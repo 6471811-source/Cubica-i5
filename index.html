@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Счёт-договор — CUBICA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f8f6f2;color:#2c3e50;padding:32px 20px 80px;-webkit-font-smoothing:antialiased;line-height:1.55}
+.wrap{max-width:1220px;margin:0 auto}
+.hero{text-align:center;margin-bottom:32px}
+.hero h1{font-family:'Playfair Display',serif;font-size:36px;font-weight:600;color:#2c3e50;margin-bottom:6px;line-height:1.15}
+.hero .sub{font-size:13px;color:#7a8a99;letter-spacing:2px;text-transform:uppercase;font-weight:500}
+.hero .line{width:80px;height:2px;background:linear-gradient(90deg,transparent,#c49a6c,transparent);margin:14px auto 0}
+
+.section{margin-bottom:20px;padding:24px 28px;background:#fff;border:1px solid rgba(196,154,108,.18);border-radius:14px;box-shadow:0 8px 30px rgba(44,62,80,.05)}
+.sec-title{display:flex;align-items:center;gap:12px;font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#2c3e50;margin-bottom:18px}
+.sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#2c3e50;color:#fff;font-size:14px;font-weight:600;flex-shrink:0;font-family:'Inter',sans-serif}
+
+table.inv{width:100%;border-collapse:collapse;font-size:13px}
+table.inv th{background:#fdfcfb;color:#7a8a99;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.7px;text-align:left;padding:10px 12px;border-bottom:1px solid rgba(196,154,108,.2)}
+table.inv td{padding:10px 12px;border-bottom:1px solid rgba(196,154,108,.08);vertical-align:middle}
+table.inv tr:last-child td{border-bottom:none}
+table.inv td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.inv td.pos{text-align:center;color:#7a8a99;font-weight:600;width:36px}
+table.inv td.vat{text-align:center;color:#7a8a99;font-weight:600;font-size:12px}
+table.inv td.sum-vat{font-weight:700;color:#c49a6c;background:rgba(196,154,108,.05);border-radius:4px}
+
+.price-input{
+  width:120px;padding:8px 10px;border:1px solid rgba(196,154,108,.4);border-radius:8px;
+  font-size:13px;text-align:right;font-family:'Inter',sans-serif;
+  font-variant-numeric:tabular-nums;background:#fdfcfb;color:#2c3e50;
+  transition:border-color .2s,box-shadow .2s;
+}
+.price-input:focus{outline:none;border-color:#c49a6c;box-shadow:0 0 0 3px rgba(196,154,108,.15);background:#fff}
+
+.totals{display:grid;grid-template-columns:1fr auto;gap:6px 20px;margin-top:16px;font-size:14px;max-width:440px;margin-left:auto}
+.totals .lbl{color:#7a8a99}
+.totals .val{font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#2c3e50}
+.totals .grand{font-size:18px;color:#c49a6c;border-top:1px solid rgba(196,154,108,.3);padding-top:10px;margin-top:6px}
+
+.deal-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:10px}
+.deal-row:last-child{margin-bottom:0}
+.deal-label{font-size:12px;font-weight:600;color:#2c3e50;min-width:160px;letter-spacing:.3px}
+.deal-radio{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#2c3e50;cursor:pointer;padding:6px 12px;border:1px solid rgba(196,154,108,.3);border-radius:8px;background:#fdfcfb;transition:all .2s}
+.deal-radio:hover{border-color:#c49a6c}
+.deal-radio input{accent-color:#c49a6c;margin:0}
+.deal-radio input:checked+span{font-weight:600;color:#c49a6c}
+
+.slider-wrap{display:flex;align-items:center;gap:12px;flex:1;min-width:280px}
+.slider-wrap input[type=range]{flex:1;accent-color:#c49a6c;height:4px}
+.slider-val{font-weight:700;color:#c49a6c;font-size:14px;min-width:80px;text-align:right;font-variant-numeric:tabular-nums}
+
+.buyer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
+.buyer-grid .full{grid-column:1 / -1}
+.buyer-field{display:flex;flex-direction:column;gap:5px}
+.buyer-field label{font-size:10.5px;font-weight:600;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
+.buyer-field input{
+  padding:9px 12px;border:1px solid rgba(196,154,108,.3);border-radius:8px;font-size:13px;
+  font-family:inherit;color:#2c3e50;background:#fdfcfb;
+  transition:border-color .2s,box-shadow .2s;
+}
+.buyer-field input:focus{outline:none;border-color:#c49a6c;box-shadow:0 0 0 3px rgba(196,154,108,.15);background:#fff}
+
+/* Превью */
+.preview-wrap{background:#f0ece6;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
+.preview-page{
+  background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);
+  position:relative;display:flex;overflow:hidden;flex-shrink:0;
+  font-family:'Inter',sans-serif;
+}
+.pv-panel{width:230px;padding:18px 12px 14px;display:flex;flex-direction:column;position:relative;background:#fdfcfb;color:#2c3e50;border-right:2px solid #c49a6c;z-index:2;flex-shrink:0}
+.pv-panel .pv-logo-svg{width:100%;height:auto;display:block;margin-bottom:14px}
+.pv-panel-company{font-size:12px;font-weight:800;margin-bottom:5px;color:#2c3e50}
+.pv-panel-req{font-size:9px;line-height:1.5;color:#5a6572}
+.pv-panel-req div{margin-bottom:2px;word-break:break-word}
+.pv-sep{border:none;border-top:1px dotted #d8d0c4;margin:6px 0}
+.pv-req-qr{display:flex;align-items:center;gap:6px;margin-top:2px;padding:5px;border:1px dashed #c49a6c;border-radius:6px;background:rgba(196,154,108,.05)}
+.pv-req-qr .box{width:50px;height:50px;flex-shrink:0;border:1px solid #c49a6c;border-radius:4px;padding:3px;background:#fff;display:flex;align-items:center;justify-content:center}
+.pv-req-qr .box svg{width:100%;height:100%;display:block}
+.pv-req-qr .meta{font-size:8px;color:#5a6572;line-height:1.25}
+.pv-req-qr .meta b{display:block;color:#c49a6c;font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.pv-req-qr .meta .sub{color:#9aa8b5;font-size:7.5px;margin-top:1px}
+.pv-side-contacts{margin-top:auto;margin-bottom:6px;padding:6px 0 5px;border-top:1px dotted #d8d0c4;display:flex;flex-direction:column;gap:4px}
+.pv-side-title{font-size:8.5px;font-weight:800;color:#c49a6c;letter-spacing:.7px;text-transform:uppercase;margin:0 0 3px}
+.pv-side-row{display:flex;align-items:flex-start;gap:5px;font-size:9.5px;color:#2c3e50;line-height:1.25}
+.pv-side-ic{width:13px;height:13px;flex-shrink:0;border-radius:50%;background:#c49a6c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:800;line-height:1;margin-top:1px}
+.pv-side-val{font-weight:600;color:#2c3e50;word-break:break-word}
+.pv-side-val small{display:block;font-weight:400;color:#9aa8b5;font-size:7.5px;margin-top:1px;text-transform:uppercase;letter-spacing:.3px}
+.pv-hours{display:flex;align-items:flex-start;gap:5px;padding:5px 0 6px;margin-bottom:6px;border-bottom:1px dotted #d8d0c4;font-size:9.5px;color:#2c3e50}
+.pv-hours .ic{width:13px;height:13px;flex-shrink:0;border-radius:50%;background:#c49a6c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:800;line-height:1;margin-top:1px}
+.pv-hours .val{font-weight:600;word-break:break-word}
+.pv-hours .val small{display:block;font-weight:400;color:#9aa8b5;font-size:7.5px;margin-top:1px;text-transform:uppercase;letter-spacing:.3px}
+.pv-side-bottom{display:flex;flex-direction:column;gap:6px}
+.pv-qr-wrap{display:flex;gap:6px;align-items:flex-start}
+.pv-qr{width:60px;height:60px;border:1.5px solid #c49a6c;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
+.pv-qr svg{display:block;width:100%;height:100%}
+.pv-qr-meta{display:flex;flex-direction:column;gap:2px;font-size:8.5px;color:#5a6572;line-height:1.25;justify-content:center}
+.pv-qr-meta b{color:#c49a6c;font-weight:800;font-size:9px;letter-spacing:.3px;text-transform:uppercase}
+.pv-issue{font-size:8.5px;color:#2c3e50;line-height:1.35;border-top:1px dotted #d8d0c4;padding-top:5px}
+.pv-issue .t1{font-size:8.5px;font-weight:800;color:#c49a6c;letter-spacing:.5px;margin-bottom:2px;text-transform:uppercase}
+.pv-issue .addr{font-weight:700;color:#2c3e50;font-size:9.5px}
+.pv-issue .sub{color:#9aa8b5;font-size:8px;margin-top:2px}
+.pv-panel-thanks{margin-top:5px;padding-top:5px;border-top:1.5px solid #c49a6c;text-align:center}
+.pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#c49a6c}
+.pv-panel-thanks .t2{font-size:8px;color:#9aa8b5;margin-top:1px}
+.pv-main{flex:1;padding:16px 16px 14px;display:flex;flex-direction:column;color:#2c3e50;position:relative;z-index:1;background:#fff;overflow:hidden}
+.pv-title{font-size:24px;font-weight:700;color:#2c3e50;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:3px;font-family:'Playfair Display',serif}
+.pv-meta{font-size:10px;color:#5a6572;text-align:right;line-height:1.4;margin-bottom:6px}
+.pv-hr{border:none;border-top:1px solid #d8d0c4;margin:5px 0 8px}
+.pv-cust-label{font-size:9.5px;font-weight:800;color:#2c3e50;margin-bottom:3px;letter-spacing:.4px}
+.pv-cust-line{font-size:9px;color:#5a6572;line-height:1.55}
+.pv-cust-line b{color:#2c3e50;font-weight:700}
+.pv-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px;background:#fff}
+.pv-table th{background:#c49a6c;color:#fff;font-weight:600;font-size:8.5px;text-align:left;padding:4px 5px;border:none}
+.pv-table td{padding:3px 5px;border-bottom:1px solid #ececec;vertical-align:middle;line-height:1.2}
+.pv-table tr:nth-child(even) td{background:#fdfcfb}
+.pv-table td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pv-table td.vat{text-align:center;color:#7a8a99;font-weight:600}
+.pv-table td.sum-vat{font-weight:700;background:rgba(196,154,108,.06) !important}
+.pv-table td.pos{text-align:center;color:#7a8a99;font-weight:600;width:20px;font-size:8.5px}
+.pv-totals{margin-top:6px;margin-left:auto;width:260px}
+.pv-totals .row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0}
+.pv-totals .row .lbl{color:#7a8a99}
+.pv-totals .row .val{font-weight:700;font-variant-numeric:tabular-nums}
+.pv-totals .grand{margin-top:3px;background:#c49a6c;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:800;display:flex;justify-content:space-between}
+.pv-note{font-size:8.5px;color:#2c3e50;margin-top:4px;font-style:italic}
+.pv-contract{margin-top:12px;padding:12px 14px;background:#fdfcfb;border:1px solid rgba(196,154,108,.18);border-radius:5px;font-size:8.4px;color:#2c3e50;line-height:1.5}
+.pv-contract .h{font-size:9.4px;font-weight:800;color:#c49a6c;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px}
+.pv-contract .h2{font-size:8.7px;font-weight:800;color:#2c3e50;margin-top:7px;margin-bottom:3px}
+.pv-contract p{margin:0 0 4px 0}
+.pv-contract b{color:#2c3e50}
+.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:10px;padding-top:9px;border-top:1px dotted #d8d0c4;font-size:8.4px;color:#5a6572}
+.pv-contract .sign .col{flex:1}
+.pv-contract .sign .ln{margin-top:12px;border-bottom:1px solid #999;height:1px}
+.pv-footer{position:absolute;left:0;right:0;bottom:0;height:16px;font-size:8px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:600;background:#fff;color:#2c3e50;border-top:1.5px solid #c49a6c;z-index:3}
+.pv-footer span:first-child{color:#c49a6c;font-weight:800}
+.pv-footer span:last-child{color:#c49a6c}
+
+.actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+.btn{padding:14px 28px;font-size:14px;font-weight:600;border-radius:12px;cursor:pointer;font-family:inherit;border:none;display:inline-flex;align-items:center;gap:8px;transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn.ghost{background:#fff;color:#2c3e50;border:1px solid rgba(196,154,108,.4);box-shadow:0 4px 12px rgba(44,62,80,.04)}
+.btn.ghost:hover{border-color:#c49a6c}
+.btn.gold{background:linear-gradient(135deg,#c49a6c,#a87c4f);color:#fff;box-shadow:0 8px 24px rgba(196,154,108,.35)}
+.btn.gold:hover{box-shadow:0 12px 32px rgba(196,154,108,.5)}
+.btn.green{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;box-shadow:0 8px 24px rgba(76,175,80,.3)}
+.btn.green:hover{box-shadow:0 12px 32px rgba(76,175,80,.5)}
+
+/* Модалка с ссылкой */
+.modal{position:fixed;inset:0;background:rgba(44,62,80,.7);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-inner{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);max-width:680px;width:100%;padding:32px}
+.modal-inner h3{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#2c3e50;margin-bottom:10px}
+.modal-inner p{color:#7a8a99;font-size:13px;line-height:1.6;margin-bottom:16px}
+.copy-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.copy-row input{
+  flex:1;padding:14px 16px;border:1.5px solid rgba(196,154,108,.4);border-radius:10px;
+  font-size:12px;font-family:Consolas,monospace;background:#fdfcfb;color:#2c3e50;
+}
+.copy-row input:focus{outline:none;border-color:#c49a6c}
+.copy-row button{
+  padding:14px 22px;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#c49a6c,#a87c4f);color:#fff;border:none;white-space:nowrap;
+}
+.copy-msg{
+  position:fixed;left:50%;top:24px;transform:translateX(-50%);
+  background:#2e7d32;color:#fff;padding:14px 26px;border-radius:10px;font-weight:600;font-size:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:3000;display:none;
+}
+.copy-msg.show{display:block;animation:slideDown .4s ease-out}
+@keyframes slideDown{from{transform:translateX(-50%) translateY(-30px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+.no-data{padding:80px 40px;text-align:center;color:#7a8a99;font-family:'Playfair Display',serif;font-size:20px}
+.no-data b{color:#c49a6c;display:block;margin-top:10px;font-size:15px;font-family:'Inter',sans-serif}
+
+@media(max-width:640px){
+  .hero h1{font-size:26px}
+  .preview-page{width:100%;height:auto;min-height:auto;transform-origin:top left}
+  .preview-wrap{padding:12px;overflow-x:scroll}
+  .buyer-grid{grid-template-columns:1fr}
+  .deal-label{min-width:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Счёт-договор</h1>
+    <div class="sub">CUBICA · Кубическая рейка</div>
+    <div class="line"></div>
+  </div>
+
+  <div id="noData" class="section no-data" style="display:none">
+    Данные не получены
+    <b>Откройте эту страницу через кнопку «Коммерческое предложение» в калькуляторе CUBICA</b>
+  </div>
+
+  <div id="content" style="display:none">
+
+    <div class="section">
+      <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
+      <div style="overflow-x:auto">
+        <table class="inv">
+          <thead>
+            <tr>
+              <th style="width:5%">№</th>
+              <th style="width:30%">Наименование</th>
+              <th style="width:8%;text-align:right">Кол-во</th>
+              <th style="width:6%">Ед.</th>
+              <th style="width:12%;text-align:right">Цена без НДС</th>
+              <th style="width:12%;text-align:right">Ст-ть без НДС</th>
+              <th style="width:6%;text-align:center">НДС</th>
+              <th style="width:11%;text-align:right">НДС сумма</th>
+              <th style="width:12%;text-align:right">Сумма с НДС</th>
+            </tr>
+          </thead>
+          <tbody id="invTbody"></tbody>
+        </table>
+      </div>
+      <div class="totals" id="invTotals"></div>
+    </div>
+
+    <div class="section">
+      <h2 class="sec-title"><span class="sec-num">2</span>Условия сделки</h2>
+      <div class="deal-row">
+        <span class="deal-label">Условия поставки:</span>
+        <label class="deal-radio"><input type="radio" name="delivery" value="pickup" checked><span>Самовывоз</span></label>
+        <label class="deal-radio"><input type="radio" name="delivery" value="delivery"><span>Доставка</span></label>
+      </div>
+      <div class="deal-row">
+        <span class="deal-label">Условия оплаты:</span>
+        <div class="slider-wrap">
+          <input type="range" id="prepaySlider" min="0" max="100" step="5" value="100">
+          <span class="slider-val" id="prepayVal">100 %</span>
+        </div>
+      </div>
+      <div class="deal-row">
+        <span class="deal-label">Срок поставки:</span>
+        <div class="slider-wrap">
+          <input type="range" id="deliveryDaysSlider" min="0" max="30" step="1" value="3">
+          <span class="slider-val" id="deliveryDaysVal">3 дня</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="sec-title"><span class="sec-num">3</span>Данные покупателя</h2>
+      <div class="buyer-grid">
+        <div class="buyer-field full">
+          <label for="bName">Наименование организации</label>
+          <input type="text" id="bName" placeholder="ООО «Пример»">
+        </div>
+        <div class="buyer-field">
+          <label for="bUnp">УНП (9 цифр)</label>
+          <input type="text" id="bUnp" inputmode="numeric" maxlength="9" placeholder="000000000">
+        </div>
+        <div class="buyer-field">
+          <label for="bAccount">Номер счёта</label>
+          <input type="text" id="bAccount" maxlength="34" placeholder="BY00 XXXX 0000 0000 0000 0000 0000">
+        </div>
+        <div class="buyer-field full">
+          <label for="bAddress">Юридический адрес</label>
+          <input type="text" id="bAddress" placeholder="г. Минск, ул. Примерная, д. 1, офис 1">
+        </div>
+        <div class="buyer-field">
+          <label for="bBank">Банк</label>
+          <input type="text" id="bBank" placeholder="ОАО «Банк Пример», г. Минск">
+        </div>
+        <div class="buyer-field">
+          <label for="bBic">БИК (7 символов)</label>
+          <input type="text" id="bBic" maxlength="7" placeholder="MTBKBY22" style="text-transform:uppercase">
+        </div>
+        <div class="buyer-field">
+          <label for="bPosition">Должность подписанта</label>
+          <input type="text" id="bPosition" placeholder="Директор">
+        </div>
+        <div class="buyer-field">
+          <label for="bFio">ФИО подписанта</label>
+          <input type="text" id="bFio" placeholder="Иванов Иван Иванович">
+        </div>
+        <div class="buyer-field full">
+          <label for="bBasis">Основание полномочий</label>
+          <input type="text" id="bBasis" placeholder="Устава">
+        </div>
+        <div class="buyer-field full">
+          <label for="bPhone">Контактный телефон</label>
+          <input type="text" id="bPhone" placeholder="+375 (29) 000-00-00">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="sec-title"><span class="sec-num">4</span>Предпросмотр счёта</h2>
+      <div class="preview-wrap">
+        <div class="preview-page" id="pvPage"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" onclick="window.close()">Закрыть</button>
+      <button class="btn gold" id="btnPdf">🖨 Скачать PDF счёта</button>
+      <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal" id="shareModal">
+  <div class="modal-inner">
+    <h3>🔗 Ссылка для клиента</h3>
+    <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя. Отправьте её клиенту — он увидит красивую презентацию КП с 2D-схемой и 3D-объёмом.</p>
+    <div class="copy-row">
+      <input type="text" id="shareLink" readonly onclick="this.select()">
+      <button type="button" id="btnCopy">📋 Копировать</button>
+    </div>
+    <div style="text-align:right">
+      <button class="btn ghost" onclick="document.getElementById('shareModal').classList.remove('open')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="copy-msg" id="copyMsg">✓ Ссылка скопирована в буфер обмена</div>
+
+<script>
+/* =====================================================================
+   CUBICA · i5 — транзитная форма счёта-договора
+   Вход: ?data=<base64(JSON)>  — данные из калькулятора
+   Выход: ?kp=<base64(JSON)>   — данные для i0 (презентация клиенту)
+   ===================================================================== */
+
+/* ============= АДРЕС i0 ============= */
+const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
+// ↑ если i0 переехал — замените на актуальный адрес
+
+/* ============= Реквизиты компании ============= */
+const COMPANY = {
+  name:'ООО «ВК ТЕРМ»',
+  address:'РБ, 223051, Минская обл., Минский р-н, аг. Колодищи, ул. Минская, д. 5, пом. 107-4',
+  phone:'+375 (44) 752-70-73',
+  email:'7527073@armstrong.by',
+  site:'cubica.by',
+  site2:'armstrong.by',
+  unp:'191202287',
+  account:'BY79MTBK30120001093300125719',
+  bank:'ЗАО «МТБанк», г. Минск',
+  bic:'MTBKBY22',
+  director:'Креминский И. Ю.',
+  directorPosition:'Директор',
+  tagline:'modern ceiling solutions',
+  issueAddress:'аг. Колодищи, ул. Минская, 5, этаж 5, офис 508',
+  pickupAddress:'аг. Колодищи, территория учебного парка',
+  hours:'Пн–Пт, 09:00–15:00'
+};
+
+/* ============= Утилиты ============= */
+function b64dec(s){
+  if(!s) return null;
+  s = String(s).replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4) s += '=';
+  try{
+    const bin = atob(s);
+    const bytes = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }catch(e){return null;}
+}
+function b64enc(s){
+  return btoa(unescape(encodeURIComponent(s)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
+function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
+function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
+function handleSmartInput(inp,e){
+  const key=e.key;if(!/^\d$/.test(key))return false;
+  let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
+  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
+  const comma=val.indexOf(',');
+  if(comma>=0&&selStart<=comma){
+    let left=val.slice(0,comma),right=val.slice(comma+1);
+    if(left==='0'&&(selStart===0||selStart===1)){inp.value=key+','+right;inp.setSelectionRange(1,1);return true;}
+    const newLeft=left.slice(0,selStart)+key+left.slice(selEnd);
+    const cleaned=newLeft.replace(/^0+(\d)/,'$1').slice(0,9)||'0';
+    inp.value=cleaned+','+right;inp.setSelectionRange(Math.min(cleaned.length,selStart+1),Math.min(cleaned.length,selStart+1));
+    return true;
+  }
+  if(comma>=0&&selStart>comma){
+    let left=val.slice(0,comma)||'0';
+    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
+    const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
+    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
+    let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
+    inp.value=left+','+right;const newPos=comma+1+posInFrac+1;
+    inp.setSelectionRange(newPos,newPos);return true;
+  }
+  return false;
+}
+function numToWordsRU(n){
+  n=Math.floor(Math.abs(Number(n)||0));if(n===0)return'ноль';
+  const units=['','один','два','три','четыре','пять','шесть','семь','восемь','девять','десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const unitsF=['','одна','две','три','четыре','пять','шесть','семь','восемь','девять','десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const tens=['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
+  const hundreds=['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
+  function chunk(x,fem){const res=[];const h=Math.floor(x/100),t=Math.floor((x%100)/10),u=x%10;if(h)res.push(hundreds[h]);if(t>=2){res.push(tens[t]);if(u)res.push(fem?unitsF[u]:units[u]);}else if(t===1){res.push((fem?unitsF:units)[x%100]);}else if(u){res.push(fem?unitsF[u]:units[u]);}return res.join(' ');}
+  function pf(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
+  let rest=n;
+  const mil=Math.floor(rest/1000000);rest=rest%1000000;
+  const tho=Math.floor(rest/1000);rest=rest%1000;
+  const out=[];
+  if(mil>0)out.push(chunk(mil,false)+' '+pf(mil,['миллион','миллиона','миллионов']));
+  if(tho>0)out.push(chunk(tho,true)+' '+pf(tho,['тысяча','тысячи','тысяч']));
+  if(rest>0)out.push(chunk(rest,false));
+  return out.join(' ');
+}
+function sumToWordsRU(total){
+  const n=Math.round(Math.abs(Number(total)||0)*100);
+  const rub=Math.floor(n/100),kop=n%100;
+  const rubStr=numToWordsRU(rub);
+  const rubForm=(()=>{const m=rub%100,m1=m%10;if(m>10&&m<20)return'белорусских рублей';if(m1===1)return'белорусский рубль';if(m1>1&&m1<5)return'белорусских рубля';return'белорусских рублей';})();
+  const kopStr=String(kop).padStart(2,'0');
+  const kopForm=(()=>{const m=kop%100,m1=kop%10;if(m>10&&m<20)return'копеек';if(m1===1)return'копейка';if(m1>1&&m1<5)return'копейки';return'копеек';})();
+  return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
+}
+
+/* ============= Логотип и QR ============= */
+const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
+const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/><rect x="10" y="0" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="16" y="1" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="10" y="10" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="1" y="21" width="1" height="1"/><rect x="2" y="19" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="8" y="20" width="1" height="1"/><rect x="10" y="21" width="1" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="28" y="20" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="22" y="25" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="14" y="27" width="1" height="1"/><rect x="16" y="28" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="24" y="28" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/></g></svg>`;
+
+/* ============= Чтение URL ============= */
+const urlParams = new URLSearchParams(location.search);
+const rawData = urlParams.get('data');
+let ROWS = [];
+let KP_META = null;  // метаданные из калькулятора (L_in, W_in, railW, railH, gap, color, area, polygon)
+
+if(rawData){
+  try{
+    const parsed = JSON.parse(b64dec(rawData));
+    if(Array.isArray(parsed.rows)) ROWS = parsed.rows;
+    if(parsed.company && typeof parsed.company === 'object') Object.assign(COMPANY, parsed.company);
+    if(parsed.meta) KP_META = parsed.meta;
+  }catch(e){
+    console.warn('Не удалось распарсить ?data:', e);
+  }
+}
+
+if(!ROWS.length){
+  document.getElementById('noData').style.display = 'block';
+}else{
+  document.getElementById('content').style.display = 'block';
+}
+
+/* ============= Состояние ============= */
+let invoicePrices = ROWS.map(() => 0);
+let invoiceTotals = {subtotal:0, vat:0, total:0};
+
+/* ============= Таблица позиций ============= */
+function renderInvoiceTable(){
+  const tbody = document.getElementById('invTbody');
+  tbody.innerHTML = ROWS.map((r, i) => {
+    const price = invoicePrices[i] || 0;
+    const s = r.qty * price;
+    const v = s * 0.20;
+    const t = s + v;
+    return '<tr>' +
+      '<td class="pos">' + (i+1) + '</td>' +
+      '<td>' + escapeHtml(r.label) + '</td>' +
+      '<td class="num">' + (r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty) + '</td>' +
+      '<td>' + (r.unit || 'шт.') + '</td>' +
+      '<td class="num"><input type="text" inputmode="decimal" class="price-input" value="' + fmtPriceInput(price) + '" data-idx="' + i + '" placeholder="0,00"></td>' +
+      '<td class="num" data-sum="' + i + '">' + fmtInvoice(s) + '</td>' +
+      '<td class="vat">20 %</td>' +
+      '<td class="num" data-vat="' + i + '">' + fmtInvoice(v) + '</td>' +
+      '<td class="num sum-vat" data-total="' + i + '">' + fmtInvoice(t) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('.price-input').forEach(inp => {
+    inp.addEventListener('keydown', (e) => {
+      if(e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+         e.key === 'Tab' || e.key === 'Enter' || e.key === 'Home' || e.key === 'End') return;
+      if(/^\d$/.test(e.key)){
+        if(handleSmartInput(inp, e)){ e.preventDefault(); updateRow(inp); }
+      } else if(e.key.length === 1){ e.preventDefault(); }
+    });
+    inp.addEventListener('blur', () => {
+      const v = parsePriceInput(inp.value);
+      inp.value = fmtPriceInput(v);
+      updateRow(inp);
+    });
+  });
+  updateTotals();
+}
+
+function updateRow(inp){
+  const idx = parseInt(inp.getAttribute('data-idx'), 10);
+  invoicePrices[idx] = parsePriceInput(inp.value);
+  updateTotals();
+}
+
+function updateTotals(){
+  let sub = 0, vat = 0, tot = 0;
+  ROWS.forEach((r, i) => {
+    const p = invoicePrices[i] || 0;
+    const s = r.qty * p;
+    const v = s * 0.20;
+    const t = s + v;
+    sub += s; vat += v; tot += t;
+    const sumEl = document.querySelector('#invTbody [data-sum="' + i + '"]');
+    const vatEl = document.querySelector('#invTbody [data-vat="' + i + '"]');
+    const totEl = document.querySelector('#invTbody [data-total="' + i + '"]');
+    if(sumEl) sumEl.textContent = fmtInvoice(s);
+    if(vatEl) vatEl.textContent = fmtInvoice(v);
+    if(totEl) totEl.textContent = fmtInvoice(t);
+  });
+  invoiceTotals = {subtotal: sub, vat, total: tot};
+  document.getElementById('invTotals').innerHTML =
+    '<div class="lbl">Стоимость без НДС:</div><div class="val">' + fmtInvoice(sub) + ' BYN</div>' +
+    '<div class="lbl">НДС 20 %:</div><div class="val">' + fmtInvoice(vat) + ' BYN</div>' +
+    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">' + fmtInvoice(tot) + ' BYN</div>';
+  renderPreview();
+}
+
+/* ============= Условия и покупатель ============= */
+function getDeal(){
+  return {
+    delivery: document.querySelector('input[name="delivery"]:checked').value,
+    payment: parseInt(document.getElementById('prepaySlider').value, 10),
+    days: parseInt(document.getElementById('deliveryDaysSlider').value, 10)
+  };
+}
+function getBuyer(){
+  const keys = ['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
+  const o = {};
+  keys.forEach(k => o[k] = document.getElementById(k).value.trim());
+  return o;
+}
+
+/* ============= Превью счёта ============= */
+function renderPreview(){
+  const deal = getDeal();
+  const buyer = getBuyer();
+  const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-123';
+  const invDate = new Date().toLocaleDateString('ru-RU');
+  const deliveryText = deal.delivery === 'pickup' ? 'Самовывоз: ' + COMPANY.pickupAddress : 'Доставка до адреса покупателя';
+  const paymentFull = deal.payment >= 100;
+  const paymentClause = paymentFull
+    ? 'Оплата производится в размере 100 % предоплаты.'
+    : 'Оплата производится в размере ' + deal.payment + ' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
+  const sumWords = sumToWordsRU(invoiceTotals.total);
+  const buyerPosition = buyer.bPosition || '________________';
+  const buyerFio = buyer.bFio || '________________';
+  const buyerBasis = buyer.bBasis || '________________';
+
+  const rowsHtml = ROWS.map((r, i) => {
+    const s = r.qty * (invoicePrices[i] || 0);
+    const v = s * 0.20;
+    return '<tr>' +
+      '<td class="pos">' + (i+1) + '</td>' +
+      '<td>' + escapeHtml(r.label) + '</td>' +
+      '<td class="num">' + (r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty) + '</td>' +
+      '<td>' + (r.unit || 'шт.') + '</td>' +
+      '<td class="num">' + fmtInvoice(invoicePrices[i] || 0) + '</td>' +
+      '<td class="num">' + fmtInvoice(s) + '</td>' +
+      '<td class="vat">20 %</td>' +
+      '<td class="num">' + fmtInvoice(v) + '</td>' +
+      '<td class="num sum-vat">' + fmtInvoice(s+v) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  const bName = buyer.bName || '______________________________________________';
+  const bUnp = buyer.bUnp || '________________';
+  const bAddr = buyer.bAddress || '_______________________________________________';
+  const bAcc = buyer.bAccount || '___________________________________________';
+  const bBank = buyer.bBank || '_____________________________________________';
+
+  document.getElementById('pvPage').innerHTML = `
+    <div class="pv-panel">
+      <div class="pv-logo-svg">${LOGO_SVG_COLOR}</div>
+      <div class="pv-panel-company">${COMPANY.name}</div>
+      <div class="pv-panel-req"><div>УНП: ${COMPANY.unp}</div><div>${COMPANY.address}</div></div>
+      <hr class="pv-sep">
+      <div class="pv-panel-req"><div>Р/с: ${COMPANY.account}</div><div>Банк: ${COMPANY.bank}</div><div>БИК: ${COMPANY.bic}</div></div>
+      <div class="pv-req-qr"><div class="box">${QR_STUB}</div><div class="meta"><b>Реквизиты в Word</b>Отсканируйте QR — бухгалтерия получит наши реквизиты в Word.<div class="sub">Для бухгалтера покупателя</div></div></div>
+      <div class="pv-side-contacts">
+        <div class="pv-side-title">Контакты</div>
+        <div class="pv-side-row"><span class="pv-side-ic">Т</span><span class="pv-side-val">${COMPANY.phone}<small>Телефон</small></span></div>
+        <div class="pv-side-row"><span class="pv-side-ic">@</span><span class="pv-side-val">${COMPANY.email}<small>E-mail</small></span></div>
+        <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site}<small>Сайт</small></span></div>
+        <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site2}<small>Сайт партнёра</small></span></div>
+      </div>
+      <div class="pv-hours"><span class="ic">⏱</span><span class="val">${COMPANY.hours}<small>Режим работы</small></span></div>
+      <div class="pv-side-bottom">
+        <div class="pv-qr-wrap"><div class="pv-qr">${QR_STUB}</div><div class="pv-qr-meta"><b>QR адреса выписки</b>Наведите телефон —<br>откроется навигатор<br>с адресом ТТН/ТН.</div></div>
+        <div class="pv-issue"><div class="t1">Адрес выписки ТТН / ТН</div><div class="addr">${COMPANY.issueAddress}</div><div class="sub">Срок действия счёта — 14 дней.</div></div>
+      </div>
+      <div class="pv-panel-thanks"><div class="t1">Спасибо за заказ!</div><div class="t2">${COMPANY.tagline}</div></div>
+    </div>
+    <div class="pv-main">
+      <div class="pv-title">Счёт-договор</div>
+      <div class="pv-meta">№ ${invNo}<br>от ${invDate}</div>
+      <hr class="pv-hr">
+      <div class="pv-cust-label">ПОКУПАТЕЛЬ:</div>
+      <div class="pv-cust-line"><b>Наименование:</b> ${bName}<br><b>УНП:</b> ${bUnp}<br><b>Юридический адрес:</b> ${bAddr}<br><b>Р/с:</b> ${bAcc}<br><b>Банк:</b> ${bBank}</div>
+      <table class="pv-table"><thead><tr>
+        <th style="width:5%">№</th><th style="width:28%">Наименование</th><th style="width:9%">Кол-во</th><th style="width:5%">Ед.</th>
+        <th style="width:12%">Цена без НДС</th><th style="width:12%">Ст-ть без НДС</th><th style="width:6%">НДС</th><th style="width:11%">НДС сумма</th><th style="width:12%">Сумма с НДС</th>
+      </tr></thead><tbody>${rowsHtml}</tbody></table>
+      <div class="pv-totals">
+        <div class="row"><span class="lbl">Стоимость без НДС:</span><span class="val">${fmtInvoice(invoiceTotals.subtotal)} BYN</span></div>
+        <div class="row"><span class="lbl">НДС 20 %:</span><span class="val">${fmtInvoice(invoiceTotals.vat)} BYN</span></div>
+        <div class="grand"><span>ИТОГО с НДС:</span><span>${fmtInvoice(invoiceTotals.total)} BYN</span></div>
+      </div>
+      <div class="pv-note">Всего наименований: ${ROWS.length}, на сумму ${fmtInvoice(invoiceTotals.total)} BYN.</div>
+      <div class="pv-contract">
+        <div class="h">Счёт-договор поставки товара</div>
+        <p><b>${COMPANY.name}</b>, именуемое далее «Поставщик», в лице ${COMPANY.directorPosition.toLowerCase()} ${COMPANY.director}, действующего на основании Устава, с одной стороны, и <b>${buyer.bName || 'Покупатель'}</b>, именуемое далее «Покупатель», в лице ${buyerPosition} ${buyerFio}, действующего на основании ${buyerBasis}, с другой стороны, заключили настоящий договор о нижеследующем.</p>
+        <div class="h2">1. Предмет договора</div>
+        <p>1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.</p>
+        <p>1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.</p>
+        <div class="h2">2. Сумма договора и порядок расчётов</div>
+        <p>2.1. Общая сумма договора составляет <b>${sumWords}</b>, что соответствует <b>${fmtInvoice(invoiceTotals.total)} BYN</b> с учётом НДС 20 %. Сумма НДС 20 % составляет <b>${fmtInvoice(invoiceTotals.vat)} BYN</b>.</p>
+        <p>2.2. ${paymentClause}</p>
+        <div class="h2">3. Порядок поставки</div>
+        <p>3.1. Поставка осуществляется: <b>${deliveryText}</b>.</p>
+        <p>3.2. Срок поставки — <b>${deal.days} ${declOfNum(deal.days, ['день','дня','дней'])}</b> с момента оплаты.</p>
+        <p>3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.</p>
+        <div class="h2">4. Ответственность сторон</div>
+        <p>4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.</p>
+        <div class="h2">5. Срок действия и прочие условия</div>
+        <p>5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.</p>
+        <p>5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.</p>
+        <p>5.3. Оплата счёта означает согласие Покупателя с условиями поставки.</p>
+        <div class="sign">
+          <div class="col"><b>Поставщик</b><div class="ln"></div><div>${COMPANY.directorPosition} ${COMPANY.director}</div></div>
+          <div class="col"><b>Покупатель</b><div class="ln"></div><div>&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="pv-footer"><span>CUBICA.BY</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
+    </div>`;
+}
+
+/* ============= PDF счёта ============= */
+function svgToPngDataUrl(svg, w, h, transparent){
+  return new Promise(resolve => {
+    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      if(!transparent){ ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h); }
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+async function downloadPdf(){
+  if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const PW=210, PH=297;
+  const GOLD=[196,154,108], GOLD_DARK=[168,124,79], DARK=[44,62,80], GREY=[122,138,153];
+  const LIGHT=[253,252,251], LINE=[216,208,196];
+  const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(Math.floor(Math.random()*900)+100);
+  const invDate = new Date().toLocaleDateString('ru-RU');
+  const deal = getDeal();
+  const buyer = getBuyer();
+  const deliveryText = deal.delivery === 'pickup' ? ('Самовывоз: ' + COMPANY.pickupAddress) : 'Доставка до адреса покупателя';
+  const paymentFull = deal.payment >= 100;
+  const paymentClause = paymentFull
+    ? 'Оплата производится в размере 100 % предоплаты.'
+    : 'Оплата производится в размере ' + deal.payment + ' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
+  const sumWords = sumToWordsRU(invoiceTotals.total);
+  const buyerPosition = buyer.bPosition || '________________';
+  const buyerFio = buyer.bFio || '________________';
+  const buyerBasis = buyer.bBasis || '________________';
+  const panelW = 62;
+  const LX = panelW+7, RW = PW-LX-8;
+
+  /* ===== ЛЕВАЯ ПАНЕЛЬ ===== */
+  doc.setFillColor(253,252,251); doc.rect(0, 0, panelW, PH, 'F');
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.6);
+  doc.line(panelW, 0, panelW, PH);
+
+  const logoPng = await svgToPngDataUrl(LOGO_SVG_COLOR, 520, 143, true);
+  if(logoPng) doc.addImage(logoPng, 'PNG', 6, 10, panelW-12, (panelW-12)*(143/520));
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text(COMPANY.name, 6, 40);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(90, 101, 114);
+  let ry = 45;
+  ['УНП: ' + COMPANY.unp, COMPANY.address].forEach(l => {
+    doc.splitTextToSize(l, panelW-12).forEach(w => { doc.text(w, 6, ry); ry += 3; });
+  });
+  ry += 1;
+  ['Р/с: ' + COMPANY.account, 'Банк: ' + COMPANY.bank, 'БИК: ' + COMPANY.bic].forEach(l => {
+    doc.splitTextToSize(l, panelW-12).forEach(w => { doc.text(w, 6, ry); ry += 3; });
+  });
+
+  ry += 2;
+  const rqY = ry, rqH = 18;
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.4); doc.setLineDashPattern([1,1], 0);
+  doc.roundedRect(5, rqY, panelW-10, rqH, 1.5, 1.5, 'S');
+  doc.setLineDashPattern([], 0);
+  doc.setFillColor(255,255,255); doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.4);
+  doc.roundedRect(7, rqY+2, 13, 13, 1, 1, 'S');
+  doc.setDrawColor(DARK[0], DARK[1], DARK[2]); doc.setLineWidth(0.15);
+  doc.rect(8.1, rqY+3.1, 3.2, 3.2); doc.rect(12, rqY+3.1, 3.2, 3.2);
+  doc.rect(8.1, rqY+7, 3.2, 3.2); doc.rect(12, rqY+7, 3.2, 3.2);
+  doc.rect(10, rqY+10.9, 3.2, 3.2); doc.rect(13.8, rqY+10.9, 2.3, 2.3);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('РЕКВИЗИТЫ В WORD', 22, rqY+4.5);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(5); doc.setTextColor(90, 101, 114);
+  doc.text('Сканируйте QR — бухгалтерия', 22, rqY+8);
+  doc.text('получит реквизиты в Word.', 22, rqY+10.3);
+  doc.setTextColor(GREY[0], GREY[1], GREY[2]); doc.setFontSize(4.5);
+  doc.text('Для бухгалтера покупателя', 22, rqY+14);
+
+  const cBlockY = rqY + rqH + 6;
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.2);
+  doc.setLineDashPattern([0.6, 0.6], 0);
+  doc.line(5, cBlockY, panelW-5, cBlockY);
+  doc.setLineDashPattern([], 0);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('КОНТАКТЫ', 6, cBlockY+4);
+  let cyPos = cBlockY + 8;
+  [COMPANY.phone, COMPANY.email, COMPANY.site, COMPANY.site2].forEach((v, i) => {
+    doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]); doc.circle(7.5, cyPos-1, 1.1, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(v, 10.5, cyPos);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(4.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text(['Телефон', 'E-mail', 'Сайт', 'Сайт партнёра'][i], 10.5, cyPos+2.4);
+    cyPos += 6.3;
+  });
+  cyPos += 1;
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineDashPattern([0.6, 0.6], 0);
+  doc.line(5, cyPos-2, panelW-5, cyPos-2);
+  doc.setLineDashPattern([], 0);
+  doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]); doc.circle(7.5, cyPos+1.2, 1.1, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text(COMPANY.hours, 10.5, cyPos+2);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(4.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text('Режим работы', 10.5, cyPos+4.5);
+
+  const qrY = PH-80;
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.5);
+  doc.line(5, qrY-3, panelW-5, qrY-3);
+  doc.setFillColor(255,255,255); doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.5);
+  doc.roundedRect(6, qrY, 16, 16, 1, 1, 'S');
+  doc.setDrawColor(DARK[0], DARK[1], DARK[2]); doc.setLineWidth(0.15);
+  doc.rect(7.8, qrY+1.8, 4, 4); doc.rect(12.7, qrY+1.8, 4, 4);
+  doc.rect(7.8, qrY+6.7, 4, 4); doc.rect(12.7, qrY+6.7, 4, 4);
+  doc.rect(17.6, qrY+6.7, 3, 3);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('QR АДРЕСА ВЫПИСКИ', 6, qrY+20);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('АДРЕС ВЫПИСКИ ТТН / ТН', 6, qrY+25);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  const addrLines = doc.splitTextToSize(COMPANY.issueAddress, panelW-10);
+  doc.text(addrLines, 6, qrY+30);
+  let subY = qrY+30 + addrLines.length*3 + 1;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text(doc.splitTextToSize('Наведите телефон на QR — откроется навигатор.', panelW-10), 6, subY);
+
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.5);
+  doc.line(5, PH-11, panelW-5, PH-11);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('Спасибо за заказ!', panelW/2, PH-6.5, {align:'center'});
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text(COMPANY.tagline, panelW/2, PH-3, {align:'center'});
+
+  /* ===== ПРАВАЯ ЧАСТЬ ===== */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text('Счёт-договор', PW-9, 17, {align:'right'});
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(90, 101, 114);
+  doc.text('№ ' + invNo, PW-9, 22, {align:'right'});
+  doc.text('от ' + invDate, PW-9, 25.5, {align:'right'});
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3); doc.line(LX, 29.5, PW-9, 29.5);
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text('ПОКУПАТЕЛЬ:', LX, 36);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.2); doc.setTextColor(60, 60, 60);
+  const bName = buyer.bName || '______________________________________________';
+  const bUnp = buyer.bUnp || '__________________';
+  const bAddr = buyer.bAddress || '______________________________________';
+  const bAcc = buyer.bAccount || '______________________________________';
+  const bBank = buyer.bBank || '______________________________________';
+  doc.text('Наименование: ' + bName, LX, 40.5);
+  doc.text('УНП: ' + bUnp, LX, 44.5);
+  doc.text('Юридический адрес: ' + bAddr, LX, 48.5);
+  doc.text('Р/с: ' + bAcc, LX, 52.5);
+  doc.text('Банк: ' + bBank, LX, 56.5);
+
+  let ty = 61;
+  const colW = [8, 58, 13, 9, 22, 22, 9, 20, 17];
+  const headH = 6.5;
+  doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]); doc.rect(LX, ty, RW, headH, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
+  let cx = LX;
+  const headers = ['№', 'Наименование', 'Кол-во', 'Ед.', 'Цена без НДС', 'Ст-ть без НДС', 'НДС', 'НДС сумма', 'Сумма с НДС'];
+  headers.forEach((h, i) => { doc.text(h, cx+1, ty+4.5); cx += colW[i]; });
+  ty += headH;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(6.8);
+  ROWS.forEach((r, idx) => {
+    const rh = 5.6;
+    if(idx%2 === 1){ doc.setFillColor(LIGHT[0], LIGHT[1], LIGHT[2]); doc.rect(LX, ty, RW, rh, 'F'); }
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(String(idx+1), LX+colW[0]/2, ty+4, {align:'center'});
+    const nm = doc.splitTextToSize(r.label, colW[1]-3)[0];
+    doc.text(nm, LX+colW[0]+1.5, ty+4);
+    doc.text(String(r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty), LX+colW[0]+colW[1]+colW[2]-1, ty+4, {align:'right'});
+    doc.text(r.unit || 'шт.', LX+colW[0]+colW[1]+colW[2]+2, ty+4);
+    const s = r.qty * (invoicePrices[idx] || 0);
+    const v = s * 0.20;
+    doc.text(fmtInvoice(invoicePrices[idx] || 0), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]-1, ty+4, {align:'right'});
+    doc.text(fmtInvoice(s), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]-1, ty+4, {align:'right'});
+    doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('20 %', LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]+colW[6]/2, ty+4, {align:'center'});
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(fmtInvoice(v), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]+colW[6]+colW[7]-1, ty+4, {align:'right'});
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmtInvoice(s+v), PW-9, ty+4, {align:'right'});
+    doc.setFont('helvetica', 'normal');
+    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.15); doc.line(LX, ty, LX+RW, ty);
+    ty += rh;
+  });
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.4); doc.line(LX, ty, LX+RW, ty);
+  cx = LX;
+  for(let i = 0; i < colW.length-1; i++){ cx += colW[i]; doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.15); doc.line(cx, ty - ROWS.length*5.6 - headH, cx, ty); }
+
+  ty += 4;
+  const boxW = 88, boxX = PW-9-boxW;
+  doc.setFillColor(LIGHT[0], LIGHT[1], LIGHT[2]); doc.roundedRect(boxX, ty, boxW, 24, 2, 2, 'F');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text('Стоимость без НДС:', boxX+4, ty+6);
+  doc.text('НДС 20 %:', boxX+4, ty+11.5);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text(fmtInvoice(invoiceTotals.subtotal) + ' BYN', boxX+boxW-4, ty+6, {align:'right'});
+  doc.text(fmtInvoice(invoiceTotals.vat) + ' BYN', boxX+boxW-4, ty+11.5, {align:'right'});
+  doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]); doc.roundedRect(boxX+2, ty+14.5, boxW-4, 8, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
+  doc.text('ИТОГО с НДС:', boxX+5, ty+20);
+  doc.text(fmtInvoice(invoiceTotals.total) + ' BYN', boxX+boxW-5, ty+20, {align:'right'});
+
+  ty += 32;
+  doc.setFillColor(253,252,251); doc.setDrawColor(232,226,214); doc.setLineWidth(0.2);
+  const cW = RW, cH = PH - ty - 12;
+  doc.roundedRect(LX, ty, cW, cH, 1.5, 1.5, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('СЧЁТ-ДОГОВОР ПОСТАВКИ ТОВАРА', LX+4, ty+5.5);
+  let cT = ty + 10;
+  const lineH = 3;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(40, 40, 40);
+  const P = txt => {
+    const lines = doc.splitTextToSize(txt, cW-8);
+    doc.text(lines, LX+4, cT);
+    cT += lines.length*lineH + 1.2;
+  };
+  P(COMPANY.name + ', именуемое далее «Поставщик», в лице ' + COMPANY.directorPosition.toLowerCase() + ' ' + COMPANY.director + ', действующего на основании Устава, с одной стороны, и ' + (buyer.bName || 'Покупатель') + ', именуемое далее «Покупатель», в лице ' + buyerPosition + ' ' + buyerFio + ', действующего на основании ' + buyerBasis + ', с другой стороны, заключили настоящий договор о нижеследующем.');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text('1. Предмет договора', LX+4, cT); cT += lineH+0.8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
+  P('1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.');
+  P('1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text('2. Сумма договора и порядок расчётов', LX+4, cT); cT += lineH+0.8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
+  P('2.1. Общая сумма договора составляет ' + sumWords + ', что соответствует ' + fmtInvoice(invoiceTotals.total) + ' BYN с учётом НДС 20 %. Сумма НДС 20 % составляет ' + fmtInvoice(invoiceTotals.vat) + ' BYN.');
+  P('2.2. ' + paymentClause);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text('3. Порядок поставки', LX+4, cT); cT += lineH+0.8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
+  P('3.1. Поставка осуществляется: ' + deliveryText + '.');
+  P('3.2. Срок поставки — ' + deal.days + ' ' + declOfNum(deal.days, ['день','дня','дней']) + ' с момента оплаты.');
+  P('3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text('4. Ответственность сторон', LX+4, cT); cT += lineH+0.8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
+  P('4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text('5. Срок действия и прочие условия', LX+4, cT); cT += lineH+0.8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
+  P('5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.');
+  P('5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.');
+  P('5.3. Оплата счёта означает согласие Покупателя с условиями поставки.');
+
+  cT += 3;
+  doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.15);
+  doc.line(LX+4, cT, LX+cW-4, cT);
+  cT += 4;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text('Поставщик', LX+4, cT);
+  doc.text('Покупатель', LX+cW/2+2, cT);
+  cT += 5;
+  doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.2);
+  doc.line(LX+4, cT, LX+55, cT);
+  doc.line(LX+cW/2+2, cT, LX+cW/2+55, cT);
+  cT += 3.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text('/ ' + COMPANY.directorPosition + ' ' + COMPANY.director, LX+4, cT);
+
+  doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]); doc.setLineWidth(0.6);
+  doc.line(0, PH-6, PW, PH-6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('CUBICA.BY', LX, PH-2);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+  doc.text(COMPANY.tagline + '  ·  ' + COMPANY.phone + '  ·  ' + COMPANY.email, PW/2, PH-2, {align:'center'});
+  doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('Спасибо за заказ!', PW-9, PH-2, {align:'right'});
+
+  doc.save('CUBICA_' + invNo + '.pdf');
+}
+
+/* ============= Формирование ссылки для клиента (i0) ============= */
+function buildClientPayload(){
+  const deal = getDeal();
+  const buyer = getBuyer();
+  const rowsForClient = ROWS.map((r, i) => {
+    const price = invoicePrices[i] || 0;
+    const item = {
+      label: r.label,
+      qty: r.qty,
+      unit: r.unit || 'шт.',
+      price: price
+    };
+    if(Array.isArray(r.pieces)) item.pieces = r.pieces;
+    if(r.length_mm) item.length_mm = r.length_mm;
+    return item;
+  });
+
+  const payload = {
+    v: 3,
+    // данные калькулятора (мета)
+    L_in: (KP_META && KP_META.L_in) || 0,
+    W_in: (KP_META && KP_META.W_in) || 0,
+    area: (KP_META && KP_META.area) || 0,
+    color: (KP_META && KP_META.color) || '',
+    railSpec: (KP_META && KP_META.railW && KP_META.railH) ? (KP_META.railW + '×' + KP_META.railH) : '',
+    polygon: (KP_META && KP_META.polygon) || null,
+    p: {
+      railW: (KP_META && KP_META.railW) || 50,
+      railH: (KP_META && KP_META.railH) || 30,
+      gap: (KP_META && KP_META.gap) || 15,
+      caps: (KP_META && KP_META.caps) ? 1 : 0,
+      angle: (KP_META && KP_META.angle) ? 1 : 0
+    },
+    r: (KP_META && KP_META.rotation) || 0,
+    // спецификация с ценами
+    rows: rowsForClient,
+    // итоги
+    price: invoiceTotals.total,
+    subtotal: invoiceTotals.subtotal,
+    vat: invoiceTotals.vat,
+    currency: 'BYN',
+    // условия сделки
+    deal: {
+      delivery: deal.delivery,
+      payment: deal.payment,
+      days: deal.days
+    },
+    // покупатель
+    buyer: buyer,
+    // реквизиты
+    company: COMPANY,
+    manager: 'Менеджер CUBICA',
+    phone: COMPANY.phone,
+    valid: (() => { const d = new Date(); d.setDate(d.getDate()+10); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); })()
+  };
+  return payload;
+}
+
+function openShareModal(){
+  const payload = buildClientPayload();
+  const data = b64enc(JSON.stringify(payload));
+  const url = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
+  document.getElementById('shareLink').value = url;
+  document.getElementById('shareModal').classList.add('open');
+}
+
+function copyShareLink(){
+  const inp = document.getElementById('shareLink');
+  inp.select();
+  inp.setSelectionRange(0, 99999);
+  try{
+    navigator.clipboard.writeText(inp.value).then(() => {
+      showCopyMsg();
+    }).catch(() => {
+      document.execCommand('copy');
+      showCopyMsg();
+    });
+  }catch(e){
+    document.execCommand('copy');
+    showCopyMsg();
+  }
+}
+
+function showCopyMsg(){
+  const m = document.getElementById('copyMsg');
+  m.classList.add('show');
+  setTimeout(() => m.classList.remove('show'), 2000);
+}
+
+/* ============= Инициализация ============= */
+if(ROWS.length){
+  renderInvoiceTable();
+
+  /* Форматтеры полей покупателя */
+  document.getElementById('bUnp').addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,9);
+    renderPreview();
+  });
+  document.getElementById('bAccount').addEventListener('input', e => {
+    let raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28);
+    const blocks = raw.match(/.{1,4}/g) || [];
+    e.target.value = blocks.join(' ');
+    renderPreview();
+  });
+  document.getElementById('bBic').addEventListener('input', e => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);
+    renderPreview();
+  });
+  ['bName','bAddress','bBank','bPosition','bFio','bBasis','bPhone'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderPreview);
+  });
+
+  /* Ползунки */
+  document.getElementById('prepaySlider').addEventListener('input', e => {
+    document.getElementById('prepayVal').textContent = e.target.value + ' %';
+    renderPreview();
+  });
+  document.getElementById('deliveryDaysSlider').addEventListener('input', e => {
+    const d = parseInt(e.target.value, 10);
+    document.getElementById('deliveryDaysVal').textContent = d + ' ' + declOfNum(d, ['день','дня','дней']);
+    renderPreview();
+  });
+  document.querySelectorAll('input[name="delivery"]').forEach(el => el.addEventListener('input', renderPreview));
+
+  document.getElementById('prepayVal').textContent = document.getElementById('prepaySlider').value + ' %';
+  document.getElementById('deliveryDaysVal').textContent = document.getElementById('deliveryDaysSlider').value + ' ' + declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value, 10), ['день','дня','дней']);
+
+  /* Кнопки */
+  document.getElementById('btnPdf').addEventListener('click', downloadPdf);
+  document.getElementById('btnShare').addEventListener('click', openShareModal);
+  document.getElementById('btnCopy').addEventListener('click', copyShareLink);
+  document.getElementById('shareModal').addEventListener('click', e => {
+    if(e.target === document.getElementById('shareModal')) document.getElementById('shareModal').classList.remove('open');
+  });
+}
+</script>
+</body>
+</html>

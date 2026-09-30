@@ -441,6 +441,7 @@ const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" sha
 const urlParams = new URLSearchParams(location.search);
 const rawData = urlParams.get('data');
 let ROWS = [];
+let ROOMS = [];    /* НОВОЕ: массив помещений из k6.1 */
 let KP_META = null;
 
 if(rawData){
@@ -453,6 +454,7 @@ if(rawData){
         unit: r.unit || 'шт.'
       }));
     }
+    if(Array.isArray(parsed.rooms)) ROOMS = parsed.rooms;   /* НОВОЕ */
     if(parsed.company && typeof parsed.company === 'object') Object.assign(COMPANY, parsed.company);
     if(parsed.meta) KP_META = parsed.meta;
   }catch(e){
@@ -749,7 +751,8 @@ function buildClientPayload(){
   });
 
   const payload = {
-    v: 3,
+    v: 4,                                              /* было 3 — стало 4 */
+    rooms: ROOMS,                                      /* НОВОЕ: прокидываем дальше в i0 */
     L_in: (KP_META && KP_META.L_in) || 0,
     W_in: (KP_META && KP_META.W_in) || 0,
     area: (KP_META && KP_META.area) || 0,

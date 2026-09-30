@@ -66,7 +66,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 }
 .buyer-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
 
-/* ===== ПРЕВЬЮ — это тот же вид, что и в PDF ===== */
 .preview-wrap{background:#e8eaee;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
 .preview-page{
   background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);
@@ -177,7 +176,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .no-data{padding:80px 40px;text-align:center;color:#888;font-size:20px;font-weight:800}
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 
-/* Скрин-режим для html2canvas: убираем тень и делаем ровно 760×1074 */
 .preview-page.rendering{box-shadow:none !important}
 
 @media(max-width:640px){
@@ -429,11 +427,9 @@ function sumToWordsRU(total){
 
 /* ==== Нормализация «рейковой» строки: убираем длину из названия ==== */
 function normalizeRailLabel(label){
-  // "Рейка Cubica 50/50 Denver 4000 мм" → "Рейка Cubica 50/50 Denver"
-  // "Рейка Cubica 50/50 Denver (объединено)" → "Рейка Cubica 50/50 Denver"
   return String(label)
-    .replace(/\s+\d+\s*мм\s*$/i,'')          // убираем длину в мм в конце
-    .replace(/\s*\(объединено\)\s*$/i,'')     // убираем пометку (объединено)
+    .replace(/\s+\d+\s*мм\s*$/i,'')
+    .replace(/\s*\(объединено\)\s*$/i,'')
     .trim();
 }
 
@@ -464,9 +460,21 @@ if(rawData){
   }
 }
 
+/* ==== ПЕРЕВОД РЕЕК ИЗ 'шт. с длиной' В 'м.п.' ==== */
+ROWS = ROWS.map(r => {
+  const m = r.label.match(/^Рейка Cubica .*?(\d+)\s*мм/i);
+  if(m && r.unit !== 'м.п.'){
+    const lenMm = parseInt(m[1], 10);
+    return {
+      label: r.label,
+      qty: (lenMm / 1000) * r.qty,
+      unit: 'м.п.'
+    };
+  }
+  return r;
+});
+
 /* ==== Схлопываем строки с одинаковыми названиями (после удаления длины) ==== */
-/* Это гарантирует, что даже если калькулятор прислал рейку несколькими строками
-   с разными длинами, в i5 она окажется одной позицией с суммированным м.п. */
 (function mergeRows(){
   const map = new Map();
   const order = [];
@@ -482,7 +490,6 @@ if(rawData){
     }
   }
   ROWS = order.map(k => map.get(k));
-  // Округляем рейку до 3 знаков
   for(const r of ROWS){
     if(r.unit === 'м.п.') r.qty = Math.round(r.qty*1000)/1000;
   }
@@ -680,11 +687,6 @@ function renderPreview(){
     </div>`;
 }
 
-/* ============================================================
-   PDF — теперь один в один как превью.
-   Метод: html2canvas снимает DOM-узел #pvPage, jsPDF кладёт
-   картинку в A4 (при необходимости режет по страницам).
-   ============================================================ */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -693,13 +695,9 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  // Скрываем возможные тени, чтобы не попадали на рендер
   target.classList.add('rendering');
-
-  // Дадим браузеру отрисовать (иногда нужно для корректного snapshot)
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-  // Рендерим превью в canvas с высоким масштабом (для печати)
   const canvas = await window.html2canvas(target, {
     scale: 3,
     backgroundColor: '#ffffff',
@@ -715,20 +713,16 @@ async function downloadPdf(){
 
   const imgData = canvas.toDataURL('image/png');
 
-  // A4: 210 × 297 мм
   const PW = 210, PH = 297;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  // Пропорции превью: 760×1074 → 210 × (210 * 1074 / 760) ≈ 210 × 296.7 мм — идеально влезает на одну A4
   const imgW = PW;
   const imgH = PW * (canvas.height / canvas.width);
 
   if(imgH <= PH + 0.5){
-    // Одна страница — превью полностью влезает
     doc.addImage(imgData, 'PNG', 0, 0, imgW, imgH, undefined, 'FAST');
   }else{
-    // Превью длиннее А4 — режем по страницам
     let y = 0;
     let remaining = imgH;
     let firstPage = true;
@@ -745,7 +739,6 @@ async function downloadPdf(){
   doc.save('CUBICA_' + invNo + '.pdf');
 }
 
-/* Ссылка клиенту */
 function buildClientPayload(){
   const deal = getDeal();
   const buyer = getBuyer();

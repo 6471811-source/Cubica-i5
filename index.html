@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Счёт-договор — CUBICA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;color:#1a1a1a;padding:32px 20px 80px;-webkit-font-smoothing:antialiased;line-height:1.55}
@@ -65,7 +66,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 }
 .buyer-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
 
-/* Превью */
+/* ===== ПРЕВЬЮ — это тот же вид, что и в PDF ===== */
 .preview-wrap{background:#e8eaee;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
 .preview-page{
   background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);
@@ -176,9 +177,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .no-data{padding:80px 40px;text-align:center;color:#888;font-size:20px;font-weight:800}
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 
+/* Скрин-режим для html2canvas: убираем тень и делаем ровно 760×1074 */
+.preview-page.rendering{box-shadow:none !important}
+
 @media(max-width:640px){
   .hero h1{font-size:24px}
-  .preview-page{width:100%;height:auto;min-height:auto;transform-origin:top left}
   .preview-wrap{padding:12px;overflow-x:scroll}
   .buyer-grid{grid-template-columns:1fr}
   .deal-label{min-width:auto}
@@ -332,10 +335,8 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
    Выход: ?kp=<base64(JSON)>   — данные для i0 (презентация клиенту)
    ===================================================================== */
 
-/* ============= АДРЕС i0 ============= */
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 
-/* ============= Реквизиты компании ============= */
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
   address:'РБ, 223051, Минская обл., Минский р-н, аг. Колодищи, ул. Минская, д. 5, пом. 107-4',
@@ -355,7 +356,6 @@ const COMPANY = {
   hours:'Пн–Пт, 09:00–15:00'
 };
 
-/* ============= Утилиты ============= */
 function b64dec(s){
   if(!s) return null;
   s = String(s).replace(/-/g,'+').replace(/_/g,'/');
@@ -427,11 +427,21 @@ function sumToWordsRU(total){
   return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
 }
 
-/* ============= Логотип и QR ============= */
+/* ==== Нормализация «рейковой» строки: убираем длину из названия ==== */
+function normalizeRailLabel(label){
+  // "Рейка Cubica 50/50 Denver 4000 мм" → "Рейка Cubica 50/50 Denver"
+  // "Рейка Cubica 50/50 Denver (объединено)" → "Рейка Cubica 50/50 Denver"
+  return String(label)
+    .replace(/\s+\d+\s*мм\s*$/i,'')          // убираем длину в мм в конце
+    .replace(/\s*\(объединено\)\s*$/i,'')     // убираем пометку (объединено)
+    .trim();
+}
+
+/* Логотип */
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
 const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/><rect x="10" y="0" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="16" y="1" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="10" y="10" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="1" y="21" width="1" height="1"/><rect x="2" y="19" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="8" y="20" width="1" height="1"/><rect x="10" y="21" width="1" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="28" y="20" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="22" y="25" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="14" y="27" width="1" height="1"/><rect x="16" y="28" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="24" y="28" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/></g></svg>`;
 
-/* ============= Чтение URL ============= */
+/* Чтение URL */
 const urlParams = new URLSearchParams(location.search);
 const rawData = urlParams.get('data');
 let ROWS = [];
@@ -440,7 +450,13 @@ let KP_META = null;
 if(rawData){
   try{
     const parsed = JSON.parse(b64dec(rawData));
-    if(Array.isArray(parsed.rows)) ROWS = parsed.rows;
+    if(Array.isArray(parsed.rows)){
+      ROWS = parsed.rows.map(r=>({
+        label: String(r.label||''),
+        qty: Number(r.qty)||0,
+        unit: r.unit || 'шт.'
+      }));
+    }
     if(parsed.company && typeof parsed.company === 'object') Object.assign(COMPANY, parsed.company);
     if(parsed.meta) KP_META = parsed.meta;
   }catch(e){
@@ -448,17 +464,39 @@ if(rawData){
   }
 }
 
+/* ==== Схлопываем строки с одинаковыми названиями (после удаления длины) ==== */
+/* Это гарантирует, что даже если калькулятор прислал рейку несколькими строками
+   с разными длинами, в i5 она окажется одной позицией с суммированным м.п. */
+(function mergeRows(){
+  const map = new Map();
+  const order = [];
+  for(const r of ROWS){
+    let label = r.label;
+    if(/^Рейка Cubica /.test(label)) label = normalizeRailLabel(label);
+    const key = label + '|' + r.unit;
+    if(map.has(key)){
+      map.get(key).qty += r.qty;
+    }else{
+      map.set(key, {label, qty:r.qty, unit:r.unit});
+      order.push(key);
+    }
+  }
+  ROWS = order.map(k => map.get(k));
+  // Округляем рейку до 3 знаков
+  for(const r of ROWS){
+    if(r.unit === 'м.п.') r.qty = Math.round(r.qty*1000)/1000;
+  }
+})();
+
 if(!ROWS.length){
   document.getElementById('noData').style.display = 'block';
 }else{
   document.getElementById('content').style.display = 'block';
 }
 
-/* ============= Состояние ============= */
 let invoicePrices = ROWS.map(() => 0);
 let invoiceTotals = {subtotal:0, vat:0, total:0};
 
-/* ============= Таблица позиций ============= */
 function renderInvoiceTable(){
   const tbody = document.getElementById('invTbody');
   tbody.innerHTML = ROWS.map((r, i) => {
@@ -525,7 +563,6 @@ function updateTotals(){
   renderPreview();
 }
 
-/* ============= Условия и покупатель ============= */
 function getDeal(){
   return {
     delivery: document.querySelector('input[name="delivery"]:checked').value,
@@ -540,7 +577,6 @@ function getBuyer(){
   return o;
 }
 
-/* ============= Превью счёта ============= */
 function renderPreview(){
   const deal = getDeal();
   const buyer = getBuyer();
@@ -644,292 +680,78 @@ function renderPreview(){
     </div>`;
 }
 
-/* ============= PDF счёта ============= */
-function svgToPngDataUrl(svg, w, h, transparent){
-  return new Promise(resolve => {
-    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const ctx = c.getContext('2d');
-      if(!transparent){ ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h); }
-      ctx.drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/png'));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    img.src = url;
-  });
-}
-
+/* ============================================================
+   PDF — теперь один в один как превью.
+   Метод: html2canvas снимает DOM-узел #pvPage, jsPDF кладёт
+   картинку в A4 (при необходимости режет по страницам).
+   ============================================================ */
 async function downloadPdf(){
+  if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
+  if(!window.html2canvas){ alert('html2canvas не загружен'); return; }
+
+  const target = document.getElementById('pvPage');
+  if(!target){ alert('Нет превью для рендера.'); return; }
+
+  // Скрываем возможные тени, чтобы не попадали на рендер
+  target.classList.add('rendering');
+
+  // Дадим браузеру отрисовать (иногда нужно для корректного snapshot)
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  // Рендерим превью в canvas с высоким масштабом (для печати)
+  const canvas = await window.html2canvas(target, {
+    scale: 3,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+    width: target.offsetWidth,
+    height: target.offsetHeight,
+    windowWidth: target.offsetWidth,
+    windowHeight: target.offsetHeight
+  });
+
+  target.classList.remove('rendering');
+
+  const imgData = canvas.toDataURL('image/png');
+
+  // A4: 210 × 297 мм
+  const PW = 210, PH = 297;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-  const PW=210, PH=297;
-  const RED=[225,0,4], RED_DARK=[165,0,3], BLACK=[0,0,0];
-  const LIGHT=[250,250,250], LINE=[220,220,220], GREY=[120,120,120];
-  const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(Math.floor(Math.random()*900)+100);
-  const invDate = new Date().toLocaleDateString('ru-RU');
-  const deal = getDeal();
-  const buyer = getBuyer();
-  const deliveryText = deal.delivery === 'pickup' ? ('Самовывоз: ' + COMPANY.pickupAddress) : 'Доставка до адреса покупателя';
-  const paymentFull = deal.payment >= 100;
-  const paymentClause = paymentFull
-    ? 'Оплата производится в размере 100 % предоплаты.'
-    : 'Оплата производится в размере ' + deal.payment + ' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
-  const sumWords = sumToWordsRU(invoiceTotals.total);
-  const buyerPosition = buyer.bPosition || '________________';
-  const buyerFio = buyer.bFio || '________________';
-  const buyerBasis = buyer.bBasis || '________________';
-  const panelW = 62;
-  const LX = panelW+7, RW = PW-LX-8;
 
-  /* ===== ЛЕВАЯ ПАНЕЛЬ ===== */
-  doc.setFillColor(255,255,255); doc.rect(0, 0, panelW, PH, 'F');
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.6);
-  doc.line(panelW, 0, panelW, PH);
+  // Пропорции превью: 760×1074 → 210 × (210 * 1074 / 760) ≈ 210 × 296.7 мм — идеально влезает на одну A4
+  const imgW = PW;
+  const imgH = PW * (canvas.height / canvas.width);
 
-  const logoPng = await svgToPngDataUrl(LOGO_SVG_COLOR, 520, 143, true);
-  if(logoPng) doc.addImage(logoPng, 'PNG', 6, 10, panelW-12, (panelW-12)*(143/520));
+  if(imgH <= PH + 0.5){
+    // Одна страница — превью полностью влезает
+    doc.addImage(imgData, 'PNG', 0, 0, imgW, imgH, undefined, 'FAST');
+  }else{
+    // Превью длиннее А4 — режем по страницам
+    let y = 0;
+    let remaining = imgH;
+    let firstPage = true;
+    while(remaining > 0){
+      if(!firstPage) doc.addPage();
+      firstPage = false;
+      doc.addImage(imgData, 'PNG', 0, y, imgW, imgH, undefined, 'FAST');
+      remaining -= PH;
+      y -= PH;
+    }
+  }
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(0, 0, 0);
-  doc.text(COMPANY.name, 6, 40);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(50, 50, 50);
-  let ry = 45;
-  ['УНП: ' + COMPANY.unp, COMPANY.address].forEach(l => {
-    doc.splitTextToSize(l, panelW-12).forEach(w => { doc.text(w, 6, ry); ry += 3; });
-  });
-  ry += 1;
-  ['Р/с: ' + COMPANY.account, 'Банк: ' + COMPANY.bank, 'БИК: ' + COMPANY.bic].forEach(l => {
-    doc.splitTextToSize(l, panelW-12).forEach(w => { doc.text(w, 6, ry); ry += 3; });
-  });
-
-  ry += 2;
-  const rqY = ry, rqH = 18;
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.4); doc.setLineDashPattern([1,1], 0);
-  doc.roundedRect(5, rqY, panelW-10, rqH, 1.5, 1.5, 'S');
-  doc.setLineDashPattern([], 0);
-  doc.setFillColor(255,255,255); doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.4);
-  doc.roundedRect(7, rqY+2, 13, 13, 1, 1, 'S');
-  doc.setDrawColor(0,0,0); doc.setLineWidth(0.15);
-  doc.rect(8.1, rqY+3.1, 3.2, 3.2); doc.rect(12, rqY+3.1, 3.2, 3.2);
-  doc.rect(8.1, rqY+7, 3.2, 3.2); doc.rect(12, rqY+7, 3.2, 3.2);
-  doc.rect(10, rqY+10.9, 3.2, 3.2); doc.rect(13.8, rqY+10.9, 2.3, 2.3);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('РЕКВИЗИТЫ В WORD', 22, rqY+4.5);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(5); doc.setTextColor(50, 50, 50);
-  doc.text('Сканируйте QR — бухгалтерия', 22, rqY+8);
-  doc.text('получит реквизиты в Word.', 22, rqY+10.3);
-  doc.setTextColor(GREY[0], GREY[1], GREY[2]); doc.setFontSize(4.5);
-  doc.text('Для бухгалтера покупателя', 22, rqY+14);
-
-  const cBlockY = rqY + rqH + 6;
-  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.2);
-  doc.setLineDashPattern([0.6, 0.6], 0);
-  doc.line(5, cBlockY, panelW-5, cBlockY);
-  doc.setLineDashPattern([], 0);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('КОНТАКТЫ', 6, cBlockY+4);
-  let cyPos = cBlockY + 8;
-  [COMPANY.phone, COMPANY.email, COMPANY.site, COMPANY.site2].forEach((v, i) => {
-    doc.setFillColor(RED[0], RED[1], RED[2]); doc.circle(7.5, cyPos-1, 1.1, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(0, 0, 0);
-    doc.text(v, 10.5, cyPos);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(4.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text(['Телефон', 'E-mail', 'Сайт', 'Сайт партнёра'][i], 10.5, cyPos+2.4);
-    cyPos += 6.3;
-  });
-  cyPos += 1;
-  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineDashPattern([0.6, 0.6], 0);
-  doc.line(5, cyPos-2, panelW-5, cyPos-2);
-  doc.setLineDashPattern([], 0);
-  doc.setFillColor(RED[0], RED[1], RED[2]); doc.circle(7.5, cyPos+1.2, 1.1, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(0, 0, 0);
-  doc.text(COMPANY.hours, 10.5, cyPos+2);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(4.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text('Режим работы', 10.5, cyPos+4.5);
-
-  const qrY = PH-80;
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.5);
-  doc.line(5, qrY-3, panelW-5, qrY-3);
-  doc.setFillColor(255,255,255); doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.5);
-  doc.roundedRect(6, qrY, 16, 16, 1, 1, 'S');
-  doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.15);
-  doc.rect(7.8, qrY+1.8, 4, 4); doc.rect(12.7, qrY+1.8, 4, 4);
-  doc.rect(7.8, qrY+6.7, 4, 4); doc.rect(12.7, qrY+6.7, 4, 4);
-  doc.rect(17.6, qrY+6.7, 3, 3);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('QR АДРЕСА ВЫПИСКИ', 6, qrY+20);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('АДРЕС ВЫПИСКИ ТТН / ТН', 6, qrY+25);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(0, 0, 0);
-  const addrLines = doc.splitTextToSize(COMPANY.issueAddress, panelW-10);
-  doc.text(addrLines, 6, qrY+30);
-  let subY = qrY+30 + addrLines.length*3 + 1;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text(doc.splitTextToSize('Наведите телефон на QR — откроется навигатор.', panelW-10), 6, subY);
-
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.5);
-  doc.line(5, PH-11, panelW-5, PH-11);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('Спасибо за заказ!', panelW/2, PH-6.5, {align:'center'});
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text(COMPANY.tagline, panelW/2, PH-3, {align:'center'});
-
-  /* ===== ПРАВАЯ ЧАСТЬ ===== */
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(0, 0, 0);
-  doc.text('Счёт-договор', PW-9, 17, {align:'right'});
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70, 70, 70);
-  doc.text('№ ' + invNo, PW-9, 22, {align:'right'});
-  doc.text('от ' + invDate, PW-9, 25.5, {align:'right'});
-  doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3); doc.line(LX, 29.5, PW-9, 29.5);
-
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(0, 0, 0);
-  doc.text('ПОКУПАТЕЛЬ:', LX, 36);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.2); doc.setTextColor(60, 60, 60);
-  const bName = buyer.bName || '______________________________________________';
-  const bUnp = buyer.bUnp || '__________________';
-  const bAddr = buyer.bAddress || '______________________________________';
-  const bAcc = buyer.bAccount || '______________________________________';
-  const bBank = buyer.bBank || '______________________________________';
-  doc.text('Наименование: ' + bName, LX, 40.5);
-  doc.text('УНП: ' + bUnp, LX, 44.5);
-  doc.text('Юридический адрес: ' + bAddr, LX, 48.5);
-  doc.text('Р/с: ' + bAcc, LX, 52.5);
-  doc.text('Банк: ' + bBank, LX, 56.5);
-
-  let ty = 61;
-  const colW = [8, 58, 13, 9, 22, 22, 9, 20, 17];
-  const headH = 6.5;
-  doc.setFillColor(RED[0], RED[1], RED[2]); doc.rect(LX, ty, RW, headH, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
-  let cx = LX;
-  const headers = ['№', 'Наименование', 'Кол-во', 'Ед.', 'Цена без НДС', 'Ст-ть без НДС', 'НДС', 'НДС сумма', 'Сумма с НДС'];
-  headers.forEach((h, i) => { doc.text(h, cx+1, ty+4.5); cx += colW[i]; });
-  ty += headH;
-
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(6.8);
-  ROWS.forEach((r, idx) => {
-    const rh = 5.6;
-    if(idx%2 === 1){ doc.setFillColor(LIGHT[0], LIGHT[1], LIGHT[2]); doc.rect(LX, ty, RW, rh, 'F'); }
-    doc.setTextColor(0, 0, 0);
-    doc.text(String(idx+1), LX+colW[0]/2, ty+4, {align:'center'});
-    const nm = doc.splitTextToSize(r.label, colW[1]-3)[0];
-    doc.text(nm, LX+colW[0]+1.5, ty+4);
-    doc.text(String(r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty), LX+colW[0]+colW[1]+colW[2]-1, ty+4, {align:'right'});
-    doc.text(r.unit || 'шт.', LX+colW[0]+colW[1]+colW[2]+2, ty+4);
-    const s = r.qty * (invoicePrices[idx] || 0);
-    const v = s * 0.20;
-    doc.text(fmtInvoice(invoicePrices[idx] || 0), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]-1, ty+4, {align:'right'});
-    doc.text(fmtInvoice(s), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]-1, ty+4, {align:'right'});
-    doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text('20 %', LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]+colW[6]/2, ty+4, {align:'center'});
-    doc.setTextColor(0, 0, 0);
-    doc.text(fmtInvoice(v), LX+colW[0]+colW[1]+colW[2]+colW[3]+colW[4]+colW[5]+colW[6]+colW[7]-1, ty+4, {align:'right'});
-    doc.setFont('helvetica', 'bold');
-    doc.text(fmtInvoice(s+v), PW-9, ty+4, {align:'right'});
-    doc.setFont('helvetica', 'normal');
-    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.15); doc.line(LX, ty, LX+RW, ty);
-    ty += rh;
-  });
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.4); doc.line(LX, ty, LX+RW, ty);
-  cx = LX;
-  for(let i = 0; i < colW.length-1; i++){ cx += colW[i]; doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.15); doc.line(cx, ty - ROWS.length*5.6 - headH, cx, ty); }
-
-  ty += 4;
-  const boxW = 88, boxX = PW-9-boxW;
-  doc.setFillColor(LIGHT[0], LIGHT[1], LIGHT[2]); doc.roundedRect(boxX, ty, boxW, 24, 2, 2, 'F');
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text('Стоимость без НДС:', boxX+4, ty+6);
-  doc.text('НДС 20 %:', boxX+4, ty+11.5);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(0, 0, 0);
-  doc.text(fmtInvoice(invoiceTotals.subtotal) + ' BYN', boxX+boxW-4, ty+6, {align:'right'});
-  doc.text(fmtInvoice(invoiceTotals.vat) + ' BYN', boxX+boxW-4, ty+11.5, {align:'right'});
-  doc.setFillColor(RED[0], RED[1], RED[2]); doc.roundedRect(boxX+2, ty+14.5, boxW-4, 8, 1.5, 1.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
-  doc.text('ИТОГО с НДС:', boxX+5, ty+20);
-  doc.text(fmtInvoice(invoiceTotals.total) + ' BYN', boxX+boxW-5, ty+20, {align:'right'});
-
-  ty += 32;
-  doc.setFillColor(252, 252, 252); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.2);
-  const cW = RW, cH = PH - ty - 12;
-  doc.roundedRect(LX, ty, cW, cH, 1.5, 1.5, 'FD');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('СЧЁТ-ДОГОВОР ПОСТАВКИ ТОВАРА', LX+4, ty+5.5);
-  let cT = ty + 10;
-  const lineH = 3;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(40, 40, 40);
-  const P = txt => {
-    const lines = doc.splitTextToSize(txt, cW-8);
-    doc.text(lines, LX+4, cT);
-    cT += lines.length*lineH + 1.2;
-  };
-  P(COMPANY.name + ', именуемое далее «Поставщик», в лице ' + COMPANY.directorPosition.toLowerCase() + ' ' + COMPANY.director + ', действующего на основании Устава, с одной стороны, и ' + (buyer.bName || 'Покупатель') + ', именуемое далее «Покупатель», в лице ' + buyerPosition + ' ' + buyerFio + ', действующего на основании ' + buyerBasis + ', с другой стороны, заключили настоящий договор о нижеследующем.');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(0, 0, 0);
-  doc.text('1. Предмет договора', LX+4, cT); cT += lineH+0.8;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
-  P('1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.');
-  P('1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('2. Сумма договора и порядок расчётов', LX+4, cT); cT += lineH+0.8;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
-  P('2.1. Общая сумма договора составляет ' + sumWords + ', что соответствует ' + fmtInvoice(invoiceTotals.total) + ' BYN с учётом НДС 20 %. Сумма НДС 20 % составляет ' + fmtInvoice(invoiceTotals.vat) + ' BYN.');
-  P('2.2. ' + paymentClause);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('3. Порядок поставки', LX+4, cT); cT += lineH+0.8;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
-  P('3.1. Поставка осуществляется: ' + deliveryText + '.');
-  P('3.2. Срок поставки — ' + deal.days + ' ' + declOfNum(deal.days, ['день','дня','дней']) + ' с момента оплаты.');
-  P('3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('4. Ответственность сторон', LX+4, cT); cT += lineH+0.8;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
-  P('4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('5. Срок действия и прочие условия', LX+4, cT); cT += lineH+0.8;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8);
-  P('5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.');
-  P('5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.');
-  P('5.3. Оплата счёта означает согласие Покупателя с условиями поставки.');
-
-  cT += 3;
-  doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.15);
-  doc.line(LX+4, cT, LX+cW-4, cT);
-  cT += 4;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.8); doc.setTextColor(0, 0, 0);
-  doc.text('Поставщик', LX+4, cT);
-  doc.text('Покупатель', LX+cW/2+2, cT);
-  cT += 5;
-  doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.2);
-  doc.line(LX+4, cT, LX+55, cT);
-  doc.line(LX+cW/2+2, cT, LX+cW/2+55, cT);
-  cT += 3.5;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text('/ ' + COMPANY.directorPosition + ' ' + COMPANY.director, LX+4, cT);
-
-  doc.setDrawColor(RED[0], RED[1], RED[2]); doc.setLineWidth(0.6);
-  doc.line(0, PH-6, PW, PH-6);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('CUBICA.BY', LX, PH-2);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-  doc.text(COMPANY.tagline + '  ·  ' + COMPANY.phone + '  ·  ' + COMPANY.email, PW/2, PH-2, {align:'center'});
-  doc.setTextColor(RED[0], RED[1], RED[2]);
-  doc.text('Спасибо за заказ!', PW-9, PH-2, {align:'right'});
-
+  const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');
 }
 
-/* ============= Ссылка для клиента ============= */
+/* Ссылка клиенту */
 function buildClientPayload(){
   const deal = getDeal();
   const buyer = getBuyer();
   const rowsForClient = ROWS.map((r, i) => {
     const price = invoicePrices[i] || 0;
     const item = { label: r.label, qty: r.qty, unit: r.unit || 'шт.', price: price };
-    if(Array.isArray(r.pieces)) item.pieces = r.pieces;
-    if(r.length_mm) item.length_mm = r.length_mm;
     return item;
   });
 
@@ -995,7 +817,6 @@ function showCopyMsg(){
   setTimeout(() => m.classList.remove('show'), 2000);
 }
 
-/* ============= Инициализация ============= */
 if(ROWS.length){
   renderInvoiceTable();
 

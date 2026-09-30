@@ -331,6 +331,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
    CUBICA · i5 — транзитная форма счёта-договора
    Вход: ?data=<base64(JSON)>  — данные из калькулятора
    Выход: ?kp=<base64(JSON)>   — данные для i0 (презентация клиенту)
+   Флаг: &autopdf=1            — авто-генерация PDF после загрузки
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -425,7 +426,6 @@ function sumToWordsRU(total){
   return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
 }
 
-/* ==== Нормализация «рейковой» строки: убираем длину из названия ==== */
 function normalizeRailLabel(label){
   return String(label)
     .replace(/\s+\d+\s*мм\s*$/i,'')
@@ -433,16 +433,18 @@ function normalizeRailLabel(label){
     .trim();
 }
 
-/* Логотип */
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
 const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/><rect x="10" y="0" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="16" y="1" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="10" y="10" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="1" y="21" width="1" height="1"/><rect x="2" y="19" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="8" y="20" width="1" height="1"/><rect x="10" y="21" width="1" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="28" y="20" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="22" y="25" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="14" y="27" width="1" height="1"/><rect x="16" y="28" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="24" y="28" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/></g></svg>`;
 
 /* Чтение URL */
 const urlParams = new URLSearchParams(location.search);
 const rawData = urlParams.get('data');
+const AUTO_PDF = urlParams.get('autopdf') === '1';
 let ROWS = [];
-let ROOMS = [];    /* НОВОЕ: массив помещений из k6.1 */
+let ROOMS = [];
 let KP_META = null;
+let PREFILL_BUYER = null;
+let PREFILL_DEAL = null;
 
 if(rawData){
   try{
@@ -451,12 +453,15 @@ if(rawData){
       ROWS = parsed.rows.map(r=>({
         label: String(r.label||''),
         qty: Number(r.qty)||0,
-        unit: r.unit || 'шт.'
+        unit: r.unit || 'шт.',
+        price: Number(r.price) || 0
       }));
     }
-    if(Array.isArray(parsed.rooms)) ROOMS = parsed.rooms;   /* НОВОЕ */
+    if(Array.isArray(parsed.rooms)) ROOMS = parsed.rooms;
     if(parsed.company && typeof parsed.company === 'object') Object.assign(COMPANY, parsed.company);
     if(parsed.meta) KP_META = parsed.meta;
+    if(parsed.buyer && typeof parsed.buyer === 'object') PREFILL_BUYER = parsed.buyer;
+    if(parsed.deal && typeof parsed.deal === 'object') PREFILL_DEAL = parsed.deal;
   }catch(e){
     console.warn('Не удалось распарсить ?data:', e);
   }
@@ -470,13 +475,14 @@ ROWS = ROWS.map(r => {
     return {
       label: r.label,
       qty: (lenMm / 1000) * r.qty,
-      unit: 'м.п.'
+      unit: 'м.п.',
+      price: r.price || 0
     };
   }
   return r;
 });
 
-/* ==== Схлопываем строки с одинаковыми названиями (после удаления длины) ==== */
+/* ==== Схлопываем строки с одинаковыми названиями ==== */
 (function mergeRows(){
   const map = new Map();
   const order = [];
@@ -487,7 +493,7 @@ ROWS = ROWS.map(r => {
     if(map.has(key)){
       map.get(key).qty += r.qty;
     }else{
-      map.set(key, {label, qty:r.qty, unit:r.unit});
+      map.set(key, {label, qty:r.qty, unit:r.unit, price: r.price || 0});
       order.push(key);
     }
   }
@@ -503,7 +509,7 @@ if(!ROWS.length){
   document.getElementById('content').style.display = 'block';
 }
 
-let invoicePrices = ROWS.map(() => 0);
+let invoicePrices = ROWS.map(r => Number(r.price) || 0);
 let invoiceTotals = {subtotal:0, vat:0, total:0};
 
 function renderInvoiceTable(){
@@ -746,13 +752,13 @@ function buildClientPayload(){
   const buyer = getBuyer();
   const rowsForClient = ROWS.map((r, i) => {
     const price = invoicePrices[i] || 0;
-    const item = { label: r.label, qty: r.qty, unit: r.unit || 'шт.', price: price };
-    return item;
+    return { label: r.label, qty: r.qty, unit: r.unit || 'шт.', price: price };
   });
 
   const payload = {
-    v: 4,                                              /* было 3 — стало 4 */
-    rooms: ROOMS,                                      /* НОВОЕ: прокидываем дальше в i0 */
+    v: 5,
+    rooms: ROOMS,
+    i5_url: location.href.split('?')[0],
     L_in: (KP_META && KP_META.L_in) || 0,
     W_in: (KP_META && KP_META.W_in) || 0,
     area: (KP_META && KP_META.area) || 0,
@@ -814,6 +820,33 @@ function showCopyMsg(){
 }
 
 if(ROWS.length){
+  // Prefill buyer из URL
+  if(PREFILL_BUYER){
+    const keys = ['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
+    keys.forEach(k => {
+      const el = document.getElementById(k);
+      if(el && PREFILL_BUYER[k] != null) el.value = String(PREFILL_BUYER[k]);
+    });
+  }
+  // Prefill deal из URL
+  if(PREFILL_DEAL){
+    if(PREFILL_DEAL.delivery){
+      const radio = document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');
+      if(radio) radio.checked = true;
+    }
+    if(PREFILL_DEAL.payment != null){
+      const slider = document.getElementById('prepaySlider');
+      slider.value = String(PREFILL_DEAL.payment);
+      document.getElementById('prepayVal').textContent = slider.value + ' %';
+    }
+    if(PREFILL_DEAL.days != null){
+      const s = document.getElementById('deliveryDaysSlider');
+      s.value = String(PREFILL_DEAL.days);
+      const d = parseInt(s.value, 10);
+      document.getElementById('deliveryDaysVal').textContent = d + ' ' + declOfNum(d, ['день','дня','дней']);
+    }
+  }
+
   renderInvoiceTable();
 
   document.getElementById('bUnp').addEventListener('input', e => {
@@ -854,6 +887,13 @@ if(ROWS.length){
   document.getElementById('shareModal').addEventListener('click', e => {
     if(e.target === document.getElementById('shareModal')) document.getElementById('shareModal').classList.remove('open');
   });
+
+  // Автогенерация PDF при ?autopdf=1
+  if(AUTO_PDF){
+    setTimeout(() => {
+      try { downloadPdf(); } catch(e){ console.error('autopdf err', e); }
+    }, 900);
+  }
 }
 </script>
 </body>

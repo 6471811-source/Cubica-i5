@@ -21,7 +21,7 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e10004;color:#fff;font-size:14px;font-weight:800;flex-shrink:0}
 
 .inv-wrap{overflow-x:auto;border:1px solid #ececec;border-radius:10px}
-table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1220px}
+table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1260px}
 table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;text-align:left;padding:9px 10px;border:none;white-space:nowrap}
 table.inv td{padding:6px 10px;border-bottom:1px solid #ececec;vertical-align:middle}
 table.inv tr:last-child td{border-bottom:none}
@@ -31,6 +31,7 @@ table.inv td.pos{text-align:center;color:#888;font-weight:600;width:32px}
 table.inv td.vat{text-align:center;color:#888;font-weight:600;font-size:11.5px}
 table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-radius:4px}
 
+.name-cell{display:flex;gap:5px;align-items:center}
 .cell-input{
   width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;
   font-size:12.5px;font-family:inherit;background:#fff;color:#1a1a1a;
@@ -41,8 +42,14 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .cell-input.name{font-weight:600}
 .cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
-
 .qty-total{color:#1a1a1a;font-weight:800}
+
+.btn-picker{
+  width:28px;height:28px;flex-shrink:0;border-radius:6px;border:1px solid #ddd;background:#fff;
+  color:#666;cursor:pointer;font-size:13px;line-height:1;padding:0;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.btn-picker:hover{background:#fff5f5;border-color:#e10004;color:#e10004}
 
 .btn-row-del{
   width:26px;height:26px;border-radius:6px;border:1px solid #f0c0c0;background:#fff;color:#c00000;
@@ -196,6 +203,32 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .no-data{padding:80px 40px;text-align:center;color:#888;font-size:20px;font-weight:800}
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 .preview-page.rendering{box-shadow:none !important}
+
+.picker-inner{max-width:720px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:90vh}
+.picker-head{padding:20px 24px 12px;border-bottom:1px solid #ececec}
+.picker-head h3{margin-bottom:4px}
+.picker-head p{margin:0;font-size:12px;color:#7a8a99;line-height:1.5}
+.picker-search{padding:12px 24px;border-bottom:1px solid #ececec}
+.picker-search input{width:100%;padding:11px 14px;border:1.5px solid #ccc;border-radius:10px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
+.picker-search input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
+.picker-count{padding:7px 24px;font-size:11px;color:#888;border-bottom:1px solid #ececec;background:#fafbfc}
+.picker-tree{flex:1;overflow-y:auto;padding:8px 14px;min-height:280px;max-height:55vh}
+.picker-actions{padding:14px 24px;border-top:1px solid #ececec;display:flex;justify-content:flex-end;gap:10px;background:#fafbfc}
+.picker-node{user-select:none}
+.picker-row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1.35;transition:background .12s}
+.picker-row:hover{background:#f4f5f7}
+.picker-row.folder{font-weight:600;color:#1a1a1a}
+.picker-row.item{color:#333}
+.picker-row.item.selected{background:#e10004;color:#fff}
+.picker-row .arrow{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#888;font-size:10px;transition:transform .15s}
+.picker-row.expanded .arrow{transform:rotate(90deg)}
+.picker-row .icon{flex-shrink:0;font-size:14px}
+.picker-row .label{flex:1;word-break:break-word}
+.picker-children{margin-left:16px;border-left:1px dashed #e0e0e0;padding-left:6px;display:none}
+.picker-children.open{display:block}
+.picker-empty{padding:50px 20px;text-align:center;color:#999;font-size:13px;line-height:1.6}
+.picker-empty code{background:#f4f5f7;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#555;word-break:break-all}
+
 @media(max-width:640px){
   .hero h1{font-size:24px}
   .preview-wrap{padding:12px;overflow-x:scroll}
@@ -221,7 +254,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
   <div id="content" style="display:none">
 
-    <!-- СЕКЦИЯ 1: ПОЗИЦИИ СЧЁТА -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
       <div class="inv-wrap">
@@ -229,7 +261,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
           <thead>
             <tr>
               <th style="width:30px">№</th>
-              <th style="min-width:220px">Наименование</th>
+              <th style="min-width:240px">Наименование</th>
               <th style="width:110px;text-align:right">Расчёт</th>
               <th style="width:100px;text-align:right">Запас</th>
               <th style="width:110px;text-align:right">Итого</th>
@@ -251,7 +283,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       <div class="totals" id="invTotals"></div>
     </div>
 
-    <!-- СЕКЦИЯ 2: УСЛОВИЯ СДЕЛКИ -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">2</span>Условия сделки</h2>
       <div class="deal-row">
@@ -274,7 +305,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
         </div>
       </div>
 
-      <!-- Блок доставки -->
       <div class="delivery-block" id="deliveryBlock" style="display:none">
         <div class="dt">🚚 Данные для доставки</div>
         <div class="delivery-grid">
@@ -308,7 +338,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
           </div>
         </div>
 
-        <!-- Схема загрузки -->
         <div class="truck-viz-wrap" id="truckVizWrap" style="display:none">
           <div class="truck-viz-title">
             <span>🚛 Схема загрузки автомобиля</span>
@@ -322,7 +351,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       </div>
     </div>
 
-    <!-- СЕКЦИЯ 3: ДАННЫЕ ПОКУПАТЕЛЯ -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">3</span>Данные покупателя</h2>
       <div class="buyer-grid">
@@ -369,7 +397,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       </div>
     </div>
 
-    <!-- СЕКЦИЯ 4: ПРЕДПРОСМОТР -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">4</span>Предпросмотр счёта</h2>
       <div class="preview-wrap">
@@ -386,7 +413,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
-<!-- Модалка: ссылка клиенту -->
 <div class="modal" id="shareModal">
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
@@ -401,7 +427,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
-<!-- Модалка: заявка логисту -->
 <div class="modal" id="logistModal">
   <div class="modal-inner">
     <h3>📋 Заявка логисту</h3>
@@ -414,15 +439,37 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
+<div class="modal" id="pickerModal">
+  <div class="modal-inner picker-inner">
+    <div class="picker-head">
+      <h3>📁 Справочник номенклатуры</h3>
+      <p>Разверните папку и выберите позицию — название подставится в строку. Можно вводить вручную, пикер не обязателен.</p>
+    </div>
+    <div class="picker-search">
+      <input type="text" id="pickerSearch" placeholder="🔍 Поиск по названию или артикулу..." autocomplete="off">
+    </div>
+    <div class="picker-count" id="pickerCount"></div>
+    <div class="picker-tree" id="pickerTree"></div>
+    <div class="picker-actions">
+      <button type="button" class="btn ghost" id="btnPickerCancel" style="padding:11px 20px;font-size:13px">Отмена</button>
+      <button type="button" class="btn red" id="btnPickerApply" disabled style="padding:11px 22px;font-size:13px">✓ Выбрать</button>
+    </div>
+  </div>
+</div>
+
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
 /* =====================================================================
-   CUBICA · i5.2
-   Принцип ввода чисел в позициях счёта — 1:1 как в i5 (handleSmartInput).
+   CUBICA · i5.3 — счёт-договор + справочник номенклатуры из 1С (XML)
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
+
+/* >>> URL справочника номенклатуры (GitHub Pages) <<< */
+const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
+
+const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v1';
 
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
@@ -461,7 +508,6 @@ function b64enc(s){
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
-/* 2 знака после запятой для колонок Расчёт/Запас/Итого */
 function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
@@ -471,25 +517,19 @@ function parseQtyInput(str){
   return Math.round(n * 100) / 100;
 }
 
-/* --- i5-принцип ввода: умное редактирование числа в ячейке --- */
+/* --- i5-принцип ввода чисел --- */
 function handleSmartInput(inp, e){
   const key = e.key;
   if(!/^\d$/.test(key)) return false;
-  let val = inp.value;
-  let selStart = inp.selectionStart;
-  let selEnd = inp.selectionEnd;
-  // всё выделено → заменяем на digit + ",00"
+  let val = inp.value, selStart = inp.selectionStart, selEnd = inp.selectionEnd;
   if(selStart === 0 && selEnd === val.length){
     inp.value = key + ',00';
     inp.setSelectionRange(1,1);
     return true;
   }
   const comma = val.indexOf(',');
-  // курсор в целой части
   if(comma >= 0 && selStart <= comma){
-    let left = val.slice(0, comma);
-    let right = val.slice(comma + 1);
-    // «0,XX» — затираем ноль
+    let left = val.slice(0, comma), right = val.slice(comma + 1);
     if(left === '0' && (selStart === 0 || selStart === 1)){
       inp.value = key + ',' + right;
       inp.setSelectionRange(1,1);
@@ -502,7 +542,6 @@ function handleSmartInput(inp, e){
     inp.setSelectionRange(pos, pos);
     return true;
   }
-  // курсор в дробной части
   if(comma >= 0 && selStart > comma){
     let left = val.slice(0, comma) || '0';
     let right = val.slice(comma + 1).padEnd(2,'0').slice(0,2);
@@ -555,7 +594,6 @@ function normalizeRailLabel(label){
     .trim();
 }
 
-/* Автоформат времени: 8 цифр → HH:MM-HH:MM */
 function formatTimeInput(str){
   const d = String(str).replace(/\D/g,'').slice(0,8);
   if(!d) return '';
@@ -565,7 +603,6 @@ function formatTimeInput(str){
   return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4,6) + ':' + d.slice(6,8);
 }
 
-/* --- автоселект нуля для полей доставки (вес/объём/длина) --- */
 function attachZeroSelect(inp){
   inp.addEventListener('focus', function(){
     const v = String(this.value).trim();
@@ -610,7 +647,6 @@ if(rawData){
   }
 }
 
-/* ---------- НОРМАЛИЗАЦИЯ РЕЕК ---------- */
 (function normalizeAndMergeRows(){
   const map = new Map();
   const order = [];
@@ -686,7 +722,10 @@ function renderInvoiceTable(){
     const totStr  = fmtQty2(rowTotalQty(r));
     return '<tr data-idx="'+i+'">' +
       '<td class="pos">' + (i+1) + '</td>' +
-      '<td><input type="text" class="cell-input name" data-field="label" value="' + escapeHtml(r.label) + '"></td>' +
+      '<td><div class="name-cell">' +
+        '<input type="text" class="cell-input name" data-field="label" value="' + escapeHtml(r.label) + '" title="Двойной клик или F2 — открыть справочник">' +
+        '<button type="button" class="btn-picker" data-picker="' + i + '" title="Выбрать из справочника (F2)">📁</button>' +
+      '</div></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="' + calcStr + '"></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="' + resStr + '"></td>' +
       '<td class="num qty-total" data-total="' + i + '">' + totStr + '</td>' +
@@ -703,13 +742,23 @@ function renderInvoiceTable(){
   tbody.querySelectorAll('.cell-input').forEach(inp => {
     const field = inp.getAttribute('data-field');
 
-    // Текстовые поля — просто синхронизируем
-    if(field === 'label' || field === 'unit'){
+    if(field === 'label'){
       inp.addEventListener('input', () => {
         const idx = idxOf(inp);
-        if(field === 'label') ROWS[idx].label = inp.value;
-        else ROWS[idx].unit = inp.value;
-        // пересчёт сумм (ед. не влияет, но название — только превью)
+        ROWS[idx].label = inp.value;
+        renderPreview();
+      });
+      inp.addEventListener('keydown', (e) => {
+        if(e.key === 'F2'){ e.preventDefault(); openPicker(idxOf(inp)); }
+      });
+      inp.addEventListener('dblclick', () => openPicker(idxOf(inp)));
+      return;
+    }
+
+    if(field === 'unit'){
+      inp.addEventListener('input', () => {
+        const idx = idxOf(inp);
+        ROWS[idx].unit = inp.value;
         updateRowTotals(idx);
         updateTotalsView();
         renderPreview();
@@ -717,7 +766,6 @@ function renderInvoiceTable(){
       return;
     }
 
-    // === ЧИСЛОВЫЕ ПОЛЯ: РЕЖИМ I5 (handleSmartInput по keydown) ===
     inp.addEventListener('keydown', (e) => {
       if(e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
          e.key === 'Tab' || e.key === 'Enter' || e.key === 'Home' || e.key === 'End') return;
@@ -727,24 +775,18 @@ function renderInvoiceTable(){
           commitNumericCell(inp);
         }
       } else if(e.key.length === 1){
-        e.preventDefault(); // не пускаем буквы, минус, точку и т.д.
+        e.preventDefault();
       }
     });
 
-    // вставка из буфера — нормализуем
     inp.addEventListener('input', () => {
       commitNumericCell(inp);
       const idx = idxOf(inp);
-      if(field === 'price'){
-        inp.value = fmtPriceInput(ROWS[idx].price);
-      } else if(field === 'qtyCalc'){
-        inp.value = fmtQty2(ROWS[idx].qtyCalc);
-      } else if(field === 'qtyReserve'){
-        inp.value = fmtQty2(ROWS[idx].qtyReserve);
-      }
+      if(field === 'price') inp.value = fmtPriceInput(ROWS[idx].price);
+      else if(field === 'qtyCalc') inp.value = fmtQty2(ROWS[idx].qtyCalc);
+      else if(field === 'qtyReserve') inp.value = fmtQty2(ROWS[idx].qtyReserve);
     });
 
-    // на blur — финальный формат
     inp.addEventListener('blur', () => {
       const idx = idxOf(inp);
       if(field === 'price'){
@@ -761,6 +803,10 @@ function renderInvoiceTable(){
       updateTotalsView();
       renderPreview();
     });
+  });
+
+  tbody.querySelectorAll('.btn-picker').forEach(btn => {
+    btn.addEventListener('click', () => openPicker(parseInt(btn.getAttribute('data-picker'), 10)));
   });
 
   tbody.querySelectorAll('.btn-row-del').forEach(btn => {
@@ -783,13 +829,9 @@ function idxOf(inp){
 function commitNumericCell(inp){
   const idx = idxOf(inp);
   const field = inp.getAttribute('data-field');
-  if(field === 'price'){
-    ROWS[idx].price = parsePriceInput(inp.value);
-  } else if(field === 'qtyCalc'){
-    ROWS[idx].qtyCalc = parseQtyInput(inp.value);
-  } else if(field === 'qtyReserve'){
-    ROWS[idx].qtyReserve = parseQtyInput(inp.value);
-  }
+  if(field === 'price') ROWS[idx].price = parsePriceInput(inp.value);
+  else if(field === 'qtyCalc') ROWS[idx].qtyCalc = parseQtyInput(inp.value);
+  else if(field === 'qtyReserve') ROWS[idx].qtyReserve = parseQtyInput(inp.value);
   updateRowTotals(idx);
   updateTotalsView();
   renderPreview();
@@ -820,17 +862,302 @@ function updateTotalsView(){
     '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">' + fmtInvoice(invoiceTotals.total) + ' BYN</div>';
 }
 
-/* ---------- ДОБАВИТЬ ПОЗИЦИЮ ---------- */
 document.getElementById('btnAddRow').addEventListener('click', () => {
-  ROWS.push({
-    label: 'Новая позиция',
-    qtyCalc: 1,
-    qtyReserve: 0,
-    unit: 'шт.',
-    price: 0
-  });
+  ROWS.push({ label: 'Новая позиция', qtyCalc: 1, qtyReserve: 0, unit: 'шт.', price: 0 });
   renderInvoiceTable();
   renderPreview();
+});
+
+/* =====================================================================
+   СПРАВОЧНИК НОМЕНКЛАТУРЫ (1С XML → GitHub Pages)
+   ===================================================================== */
+let NOMENCLATURE = null;
+let pickerTargetIdx = -1;
+const pickerSelected = { node: null };
+const pickerExpanded = new Set();
+let pickerFilter = '';
+
+async function loadNomenclature(force){
+  if(NOMENCLATURE && !force) return NOMENCLATURE;
+
+  if(!force){
+    try{
+      const cached = localStorage.getItem(NOMENCLATURE_CACHE_KEY);
+      if(cached){
+        const parsed = JSON.parse(cached);
+        if(parsed && Array.isArray(parsed.tree) && parsed.tree.length){
+          NOMENCLATURE = parsed;
+          fetchAndCache().catch(()=>{});
+          return NOMENCLATURE;
+        }
+      }
+    }catch(e){}
+  }
+  return await fetchAndCache();
+}
+
+async function fetchAndCache(){
+  try{
+    const res = await fetch(NOMENCLATURE_URL, { cache: 'no-cache' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    let text = await res.text();
+    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+    const data = /^\s*</.test(text) && /<\s*Номенклатура/.test(text)
+      ? parseNomenclatureXML(text)
+      : JSON.parse(text);
+
+    if(!data || !Array.isArray(data.tree) || !data.tree.length){
+      throw new Error('Пустое дерево');
+    }
+    NOMENCLATURE = data;
+    try{ localStorage.setItem(NOMENCLATURE_CACHE_KEY, JSON.stringify(data)); }catch(e){}
+    return data;
+  }catch(e){
+    console.warn('Справочник:', e);
+    return NOMENCLATURE;
+  }
+}
+
+/* Парсер выгрузки 1С 8.2: плоский список → дерево */
+function parseNomenclatureXML(xmlText){
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const err = doc.querySelector('parsererror');
+  if(err) throw new Error('XML parse error: ' + err.textContent);
+
+  const elements = doc.getElementsByTagName('Элемент');
+  const map = new Map();
+  const parentOf = new Map();
+
+  for(let i = 0; i < elements.length; i++){
+    const el = elements[i];
+    const id = el.getAttribute('Код');
+    const name = (el.getAttribute('Наименование') || '').replace(/\s+/g,' ').trim();
+    if(!id || !name) continue;
+    const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
+
+    const node = { id, name, type: isFolder ? 'folder' : 'item' };
+    if(isFolder) node.children = [];
+    map.set(id, node);
+    parentOf.set(id, el.getAttribute('РодительКод') || null);
+  }
+
+  const roots = [];
+  parentOf.forEach((pCode, id) => {
+    const node = map.get(id);
+    if(!node) return;
+    if(!pCode){ roots.push(node); return; }
+    const p = map.get(pCode);
+    if(p && p.children){ p.children.push(node); }
+    else { roots.push(node); }
+  });
+
+  const collator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
+  (function sortTree(nodes){
+    nodes.sort((a,b) =>
+      a.type !== b.type
+        ? (a.type === 'folder' ? -1 : 1)
+        : collator.compare(a.name, b.name)
+    );
+    for(const n of nodes){ if(n.children) sortTree(n.children); }
+  })(roots);
+
+  return {
+    version: '2.0',
+    source: '1C XML',
+    generated: new Date().toISOString(),
+    tree: roots
+  };
+}
+
+function findNode(tree, id){
+  for(const node of tree){
+    if(node.id === id) return node;
+    if(node.children){
+      const found = findNode(node.children, id);
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+function countAllItems(tree){
+  let n = 0;
+  for(const node of tree){
+    if(node.children && node.children.length){
+      n += countAllItems(node.children);
+    } else {
+      n++;
+    }
+  }
+  return n;
+}
+
+function isFolderNode(node){
+  return node.type === 'folder' || (node.children && node.children.length > 0);
+}
+
+function nodeMatches(node, filter){
+  if(!filter) return true;
+  const f = filter.toLowerCase();
+  if(String(node.name||'').toLowerCase().includes(f)) return true;
+  if(node.article && String(node.article).toLowerCase().includes(f)) return true;
+  if(node.children && node.children.some(ch => nodeMatches(ch, filter))) return true;
+  return false;
+}
+
+async function openPicker(idx){
+  pickerTargetIdx = idx;
+  pickerSelected.node = null;
+  pickerFilter = '';
+  document.getElementById('pickerSearch').value = '';
+  document.getElementById('pickerModal').classList.add('open');
+  const treeEl = document.getElementById('pickerTree');
+  treeEl.innerHTML = '<div class="picker-empty">⏳ Загрузка справочника...</div>';
+
+  await loadNomenclature();
+
+  if(NOMENCLATURE && NOMENCLATURE.tree && pickerExpanded.size === 0){
+    for(const node of NOMENCLATURE.tree){
+      if(isFolderNode(node)) pickerExpanded.add(node.id);
+    }
+  }
+
+  renderPickerTree();
+  setTimeout(() => document.getElementById('pickerSearch').focus(), 60);
+}
+
+function closePicker(){
+  document.getElementById('pickerModal').classList.remove('open');
+  pickerTargetIdx = -1;
+  pickerSelected.node = null;
+}
+
+function renderPickerTree(){
+  const container = document.getElementById('pickerTree');
+  const countEl = document.getElementById('pickerCount');
+  const applyBtn = document.getElementById('btnPickerApply');
+  applyBtn.disabled = !pickerSelected.node;
+
+  if(!NOMENCLATURE || !NOMENCLATURE.tree || !NOMENCLATURE.tree.length){
+    container.innerHTML = '<div class="picker-empty">Справочник недоступен.<br><br>' +
+      'Проверьте URL: <code>' + escapeHtml(NOMENCLATURE_URL) + '</code><br><br>' +
+      'Или используйте ручной ввод — он работает всегда.</div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  function renderNode(node){
+    if(pickerFilter && !nodeMatches(node, pickerFilter)) return '';
+    const isFolder = isFolderNode(node);
+    const isExpanded = pickerExpanded.has(node.id) || (pickerFilter && isFolder);
+    const isSelected = pickerSelected.node && pickerSelected.node.id === node.id;
+
+    let html = '<div class="picker-node">';
+    html += '<div class="picker-row ' + (isFolder?'folder':'item') +
+      (isSelected?' selected':'') + (isExpanded?' expanded':'') +
+      '" data-id="' + escapeHtml(node.id) + '" data-type="' + (isFolder?'folder':'item') + '">';
+    if(isFolder){
+      html += '<span class="arrow">▶</span><span class="icon">📁</span>';
+    } else {
+      html += '<span class="arrow" style="visibility:hidden">▶</span><span class="icon">📄</span>';
+    }
+    html += '<span class="label">' + escapeHtml(node.name) + '</span>';
+    if(node.article) html += '<span class="picker-article">' + escapeHtml(node.article) + '</span>';
+    html += '</div>';
+    if(node.children && node.children.length){
+      html += '<div class="picker-children' + (isExpanded?' open':'') + '">';
+      for(const child of node.children){
+        html += renderNode(child);
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  let html = '';
+  for(const node of NOMENCLATURE.tree){
+    html += renderNode(node);
+  }
+
+  container.innerHTML = html || '<div class="picker-empty">Ничего не найдено по запросу «' + escapeHtml(pickerFilter) + '»</div>';
+  countEl.textContent = pickerFilter
+    ? 'Найдено по фильтру'
+    : ('Всего позиций: ' + countAllItems(NOMENCLATURE.tree));
+
+  container.querySelectorAll('.picker-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.getAttribute('data-id');
+      const type = row.getAttribute('data-type');
+      const node = findNode(NOMENCLATURE.tree, id);
+      if(!node) return;
+      if(type === 'folder'){
+        if(pickerExpanded.has(id)) pickerExpanded.delete(id);
+        else pickerExpanded.add(id);
+        renderPickerTree();
+      } else {
+        pickerSelected.node = node;
+        renderPickerTree();
+      }
+    });
+    if(row.getAttribute('data-type') === 'item'){
+      row.addEventListener('dblclick', () => {
+        pickerSelected.node = findNode(NOMENCLATURE.tree, row.getAttribute('data-id'));
+        applyPicker();
+      });
+    }
+  });
+}
+
+function applyPicker(){
+  if(!pickerSelected.node) return;
+  const idx = pickerTargetIdx;
+  if(idx < 0 || idx >= ROWS.length) { closePicker(); return; }
+
+  ROWS[idx].label = pickerSelected.node.name;
+  if(pickerSelected.node.unit) ROWS[idx].unit = pickerSelected.node.unit;
+  if(pickerSelected.node.price != null) ROWS[idx].price = Number(pickerSelected.node.price) || 0;
+
+  const tr = document.querySelector('tr[data-idx="' + idx + '"]');
+  if(tr){
+    const nameInp = tr.querySelector('input[data-field="label"]');
+    const unitInp = tr.querySelector('input[data-field="unit"]');
+    const priceInp = tr.querySelector('input[data-field="price"]');
+    if(nameInp) nameInp.value = ROWS[idx].label;
+    if(unitInp && pickerSelected.node.unit) unitInp.value = ROWS[idx].unit;
+    if(priceInp && pickerSelected.node.price != null) priceInp.value = fmtPriceInput(ROWS[idx].price);
+  }
+  updateRowTotals(idx);
+  updateTotalsView();
+  renderPreview();
+  closePicker();
+}
+
+document.getElementById('pickerSearch').addEventListener('input', (e) => {
+  pickerFilter = e.target.value;
+  renderPickerTree();
+});
+document.getElementById('pickerSearch').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const firstItem = document.querySelector('#pickerTree .picker-row.item');
+    if(firstItem){
+      pickerSelected.node = findNode(NOMENCLATURE.tree, firstItem.getAttribute('data-id'));
+      renderPickerTree();
+      applyPicker();
+    }
+  }
+});
+document.getElementById('btnPickerApply').addEventListener('click', applyPicker);
+document.getElementById('btnPickerCancel').addEventListener('click', closePicker);
+document.getElementById('pickerModal').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('pickerModal')) closePicker();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && document.getElementById('pickerModal').classList.contains('open')){
+    closePicker();
+  }
 });
 
 /* ---------- ДАННЫЕ СДЕЛКИ И ПОКУПАТЕЛЯ ---------- */
@@ -1123,7 +1450,7 @@ function buildClientPayload(){
     price: r.price || 0
   }));
 
-  const payload = {
+  return {
     v: 6,
     rooms: ROOMS,
     i5_url: location.href.split('?')[0],
@@ -1153,10 +1480,8 @@ function buildClientPayload(){
     phone: COMPANY.phone,
     valid: (() => { const d = new Date(); d.setDate(d.getDate()+10); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); })()
   };
-  return payload;
 }
 
-/* ---------- ССЫЛКА КЛИЕНТУ ---------- */
 function openShareModal(){
   const payload = buildClientPayload();
   const data = b64enc(JSON.stringify(payload));
@@ -1166,8 +1491,7 @@ function openShareModal(){
 }
 function copyShareLink(){
   const inp = document.getElementById('shareLink');
-  inp.select();
-  inp.setSelectionRange(0, 99999);
+  inp.select(); inp.setSelectionRange(0, 99999);
   try{
     navigator.clipboard.writeText(inp.value).then(showCopyMsg).catch(() => { document.execCommand('copy'); showCopyMsg(); });
   }catch(e){ document.execCommand('copy'); showCopyMsg(); }
@@ -1222,8 +1546,7 @@ function openLogistModal(){
 }
 function copyLogistText(){
   const ta = document.getElementById('logistText');
-  ta.select();
-  ta.setSelectionRange(0, 99999);
+  ta.select(); ta.setSelectionRange(0, 99999);
   try{
     navigator.clipboard.writeText(ta.value).then(showCopyMsg).catch(() => { document.execCommand('copy'); showCopyMsg(); });
   }catch(e){ document.execCommand('copy'); showCopyMsg(); }
@@ -1277,7 +1600,8 @@ if(ROWS.length){
   renderPreview();
   toggleDeliveryBlock();
 
-  // Покупатель
+  loadNomenclature().catch(()=>{});
+
   document.getElementById('bUnp').addEventListener('input', e => {
     e.target.value = e.target.value.replace(/\D/g,'').slice(0,9);
     renderPreview();
@@ -1296,7 +1620,6 @@ if(ROWS.length){
     document.getElementById(id).addEventListener('input', renderPreview);
   });
 
-  // Условия сделки
   document.getElementById('prepaySlider').addEventListener('input', e => {
     document.getElementById('prepayVal').textContent = e.target.value + ' %';
     renderPreview();
@@ -1308,7 +1631,6 @@ if(ROWS.length){
   });
   document.querySelectorAll('input[name="delivery"]').forEach(el => el.addEventListener('input', toggleDeliveryBlock));
 
-  // Умный ввод времени
   const delTimeEl = document.getElementById('delTime');
   delTimeEl.addEventListener('input', function(){
     const caretAtEnd = this.selectionStart === this.value.length;
@@ -1318,7 +1640,6 @@ if(ROWS.length){
     renderTruckViz();
   });
 
-  // Поля доставки
   ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('input', () => { renderPreview(); renderTruckViz(); });
@@ -1328,18 +1649,15 @@ if(ROWS.length){
     if(el) attachZeroSelect(el);
   });
 
-  // Инициализация подписей слайдеров
   document.getElementById('prepayVal').textContent = document.getElementById('prepaySlider').value + ' %';
   document.getElementById('deliveryDaysVal').textContent = document.getElementById('deliveryDaysSlider').value + ' ' + declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value, 10), ['день','дня','дней']);
 
-  // Кнопки
   document.getElementById('btnPdf').addEventListener('click', downloadPdf);
   document.getElementById('btnShare').addEventListener('click', openShareModal);
   document.getElementById('btnCopy').addEventListener('click', copyShareLink);
   document.getElementById('btnLogist').addEventListener('click', openLogistModal);
   document.getElementById('btnLogistCopy').addEventListener('click', copyLogistText);
 
-  // Закрытие модалок
   document.getElementById('shareModal').addEventListener('click', e => {
     if(e.target === document.getElementById('shareModal')) e.target.classList.remove('open');
   });
@@ -1347,7 +1665,6 @@ if(ROWS.length){
     if(e.target === document.getElementById('logistModal')) e.target.classList.remove('open');
   });
 
-  // Автогенерация PDF
   if(AUTO_PDF){
     setTimeout(() => { try{ downloadPdf(); }catch(e){ console.error('autopdf err', e); } }, 900);
   }

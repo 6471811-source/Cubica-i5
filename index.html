@@ -21,7 +21,7 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e10004;color:#fff;font-size:14px;font-weight:800;flex-shrink:0}
 
 .inv-wrap{overflow-x:auto;border:1px solid #ececec;border-radius:10px}
-table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1100px}
+table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1220px}
 table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;text-align:left;padding:9px 10px;border:none;white-space:nowrap}
 table.inv td{padding:6px 10px;border-bottom:1px solid #ececec;vertical-align:middle}
 table.inv tr:last-child td{border-bottom:none}
@@ -42,7 +42,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .cell-input.name{font-weight:600}
 .cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
-.cell-input.unit{text-align:center;width:60px}
 
 .qty-calc{color:#1565c0;font-weight:600}
 .qty-res{color:#b26a00;font-weight:600}
@@ -85,6 +84,16 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .delivery-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
 .btn-logist{margin-top:14px;padding:11px 20px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:none;background:#b26a00;color:#fff}
 .btn-logist:hover{background:#8f5500}
+
+/* --- Визуализация загрузки --- */
+.truck-viz-wrap{margin-top:16px;padding:14px 16px 12px;background:#fff;border:1px solid #f0d896;border-radius:10px}
+.truck-viz-title{font-size:11px;font-weight:800;color:#b26a00;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.truck-viz-title .badge{font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:20px;background:#b26a00;color:#fff;letter-spacing:.3px}
+.truck-viz-title .badge.warn{background:#f9a825}
+.truck-viz-title .badge.over{background:#d32f2f}
+.truck-viz-svg{width:100%;height:auto;display:block;border-radius:8px;background:#fafbfc}
+.truck-viz-legend{display:flex;gap:18px;font-size:11.5px;color:#666;margin-top:8px;flex-wrap:wrap}
+.truck-viz-legend b{color:#1a1a1a;font-weight:700}
 
 .buyer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
 .buyer-grid .full{grid-column:1 / -1}
@@ -225,10 +234,10 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
             <tr>
               <th style="width:30px">№</th>
               <th style="min-width:220px">Наименование</th>
-              <th style="width:80px;text-align:right">Расчёт</th>
-              <th style="width:70px;text-align:right">Запас</th>
-              <th style="width:80px;text-align:right">Итого</th>
-              <th style="width:55px">Ед.</th>
+              <th style="width:110px;text-align:right">Расчёт</th>
+              <th style="width:100px;text-align:right">Запас</th>
+              <th style="width:110px;text-align:right">Итого</th>
+              <th style="width:60px">Ед.</th>
               <th style="width:100px;text-align:right">Цена без НДС</th>
               <th style="width:110px;text-align:right">Ст-ть без НДС</th>
               <th style="width:50px;text-align:center">НДС</th>
@@ -269,7 +278,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
         </div>
       </div>
 
-      <!-- Блок доставки (появляется при выборе «Доставка») -->
+      <!-- Блок доставки -->
       <div class="delivery-block" id="deliveryBlock" style="display:none">
         <div class="dt">🚚 Данные для доставки</div>
         <div class="delivery-grid">
@@ -283,7 +292,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
           </div>
           <div class="delivery-field">
             <label for="delTime">Рекомендуемое время</label>
-            <input type="text" id="delTime" placeholder="например: 09:00–15:00">
+            <input type="text" id="delTime" inputmode="numeric" placeholder="например: 09:00-15:00" maxlength="11">
           </div>
           <div class="delivery-field">
             <label for="delDate">Дата доставки</label>
@@ -302,6 +311,17 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
             <input type="number" id="delMaxLen" step="100" min="0" placeholder="0">
           </div>
         </div>
+
+        <!-- Схема загрузки -->
+        <div class="truck-viz-wrap" id="truckVizWrap" style="display:none">
+          <div class="truck-viz-title">
+            <span>🚛 Схема загрузки автомобиля</span>
+            <span class="badge" id="truckBadge">—</span>
+          </div>
+          <div id="truckViz"></div>
+          <div class="truck-viz-legend" id="truckLegend"></div>
+        </div>
+
         <button type="button" class="btn-logist" id="btnLogist">📋 Сформировать заявку логисту</button>
       </div>
     </div>
@@ -402,9 +422,13 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.1 — счёт-договор с редактируемыми позициями и доставкой
-   Вход: ?data=<base64(JSON)> — данные из калькулятора k6.3
-   Выход: ?kp=<base64(JSON)>  — данные для i0 (презентация клиенту)
+   CUBICA · i5.2 — счёт-договор
+   Изменения i5.2:
+     · Умный ввод чисел (выделение нуля при фокусе) во всех ячейках
+     · 2 знака после запятой в «Расчёт» / «Запас» / «Итого»
+     · Автоформат времени 10001100 → 10:00-11:00
+     · Расширены колонки таблицы
+     · Визуализация загрузки: Бус / Тент / Фура с коробками по весу и объёму
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -445,10 +469,16 @@ function b64enc(s){
 }
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
+function fmtMp(v){return Number(v||0).toFixed(2).replace('.', ',');}
+/* формат: 2 знака после запятой, запятая как разделитель */
+function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
-function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));return isFinite(n)?n:0;}
+function parseQtyInput(str){
+  const n = parseFloat(String(str).replace(',','.'));
+  if(!isFinite(n)) return 0;
+  return Math.round(n * 100) / 100; // округляем до 2 знаков
+}
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
 function numToWordsRU(n){
   n=Math.floor(Math.abs(Number(n)||0));if(n===0)return'ноль';
@@ -477,12 +507,43 @@ function sumToWordsRU(total){
   return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
 }
 
-/* Нормализация названия рейки: СНАЧАЛА убираем «(объединено)», ПОТОМ длину */
 function normalizeRailLabel(label){
   return String(label)
     .replace(/\s*\(объединено\)\s*$/i,'')
     .replace(/\s+\d+\s*мм\s*$/i,'')
     .trim();
+}
+
+/* Автоформат времени: 8 цифр → HH:MM-HH:MM */
+function formatTimeInput(str){
+  const d = String(str).replace(/\D/g,'').slice(0,8);
+  if(!d) return '';
+  if(d.length <= 2) return d;
+  if(d.length <= 4) return d.slice(0,2) + ':' + d.slice(2);
+  if(d.length <= 6) return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4);
+  return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4,6) + ':' + d.slice(6,8);
+}
+
+/* Выделение «нулевого» значения при фокусе — принцип i5 */
+function attachZeroSelect(inp){
+  inp.addEventListener('focus', function(){
+    const self = this;
+    const v = String(self.value).trim();
+    if(v === '' || /^0([.,]0+)?$/.test(v)){
+      requestAnimationFrame(() => self.select());
+    } else {
+      // даже для ненулевого значения — селектим всё (быстрый ввод)
+      requestAnimationFrame(() => self.select());
+    }
+  });
+  // клик мышью тоже должен выделять
+  inp.addEventListener('mouseup', function(e){
+    const v = String(this.value).trim();
+    if(v === '' || /^0([.,]0+)?$/.test(v)){
+      e.preventDefault();
+      this.select();
+    }
+  });
 }
 
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
@@ -520,7 +581,7 @@ if(rawData){
   }
 }
 
-/* ---------- НОРМАЛИЗАЦИЯ РЕЕК: 'шт. с длиной' → 'м.п.' + склейка ---------- */
+/* ---------- НОРМАЛИЗАЦИЯ РЕЕК ---------- */
 (function normalizeAndMergeRows(){
   const map = new Map();
   const order = [];
@@ -553,10 +614,8 @@ if(rawData){
   }
   ROWS = order.map(k => {
     const r = map.get(k);
-    if(r.unit === 'м.п.'){
-      r.qtyCalc = Math.round(r.qtyCalc*1000)/1000;
-      r.qtyReserve = Math.round(r.qtyReserve*1000)/1000;
-    }
+    r.qtyCalc = Math.round(r.qtyCalc * 100) / 100;
+    r.qtyReserve = Math.round(r.qtyReserve * 100) / 100;
     return r;
   });
 })();
@@ -593,9 +652,9 @@ function renderInvoiceTable(){
     const s = rowSum(r);
     const v = s * 0.20;
     const t = s + v;
-    const calcStr = (r.unit === 'м.п.') ? r.qtyCalc.toFixed(3).replace('.',',') : r.qtyCalc;
-    const resStr = (r.unit === 'м.п.') ? r.qtyReserve.toFixed(3).replace('.',',') : r.qtyReserve;
-    const totStr = (r.unit === 'м.п.') ? rowTotalQty(r).toFixed(3).replace('.',',') : rowTotalQty(r);
+    const calcStr = fmtQty2(r.qtyCalc);
+    const resStr  = fmtQty2(r.qtyReserve);
+    const totStr  = fmtQty2(rowTotalQty(r));
     return '<tr data-idx="'+i+'">' +
       '<td class="pos">' + (i+1) + '</td>' +
       '<td><input type="text" class="cell-input name" data-field="label" value="' + escapeHtml(r.label) + '"></td>' +
@@ -612,12 +671,17 @@ function renderInvoiceTable(){
     '</tr>';
   }).join('');
 
-  // Обработчики на input
   tbody.querySelectorAll('.cell-input').forEach(inp => {
+    const field = inp.getAttribute('data-field');
+
+    // Умный ввод: qtyCalc, qtyReserve, price — выделение нуля при фокусе
+    if(field === 'price' || field === 'qtyCalc' || field === 'qtyReserve'){
+      attachZeroSelect(inp);
+    }
+
     inp.addEventListener('input', () => {
       const tr = inp.closest('tr');
       const idx = parseInt(tr.getAttribute('data-idx'), 10);
-      const field = inp.getAttribute('data-field');
       if(field === 'label'){
         ROWS[idx].label = inp.value;
       } else if(field === 'unit'){
@@ -639,17 +703,27 @@ function renderInvoiceTable(){
         renderPreview();
       }
     });
-    // На blur — форматируем
+
     inp.addEventListener('blur', () => {
-      const field = inp.getAttribute('data-field');
       if(field === 'price'){
         const v = parsePriceInput(inp.value);
         inp.value = fmtPriceInput(v);
+      } else if(field === 'qtyCalc'){
+        ROWS[idxOf(inp)].qtyCalc = parseQtyInput(inp.value);
+        inp.value = fmtQty2(ROWS[idxOf(inp)].qtyCalc);
+        updateRowTotals(idxOf(inp));
+        updateTotalsView();
+        renderPreview();
+      } else if(field === 'qtyReserve'){
+        ROWS[idxOf(inp)].qtyReserve = parseQtyInput(inp.value);
+        inp.value = fmtQty2(ROWS[idxOf(inp)].qtyReserve);
+        updateRowTotals(idxOf(inp));
+        updateTotalsView();
+        renderPreview();
       }
     });
   });
 
-  // Обработчики на кнопки удаления
   tbody.querySelectorAll('.btn-row-del').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.getAttribute('data-del'), 10);
@@ -663,6 +737,10 @@ function renderInvoiceTable(){
   updateTotalsView();
 }
 
+function idxOf(inp){
+  return parseInt(inp.closest('tr').getAttribute('data-idx'), 10);
+}
+
 function updateRowTotals(idx){
   const r = ROWS[idx];
   const s = rowSum(r);
@@ -674,8 +752,7 @@ function updateRowTotals(idx){
   const sumEl = tr.querySelector('[data-sum="'+idx+'"]');
   const vatEl = tr.querySelector('[data-vat="'+idx+'"]');
   const svatEl = tr.querySelector('[data-svat="'+idx+'"]');
-  const qtyTotal = rowTotalQty(r);
-  if(totEl) totEl.textContent = (r.unit === 'м.п.') ? qtyTotal.toFixed(3).replace('.',',') : qtyTotal;
+  if(totEl) totEl.textContent = fmtQty2(rowTotalQty(r));
   if(sumEl) sumEl.textContent = fmtInvoice(s);
   if(vatEl) vatEl.textContent = fmtInvoice(v);
   if(svatEl) svatEl.textContent = fmtInvoice(t);
@@ -727,6 +804,124 @@ function getBuyer(){
   return o;
 }
 
+/* ---------- ВИЗУАЛИЗАЦИЯ ЗАГРУЗКИ ---------- */
+function renderTruckViz(){
+  const wrap = document.getElementById('truckVizWrap');
+  const container = document.getElementById('truckViz');
+  const badge = document.getElementById('truckBadge');
+  const legend = document.getElementById('truckLegend');
+  if(!wrap) return;
+
+  const mode = document.querySelector('input[name="delivery"]:checked').value;
+  const weight = parseFloat(document.getElementById('delWeight').value) || 0;
+  const volume = parseFloat(document.getElementById('delVolume').value) || 0;
+  const maxLen = parseFloat(document.getElementById('delMaxLen').value) || 0;
+
+  if(mode !== 'delivery' || (weight === 0 && volume === 0)){
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+
+  // Выбор машины
+  const trucks = [
+    { name:'Бус',        maxW:1500,  maxV:12,  maxL:4300,  h:1.9  },
+    { name:'Тент 5 т',   maxW:5000,  maxV:35,  maxL:6200,  h:2.4  },
+    { name:'Фура 20 т',  maxW:20000, maxV:82,  maxL:13600, h:2.7  }
+  ];
+  let truck = trucks[trucks.length - 1];
+  for(const t of trucks){
+    if(weight <= t.maxW && volume <= t.maxV && maxLen <= t.maxL){ truck = t; break; }
+  }
+
+  const fillW = truck.maxW ? weight / truck.maxW : 0;
+  const fillV = truck.maxV ? volume / truck.maxV : 0;
+  const fill  = Math.min(1, Math.max(fillW, fillV));
+  const fillPct = Math.round(fill * 100);
+
+  badge.textContent = truck.name + ' · ' + fillPct + '%';
+  badge.classList.remove('warn','over');
+  if(fillPct > 90) badge.classList.add('over');
+  else if(fillPct > 60) badge.classList.add('warn');
+
+  const color = fillPct > 90 ? '#d32f2f' : (fillPct > 60 ? '#f9a825' : '#2e7d32');
+
+  // SVG сцена
+  const W = 720, H = 240;
+  const cabX = 20, cabY = 90, cabW = 105, cabH = 85;
+  const trX = 125, trY = 55, trW = 565, trH = 120;
+  const wheelY = trY + trH + 14;
+  const wheelR = 15;
+
+  // Коробки в кузове
+  const cols = 11, rows = 4;
+  const padX = 10, padY = 10;
+  const innerW = trW - padX * 2;
+  const innerH = trH - padY * 2;
+  const boxW = innerW / cols;
+  const boxH = innerH / rows;
+  const totalBoxes = cols * rows;
+  const fillBoxes = Math.round(totalBoxes * fill);
+
+  let boxesSvg = '';
+  for(let i = 0; i < totalBoxes; i++){
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = trX + padX + col * boxW;
+    const y = trY + padY + row * boxH;
+    const filled = i < fillBoxes;
+    if(filled){
+      boxesSvg += `<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="${color}" opacity="0.88" rx="2"/>`;
+      boxesSvg += `<line x1="${(x+2).toFixed(1)}" y1="${(y+boxH/2).toFixed(1)}" x2="${(x+boxW-2).toFixed(1)}" y2="${(y+boxH/2).toFixed(1)}" stroke="#ffffff" stroke-width="0.8" opacity="0.55"/>`;
+    } else {
+      boxesSvg += `<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="none" stroke="#e0e0e0" stroke-width="0.8" stroke-dasharray="3,3" rx="2"/>`;
+    }
+  }
+
+  // Колёса
+  const wheelXs = [cabX + cabW/2, trX + 70, trX + trW - 130, trX + trW - 45];
+  let wheelsSvg = '';
+  for(const wx of wheelXs){
+    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="${wheelR}" fill="#2a2a2a"/>`;
+    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="${wheelR-5}" fill="#9aa0a6"/>`;
+    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;
+  }
+
+  // Кабина
+  const cabSvg = `
+    <path d="M ${cabX} ${cabY + cabH} L ${cabX} ${cabY + 22} Q ${cabX} ${cabY} ${cabX + 22} ${cabY} L ${cabX + cabW} ${cabY} L ${cabX + cabW} ${cabY + cabH} Z"
+      fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="${cabX + 8}" y="${cabY + 12}" width="${cabW - 24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/>
+    <rect x="${cabX + cabW - 5}" y="${cabY + 8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>
+  `;
+
+  // Кузов
+  const trailerSvg = `
+    <rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>
+  `;
+
+  // Земля
+  const groundY = wheelY + wheelR;
+  const groundSvg = `<line x1="8" y1="${groundY}" x2="${W - 8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="truck-viz-svg">
+      ${groundSvg}
+      ${cabSvg}
+      ${trailerSvg}
+      ${boxesSvg}
+      ${wheelsSvg}
+    </svg>
+  `;
+
+  legend.innerHTML = `
+    <span><b>🚛 Машина:</b> ${truck.name}</span>
+    <span><b>⚖️ Вес:</b> ${weight} кг / ${truck.maxW} кг (${Math.round(fillW*100)}%)</span>
+    <span><b>📦 Объём:</b> ${volume} м³ / ${truck.maxV} м³ (${Math.round(fillV*100)}%)</span>
+    ${maxLen ? `<span><b>📏 Макс. длина:</b> ${maxLen} мм</span>` : ''}
+  `;
+}
+
 /* ---------- ПРЕВЬЮ СЧЁТА ---------- */
 function renderPreview(){
   const deal = getDeal();
@@ -746,8 +941,7 @@ function renderPreview(){
   const rowsHtml = ROWS.map((r, i) => {
     const s = rowSum(r);
     const v = s * 0.20;
-    const qtyTotal = rowTotalQty(r);
-    const qtyStr = (r.unit === 'м.п.') ? qtyTotal.toFixed(3).replace('.',',') : qtyTotal;
+    const qtyStr = fmtQty2(rowTotalQty(r));
     return '<tr>' +
       '<td class="pos">' + (i+1) + '</td>' +
       '<td>' + escapeHtml(r.label) + '</td>' +
@@ -962,11 +1156,9 @@ function buildLogistText(){
   lines.push('  Макс. длина:      ' + (d.maxLen ? d.maxLen + ' мм' : '—'));
   lines.push('');
   lines.push('СОСТАВ ЗАКАЗА:');
-  let totalWeight = Number(d.weight) || 0;
   for(let i=0; i<ROWS.length; i++){
     const r = ROWS[i];
-    const qty = rowTotalQty(r);
-    const qtyStr = (r.unit === 'м.п.') ? qty.toFixed(3).replace('.',',') : qty;
+    const qtyStr = fmtQty2(rowTotalQty(r));
     lines.push('  ' + (i+1) + '. ' + r.label + ' — ' + qtyStr + ' ' + (r.unit||'шт.'));
   }
   lines.push('');
@@ -977,7 +1169,6 @@ function buildLogistText(){
   return lines.join('\n');
 }
 function openLogistModal(){
-  // Проверка что выбрана доставка
   const mode = document.querySelector('input[name="delivery"]:checked').value;
   if(mode !== 'delivery'){
     alert('Сначала выберите «Доставка» в условиях сделки.');
@@ -1000,10 +1191,10 @@ function toggleDeliveryBlock(){
   const mode = document.querySelector('input[name="delivery"]:checked').value;
   document.getElementById('deliveryBlock').style.display = (mode === 'delivery') ? 'block' : 'none';
   renderPreview();
+  renderTruckViz();
 }
 
 if(ROWS.length){
-  // Prefill buyer
   if(PREFILL_BUYER){
     const keys = ['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
     keys.forEach(k => {
@@ -1011,7 +1202,6 @@ if(ROWS.length){
       if(el && PREFILL_BUYER[k] != null) el.value = String(PREFILL_BUYER[k]);
     });
   }
-  // Prefill deal
   if(PREFILL_DEAL){
     if(PREFILL_DEAL.delivery){
       const radio = document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');
@@ -1032,7 +1222,7 @@ if(ROWS.length){
       const dd = PREFILL_DEAL.deliveryData;
       if(dd.address) document.getElementById('delAddress').value = dd.address;
       if(dd.phone) document.getElementById('delPhone').value = dd.phone;
-      if(dd.time) document.getElementById('delTime').value = dd.time;
+      if(dd.time) document.getElementById('delTime').value = formatTimeInput(dd.time);
       if(dd.date) document.getElementById('delDate').value = dd.date;
       if(dd.weight) document.getElementById('delWeight').value = dd.weight;
       if(dd.volume) document.getElementById('delVolume').value = dd.volume;
@@ -1075,10 +1265,25 @@ if(ROWS.length){
   });
   document.querySelectorAll('input[name="delivery"]').forEach(el => el.addEventListener('input', toggleDeliveryBlock));
 
-  // Поля доставки
-  ['delAddress','delPhone','delTime','delDate','delWeight','delVolume','delMaxLen'].forEach(id => {
+  // Умный ввод времени
+  const delTimeEl = document.getElementById('delTime');
+  delTimeEl.addEventListener('input', function(){
+    const caretAtEnd = this.selectionStart === this.value.length;
+    this.value = formatTimeInput(this.value);
+    if(caretAtEnd) this.setSelectionRange(this.value.length, this.value.length);
+    renderPreview();
+    renderTruckViz();
+  });
+
+  // Остальные поля доставки → превью + схема
+  ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id => {
     const el = document.getElementById(id);
-    if(el) el.addEventListener('input', renderPreview);
+    if(el) el.addEventListener('input', () => { renderPreview(); renderTruckViz(); });
+  });
+  // числовые поля доставки тоже с автоселектом
+  ['delWeight','delVolume','delMaxLen'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) attachZeroSelect(el);
   });
 
   // Инициализация подписей слайдеров

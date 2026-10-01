@@ -10,7 +10,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;color:#1a1a1a;padding:32px 20px 80px;-webkit-font-smoothing:antialiased;line-height:1.55}
-.wrap{max-width:1220px;margin:0 auto}
+.wrap{max-width:1300px;margin:0 auto}
 .hero{text-align:center;margin-bottom:32px}
 .hero h1{font-size:30px;font-weight:800;color:#1a1a1a;margin-bottom:6px;line-height:1.15}
 .hero .sub{font-size:13px;color:#888;letter-spacing:2px;text-transform:uppercase;font-weight:600}
@@ -20,23 +20,43 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .sec-title{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:18px;letter-spacing:.2px}
 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e10004;color:#fff;font-size:14px;font-weight:800;flex-shrink:0}
 
-table.inv{width:100%;border-collapse:collapse;font-size:13px}
-table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.7px;text-align:left;padding:10px 12px;border:none}
-table.inv td{padding:10px 12px;border-bottom:1px solid #ececec;vertical-align:middle}
+.inv-wrap{overflow-x:auto;border:1px solid #ececec;border-radius:10px}
+table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1100px}
+table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;text-align:left;padding:9px 10px;border:none;white-space:nowrap}
+table.inv td{padding:6px 10px;border-bottom:1px solid #ececec;vertical-align:middle}
 table.inv tr:last-child td{border-bottom:none}
 table.inv tr:nth-child(even) td{background:#fafafa}
 table.inv td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-table.inv td.pos{text-align:center;color:#888;font-weight:600;width:36px}
-table.inv td.vat{text-align:center;color:#888;font-weight:600;font-size:12px}
+table.inv td.pos{text-align:center;color:#888;font-weight:600;width:32px}
+table.inv td.vat{text-align:center;color:#888;font-weight:600;font-size:11.5px}
 table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-radius:4px}
 
-.price-input{
-  width:120px;padding:8px 10px;border:1px solid #ccc;border-radius:8px;
-  font-size:13px;text-align:right;font-family:inherit;
-  font-variant-numeric:tabular-nums;background:#fff;color:#1a1a1a;
-  transition:border-color .2s,box-shadow .2s;
+.cell-input{
+  width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;
+  font-size:12.5px;font-family:inherit;background:#fff;color:#1a1a1a;
+  transition:border-color .15s,box-shadow .15s;
 }
-.price-input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
+.cell-input:hover{border-color:#ddd}
+.cell-input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
+.cell-input.num{text-align:right;font-variant-numeric:tabular-nums}
+.cell-input.name{font-weight:600}
+.cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
+.cell-input.unit{text-align:center;width:60px}
+
+.qty-calc{color:#1565c0;font-weight:600}
+.qty-res{color:#b26a00;font-weight:600}
+.qty-total{color:#1a1a1a;font-weight:800}
+
+.btn-row-del{
+  width:26px;height:26px;border-radius:6px;border:1px solid #f0c0c0;background:#fff;color:#c00000;
+  cursor:pointer;font-size:14px;line-height:1;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;
+}
+.btn-row-del:hover{background:#fff5f5;border-color:#c00000}
+
+.add-row-bar{display:flex;justify-content:flex-start;margin-top:12px}
+.add-row-btn{padding:9px 16px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:1px dashed #c00000;background:#fff;color:#c00000;display:inline-flex;align-items:center;gap:6px}
+.add-row-btn:hover{background:#fff5f5}
 
 .totals{display:grid;grid-template-columns:1fr auto;gap:6px 20px;margin-top:16px;font-size:14px;max-width:440px;margin-left:auto}
 .totals .lbl{color:#555}
@@ -55,23 +75,26 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .slider-wrap input[type=range]{flex:1;accent-color:#e10004;height:4px}
 .slider-val{font-weight:800;color:#e10004;font-size:14px;min-width:80px;text-align:right;font-variant-numeric:tabular-nums}
 
+.delivery-block{margin-top:18px;padding:18px;background:#fef9f0;border:1px solid #f0d896;border-radius:10px}
+.delivery-block .dt{font-size:11px;font-weight:800;color:#b26a00;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.delivery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px}
+.delivery-grid .full{grid-column:1 / -1}
+.delivery-field{display:flex;flex-direction:column;gap:5px}
+.delivery-field label{font-size:10.5px;font-weight:700;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
+.delivery-field input{padding:9px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
+.delivery-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
+.btn-logist{margin-top:14px;padding:11px 20px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:none;background:#b26a00;color:#fff}
+.btn-logist:hover{background:#8f5500}
+
 .buyer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
 .buyer-grid .full{grid-column:1 / -1}
 .buyer-field{display:flex;flex-direction:column;gap:5px}
 .buyer-field label{font-size:10.5px;font-weight:700;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
-.buyer-field input{
-  padding:9px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;
-  font-family:inherit;color:#1a1a1a;background:#fff;
-  transition:border-color .2s,box-shadow .2s;
-}
+.buyer-field input{padding:9px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border-color .2s,box-shadow .2s}
 .buyer-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
 
 .preview-wrap{background:#e8eaee;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
-.preview-page{
-  background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);
-  position:relative;display:flex;overflow:hidden;flex-shrink:0;
-  font-family:'Segoe UI',Calibri,Arial,sans-serif;
-}
+.preview-page{background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);position:relative;display:flex;overflow:hidden;flex-shrink:0;font-family:'Segoe UI',Calibri,Arial,sans-serif}
 .pv-panel{width:230px;padding:18px 12px 14px;display:flex;flex-direction:column;position:relative;background:#fff;color:#1a1a1a;border-right:2px solid #e10004;z-index:2;flex-shrink:0}
 .pv-panel .pv-logo-svg{width:100%;height:auto;display:block;margin-bottom:14px}
 .pv-panel-company{font-size:12px;font-weight:800;margin-bottom:5px;color:#000}
@@ -152,37 +175,28 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 .modal{position:fixed;inset:0;background:rgba(15,15,25,.72);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.open{display:flex}
-.modal-inner{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);max-width:680px;width:100%;padding:32px}
+.modal-inner{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);max-width:760px;width:100%;padding:32px;max-height:90vh;overflow:auto}
 .modal-inner h3{font-size:22px;font-weight:800;color:#1a1a1a;margin-bottom:10px}
 .modal-inner p{color:#7a8a99;font-size:13px;line-height:1.6;margin-bottom:16px}
 .copy-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
-.copy-row input{
-  flex:1;padding:14px 16px;border:1.5px solid #ccc;border-radius:10px;
-  font-size:12px;font-family:Consolas,monospace;background:#fafafa;color:#1a1a1a;
-}
+.copy-row input{flex:1;padding:14px 16px;border:1.5px solid #ccc;border-radius:10px;font-size:12px;font-family:Consolas,monospace;background:#fafafa;color:#1a1a1a}
 .copy-row input:focus{outline:none;border-color:#e10004}
-.copy-row button{
-  padding:14px 22px;font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;font-family:inherit;
-  background:#e10004;color:#fff;border:none;white-space:nowrap;
-}
-.copy-msg{
-  position:fixed;left:50%;top:24px;transform:translateX(-50%);
-  background:#2e7d32;color:#fff;padding:14px 26px;border-radius:10px;font-weight:700;font-size:14px;
-  box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:3000;display:none;
-}
+.copy-row button{padding:14px 22px;font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;font-family:inherit;background:#e10004;color:#fff;border:none;white-space:nowrap}
+#logistText{width:100%;padding:14px 16px;border:1.5px solid #ccc;border-radius:10px;font-size:12.5px;font-family:Consolas,monospace;background:#fafafa;color:#1a1a1a;line-height:1.5;resize:vertical;min-height:340px}
+#logistText:focus{outline:none;border-color:#e10004}
+.copy-msg{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:14px 26px;border-radius:10px;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:3000;display:none}
 .copy-msg.show{display:block;animation:slideDown .4s ease-out}
 @keyframes slideDown{from{transform:translateX(-50%) translateY(-30px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
 
 .no-data{padding:80px 40px;text-align:center;color:#888;font-size:20px;font-weight:800}
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
-
 .preview-page.rendering{box-shadow:none !important}
-
 @media(max-width:640px){
   .hero h1{font-size:24px}
   .preview-wrap{padding:12px;overflow-x:scroll}
   .buyer-grid{grid-template-columns:1fr}
   .deal-label{min-width:auto}
+  .inv-wrap{border:none}
 }
 </style>
 </head>
@@ -202,29 +216,37 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
   <div id="content" style="display:none">
 
+    <!-- СЕКЦИЯ 1: ПОЗИЦИИ СЧЁТА -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
-      <div style="overflow-x:auto">
+      <div class="inv-wrap">
         <table class="inv">
           <thead>
             <tr>
-              <th style="width:5%">№</th>
-              <th style="width:30%">Наименование</th>
-              <th style="width:8%;text-align:right">Кол-во</th>
-              <th style="width:6%">Ед.</th>
-              <th style="width:12%;text-align:right">Цена без НДС</th>
-              <th style="width:12%;text-align:right">Ст-ть без НДС</th>
-              <th style="width:6%;text-align:center">НДС</th>
-              <th style="width:11%;text-align:right">НДС сумма</th>
-              <th style="width:12%;text-align:right">Сумма с НДС</th>
+              <th style="width:30px">№</th>
+              <th style="min-width:220px">Наименование</th>
+              <th style="width:80px;text-align:right">Расчёт</th>
+              <th style="width:70px;text-align:right">Запас</th>
+              <th style="width:80px;text-align:right">Итого</th>
+              <th style="width:55px">Ед.</th>
+              <th style="width:100px;text-align:right">Цена без НДС</th>
+              <th style="width:110px;text-align:right">Ст-ть без НДС</th>
+              <th style="width:50px;text-align:center">НДС</th>
+              <th style="width:100px;text-align:right">НДС сумма</th>
+              <th style="width:110px;text-align:right">Сумма с НДС</th>
+              <th style="width:36px"></th>
             </tr>
           </thead>
           <tbody id="invTbody"></tbody>
         </table>
       </div>
+      <div class="add-row-bar">
+        <button type="button" class="add-row-btn" id="btnAddRow">+ Добавить позицию</button>
+      </div>
       <div class="totals" id="invTotals"></div>
     </div>
 
+    <!-- СЕКЦИЯ 2: УСЛОВИЯ СДЕЛКИ -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">2</span>Условия сделки</h2>
       <div class="deal-row">
@@ -246,8 +268,45 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
           <span class="slider-val" id="deliveryDaysVal">3 дня</span>
         </div>
       </div>
+
+      <!-- Блок доставки (появляется при выборе «Доставка») -->
+      <div class="delivery-block" id="deliveryBlock" style="display:none">
+        <div class="dt">🚚 Данные для доставки</div>
+        <div class="delivery-grid">
+          <div class="delivery-field full">
+            <label for="delAddress">Адрес доставки</label>
+            <input type="text" id="delAddress" placeholder="г. Минск, ул. Примерная, д. 1">
+          </div>
+          <div class="delivery-field">
+            <label for="delPhone">Контактный телефон</label>
+            <input type="text" id="delPhone" placeholder="+375 (29) 000-00-00">
+          </div>
+          <div class="delivery-field">
+            <label for="delTime">Рекомендуемое время</label>
+            <input type="text" id="delTime" placeholder="например: 09:00–15:00">
+          </div>
+          <div class="delivery-field">
+            <label for="delDate">Дата доставки</label>
+            <input type="date" id="delDate">
+          </div>
+          <div class="delivery-field">
+            <label for="delWeight">Вес груза, кг</label>
+            <input type="number" id="delWeight" step="0.1" min="0" placeholder="0">
+          </div>
+          <div class="delivery-field">
+            <label for="delVolume">Объём груза, м³</label>
+            <input type="number" id="delVolume" step="0.01" min="0" placeholder="0">
+          </div>
+          <div class="delivery-field">
+            <label for="delMaxLen">Макс. длина груза, мм</label>
+            <input type="number" id="delMaxLen" step="100" min="0" placeholder="0">
+          </div>
+        </div>
+        <button type="button" class="btn-logist" id="btnLogist">📋 Сформировать заявку логисту</button>
+      </div>
     </div>
 
+    <!-- СЕКЦИЯ 3: ДАННЫЕ ПОКУПАТЕЛЯ -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">3</span>Данные покупателя</h2>
       <div class="buyer-grid">
@@ -294,6 +353,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       </div>
     </div>
 
+    <!-- СЕКЦИЯ 4: ПРЕДПРОСМОТР -->
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">4</span>Предпросмотр счёта</h2>
       <div class="preview-wrap">
@@ -310,6 +370,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
+<!-- Модалка: ссылка клиенту -->
 <div class="modal" id="shareModal">
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
@@ -324,14 +385,26 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
-<div class="copy-msg" id="copyMsg">✓ Ссылка скопирована в буфер обмена</div>
+<!-- Модалка: заявка логисту -->
+<div class="modal" id="logistModal">
+  <div class="modal-inner">
+    <h3>📋 Заявка логисту</h3>
+    <p>Скопируйте текст и отправьте логисту любым удобным способом.</p>
+    <textarea id="logistText" readonly></textarea>
+    <div style="text-align:right;margin-top:16px">
+      <button class="btn ghost" id="btnLogistCopy" style="padding:12px 22px;font-size:13px">📋 Копировать текст</button>
+      <button class="btn ghost" onclick="document.getElementById('logistModal').classList.remove('open')" style="padding:12px 22px;font-size:13px">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
 /* =====================================================================
-   CUBICA · i5 — транзитная форма счёта-договора
-   Вход: ?data=<base64(JSON)>  — данные из калькулятора
-   Выход: ?kp=<base64(JSON)>   — данные для i0 (презентация клиенту)
-   Флаг: &autopdf=1            — авто-генерация PDF после загрузки
+   CUBICA · i5.1 — счёт-договор с редактируемыми позициями и доставкой
+   Вход: ?data=<base64(JSON)> — данные из калькулятора k6.3
+   Выход: ?kp=<base64(JSON)>  — данные для i0 (презентация клиенту)
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -355,6 +428,7 @@ const COMPANY = {
   hours:'Пн–Пт, 09:00–15:00'
 };
 
+/* ---------- УТИЛИТЫ ---------- */
 function b64dec(s){
   if(!s) return null;
   s = String(s).replace(/-/g,'+').replace(/_/g,'/');
@@ -367,39 +441,15 @@ function b64dec(s){
   }catch(e){return null;}
 }
 function b64enc(s){
-  return btoa(unescape(encodeURIComponent(s)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
+function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));return isFinite(n)?n:0;}
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
-function handleSmartInput(inp,e){
-  const key=e.key;if(!/^\d$/.test(key))return false;
-  let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
-  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
-  const comma=val.indexOf(',');
-  if(comma>=0&&selStart<=comma){
-    let left=val.slice(0,comma),right=val.slice(comma+1);
-    if(left==='0'&&(selStart===0||selStart===1)){inp.value=key+','+right;inp.setSelectionRange(1,1);return true;}
-    const newLeft=left.slice(0,selStart)+key+left.slice(selEnd);
-    const cleaned=newLeft.replace(/^0+(\d)/,'$1').slice(0,9)||'0';
-    inp.value=cleaned+','+right;inp.setSelectionRange(Math.min(cleaned.length,selStart+1),Math.min(cleaned.length,selStart+1));
-    return true;
-  }
-  if(comma>=0&&selStart>comma){
-    let left=val.slice(0,comma)||'0';
-    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
-    const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
-    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
-    let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
-    inp.value=left+','+right;const newPos=comma+1+posInFrac+1;
-    inp.setSelectionRange(newPos,newPos);return true;
-  }
-  return false;
-}
 function numToWordsRU(n){
   n=Math.floor(Math.abs(Number(n)||0));if(n===0)return'ноль';
   const units=['','один','два','три','четыре','пять','шесть','семь','восемь','девять','десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
@@ -430,16 +480,15 @@ function sumToWordsRU(total){
 /* Нормализация названия рейки: СНАЧАЛА убираем «(объединено)», ПОТОМ длину */
 function normalizeRailLabel(label){
   return String(label)
-    .replace(/\s*\(объединено\)\s*$/i,'')   // ← сначала пометка
-    .replace(/\s+\d+\s*мм\s*$/i,'')          // ← потом «\d+ мм»
+    .replace(/\s*\(объединено\)\s*$/i,'')
+    .replace(/\s+\d+\s*мм\s*$/i,'')
     .trim();
 }
 
-/* Логотип */
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
 const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/><rect x="10" y="0" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="16" y="1" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="10" y="10" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="1" y="21" width="1" height="1"/><rect x="2" y="19" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="8" y="20" width="1" height="1"/><rect x="10" y="21" width="1" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="28" y="20" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="22" y="25" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="14" y="27" width="1" height="1"/><rect x="16" y="28" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="24" y="28" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/></g></svg>`;
 
-/* Чтение URL */
+/* ---------- ЧТЕНИЕ URL ---------- */
 const urlParams = new URLSearchParams(location.search);
 const rawData = urlParams.get('data');
 const AUTO_PDF = urlParams.get('autopdf') === '1';
@@ -455,7 +504,8 @@ if(rawData){
     if(Array.isArray(parsed.rows)){
       ROWS = parsed.rows.map(r=>({
         label: String(r.label||''),
-        qty: Number(r.qty)||0,
+        qtyCalc: Number(r.qty)||0,
+        qtyReserve: 0,
         unit: r.unit || 'шт.',
         price: Number(r.price) || 0
       }));
@@ -470,22 +520,23 @@ if(rawData){
   }
 }
 
-/* ==== ПЕРЕВОД РЕЕК 'шт. с длиной' → 'м.п.' + СКЛЕЙКА ОДИНАКОВЫХ РЕЕК ==== */
+/* ---------- НОРМАЛИЗАЦИЯ РЕЕК: 'шт. с длиной' → 'м.п.' + склейка ---------- */
 (function normalizeAndMergeRows(){
   const map = new Map();
   const order = [];
   for(const r of ROWS){
     let label = String(r.label||'');
     let unit  = r.unit || 'шт.';
-    let qty   = Number(r.qty)||0;
+    let qtyCalc = Number(r.qtyCalc)||0;
+    let qtyReserve = Number(r.qtyReserve)||0;
     let price = Number(r.price)||0;
 
-    // Рейки: переводим в м.п. и убираем длину из названия
     if(/^Рейка Cubica /.test(label)){
       const m = label.match(/(\d+)\s*мм/i);
       if(m && unit !== 'м.п.'){
         const lenMm = parseInt(m[1], 10);
-        qty = (lenMm / 1000) * qty;
+        qtyCalc = (lenMm / 1000) * qtyCalc;
+        qtyReserve = (lenMm / 1000) * qtyReserve;
       }
       unit = 'м.п.';
       label = normalizeRailLabel(label);
@@ -493,15 +544,19 @@ if(rawData){
 
     const key = label + '|' + unit;
     if(map.has(key)){
-      map.get(key).qty += qty;
+      map.get(key).qtyCalc += qtyCalc;
+      map.get(key).qtyReserve += qtyReserve;
     }else{
-      map.set(key, {label, qty, unit, price});
+      map.set(key, {label, qtyCalc, qtyReserve, unit, price});
       order.push(key);
     }
   }
   ROWS = order.map(k => {
     const r = map.get(k);
-    if(r.unit === 'м.п.') r.qty = Math.round(r.qty*1000)/1000;
+    if(r.unit === 'м.п.'){
+      r.qtyCalc = Math.round(r.qtyCalc*1000)/1000;
+      r.qtyReserve = Math.round(r.qtyReserve*1000)/1000;
+    }
     return r;
   });
 })();
@@ -512,80 +567,157 @@ if(!ROWS.length){
   document.getElementById('content').style.display = 'block';
 }
 
-let invoicePrices = ROWS.map(r => Number(r.price) || 0);
+/* ---------- ИТОГИ ---------- */
 let invoiceTotals = {subtotal:0, vat:0, total:0};
 
+function rowTotalQty(r){
+  return (Number(r.qtyCalc)||0) + (Number(r.qtyReserve)||0);
+}
+function rowSum(r){
+  return rowTotalQty(r) * (Number(r.price)||0);
+}
+function computeTotals(){
+  let sub=0, vat=0, tot=0;
+  for(const r of ROWS){
+    const s = rowSum(r);
+    const v = s * 0.20;
+    sub += s; vat += v; tot += s+v;
+  }
+  invoiceTotals = {subtotal:sub, vat, total:tot};
+}
+
+/* ---------- РЕНДЕР ТАБЛИЦЫ ПОЗИЦИЙ ---------- */
 function renderInvoiceTable(){
   const tbody = document.getElementById('invTbody');
   tbody.innerHTML = ROWS.map((r, i) => {
-    const price = invoicePrices[i] || 0;
-    const s = r.qty * price;
+    const s = rowSum(r);
     const v = s * 0.20;
     const t = s + v;
-    return '<tr>' +
+    const calcStr = (r.unit === 'м.п.') ? r.qtyCalc.toFixed(3).replace('.',',') : r.qtyCalc;
+    const resStr = (r.unit === 'м.п.') ? r.qtyReserve.toFixed(3).replace('.',',') : r.qtyReserve;
+    const totStr = (r.unit === 'м.п.') ? rowTotalQty(r).toFixed(3).replace('.',',') : rowTotalQty(r);
+    return '<tr data-idx="'+i+'">' +
       '<td class="pos">' + (i+1) + '</td>' +
-      '<td>' + escapeHtml(r.label) + '</td>' +
-      '<td class="num">' + (r.unit === 'м.п.' ? fmtMp(r.qty) : r.qty) + '</td>' +
-      '<td>' + (r.unit || 'шт.') + '</td>' +
-      '<td class="num"><input type="text" inputmode="decimal" class="price-input" value="' + fmtPriceInput(price) + '" data-idx="' + i + '" placeholder="0,00"></td>' +
+      '<td><input type="text" class="cell-input name" data-field="label" value="' + escapeHtml(r.label) + '"></td>' +
+      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="' + calcStr + '"></td>' +
+      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="' + resStr + '"></td>' +
+      '<td class="num qty-total" data-total="' + i + '">' + totStr + '</td>' +
+      '<td><input type="text" class="cell-input unit" data-field="unit" value="' + escapeHtml(r.unit) + '"></td>' +
+      '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="' + fmtPriceInput(r.price) + '"></td>' +
       '<td class="num" data-sum="' + i + '">' + fmtInvoice(s) + '</td>' +
       '<td class="vat">20 %</td>' +
       '<td class="num" data-vat="' + i + '">' + fmtInvoice(v) + '</td>' +
-      '<td class="num sum-vat" data-total="' + i + '">' + fmtInvoice(t) + '</td>' +
+      '<td class="num sum-vat" data-svat="' + i + '">' + fmtInvoice(t) + '</td>' +
+      '<td><button type="button" class="btn-row-del" data-del="'+i+'" title="Удалить">✕</button></td>' +
     '</tr>';
   }).join('');
 
-  tbody.querySelectorAll('.price-input').forEach(inp => {
-    inp.addEventListener('keydown', (e) => {
-      if(e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-         e.key === 'Tab' || e.key === 'Enter' || e.key === 'Home' || e.key === 'End') return;
-      if(/^\d$/.test(e.key)){
-        if(handleSmartInput(inp, e)){ e.preventDefault(); updateRow(inp); }
-      } else if(e.key.length === 1){ e.preventDefault(); }
+  // Обработчики на input
+  tbody.querySelectorAll('.cell-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const tr = inp.closest('tr');
+      const idx = parseInt(tr.getAttribute('data-idx'), 10);
+      const field = inp.getAttribute('data-field');
+      if(field === 'label'){
+        ROWS[idx].label = inp.value;
+      } else if(field === 'unit'){
+        ROWS[idx].unit = inp.value;
+      } else if(field === 'price'){
+        ROWS[idx].price = parsePriceInput(inp.value);
+        updateRowTotals(idx);
+        updateTotalsView();
+        renderPreview();
+      } else if(field === 'qtyCalc'){
+        ROWS[idx].qtyCalc = parseQtyInput(inp.value);
+        updateRowTotals(idx);
+        updateTotalsView();
+        renderPreview();
+      } else if(field === 'qtyReserve'){
+        ROWS[idx].qtyReserve = parseQtyInput(inp.value);
+        updateRowTotals(idx);
+        updateTotalsView();
+        renderPreview();
+      }
     });
+    // На blur — форматируем
     inp.addEventListener('blur', () => {
-      const v = parsePriceInput(inp.value);
-      inp.value = fmtPriceInput(v);
-      updateRow(inp);
+      const field = inp.getAttribute('data-field');
+      if(field === 'price'){
+        const v = parsePriceInput(inp.value);
+        inp.value = fmtPriceInput(v);
+      }
     });
   });
-  updateTotals();
-}
 
-function updateRow(inp){
-  const idx = parseInt(inp.getAttribute('data-idx'), 10);
-  invoicePrices[idx] = parsePriceInput(inp.value);
-  updateTotals();
-}
-
-function updateTotals(){
-  let sub = 0, vat = 0, tot = 0;
-  ROWS.forEach((r, i) => {
-    const p = invoicePrices[i] || 0;
-    const s = r.qty * p;
-    const v = s * 0.20;
-    const t = s + v;
-    sub += s; vat += v; tot += t;
-    const sumEl = document.querySelector('#invTbody [data-sum="' + i + '"]');
-    const vatEl = document.querySelector('#invTbody [data-vat="' + i + '"]');
-    const totEl = document.querySelector('#invTbody [data-total="' + i + '"]');
-    if(sumEl) sumEl.textContent = fmtInvoice(s);
-    if(vatEl) vatEl.textContent = fmtInvoice(v);
-    if(totEl) totEl.textContent = fmtInvoice(t);
+  // Обработчики на кнопки удаления
+  tbody.querySelectorAll('.btn-row-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.getAttribute('data-del'), 10);
+      if(!confirm('Удалить позицию «' + (ROWS[idx].label || '') + '»?')) return;
+      ROWS.splice(idx, 1);
+      renderInvoiceTable();
+      renderPreview();
+    });
   });
-  invoiceTotals = {subtotal: sub, vat, total: tot};
-  document.getElementById('invTotals').innerHTML =
-    '<div class="lbl">Стоимость без НДС:</div><div class="val">' + fmtInvoice(sub) + ' BYN</div>' +
-    '<div class="lbl">НДС 20 %:</div><div class="val">' + fmtInvoice(vat) + ' BYN</div>' +
-    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">' + fmtInvoice(tot) + ' BYN</div>';
-  renderPreview();
+
+  updateTotalsView();
 }
 
+function updateRowTotals(idx){
+  const r = ROWS[idx];
+  const s = rowSum(r);
+  const v = s * 0.20;
+  const t = s + v;
+  const tr = document.querySelector('tr[data-idx="'+idx+'"]');
+  if(!tr) return;
+  const totEl = tr.querySelector('[data-total="'+idx+'"]');
+  const sumEl = tr.querySelector('[data-sum="'+idx+'"]');
+  const vatEl = tr.querySelector('[data-vat="'+idx+'"]');
+  const svatEl = tr.querySelector('[data-svat="'+idx+'"]');
+  const qtyTotal = rowTotalQty(r);
+  if(totEl) totEl.textContent = (r.unit === 'м.п.') ? qtyTotal.toFixed(3).replace('.',',') : qtyTotal;
+  if(sumEl) sumEl.textContent = fmtInvoice(s);
+  if(vatEl) vatEl.textContent = fmtInvoice(v);
+  if(svatEl) svatEl.textContent = fmtInvoice(t);
+}
+
+function updateTotalsView(){
+  computeTotals();
+  document.getElementById('invTotals').innerHTML =
+    '<div class="lbl">Стоимость без НДС:</div><div class="val">' + fmtInvoice(invoiceTotals.subtotal) + ' BYN</div>' +
+    '<div class="lbl">НДС 20 %:</div><div class="val">' + fmtInvoice(invoiceTotals.vat) + ' BYN</div>' +
+    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">' + fmtInvoice(invoiceTotals.total) + ' BYN</div>';
+}
+
+/* ---------- ДОБАВИТЬ ПОЗИЦИЮ ---------- */
+document.getElementById('btnAddRow').addEventListener('click', () => {
+  ROWS.push({
+    label: 'Новая позиция',
+    qtyCalc: 1,
+    qtyReserve: 0,
+    unit: 'шт.',
+    price: 0
+  });
+  renderInvoiceTable();
+  renderPreview();
+});
+
+/* ---------- ДАННЫЕ СДЕЛКИ И ПОКУПАТЕЛЯ ---------- */
 function getDeal(){
+  const deliveryMode = document.querySelector('input[name="delivery"]:checked').value;
   return {
-    delivery: document.querySelector('input[name="delivery"]:checked').value,
+    delivery: deliveryMode,
     payment: parseInt(document.getElementById('prepaySlider').value, 10),
-    days: parseInt(document.getElementById('deliveryDaysSlider').value, 10)
+    days: parseInt(document.getElementById('deliveryDaysSlider').value, 10),
+    deliveryData: {
+      address: document.getElementById('delAddress').value.trim(),
+      phone: document.getElementById('delPhone').value.trim(),
+      time: document.getElementById('delTime').value.trim(),
+      date: document.getElementById('delDate').value,
+      weight: parseFloat(document.getElementById('delWeight').value) || 0,
+      volume: parseFloat(document.getElementById('delVolume').value) || 0,
+      maxLen: parseFloat(document.getElementById('delMaxLen').value) || 0
+    }
   };
 }
 function getBuyer(){
@@ -595,6 +727,7 @@ function getBuyer(){
   return o;
 }
 
+/* ---------- ПРЕВЬЮ СЧЁТА ---------- */
 function renderPreview(){
   const deal = getDeal();
   const buyer = getBuyer();
@@ -611,14 +744,16 @@ function renderPreview(){
   const buyerBasis = buyer.bBasis || '________________';
 
   const rowsHtml = ROWS.map((r, i) => {
-    const s = r.qty * (invoicePrices[i] || 0);
+    const s = rowSum(r);
     const v = s * 0.20;
+    const qtyTotal = rowTotalQty(r);
+    const qtyStr = (r.unit === 'м.п.') ? qtyTotal.toFixed(3).replace('.',',') : qtyTotal;
     return '<tr>' +
       '<td class="pos">' + (i+1) + '</td>' +
       '<td>' + escapeHtml(r.label) + '</td>' +
-      '<td class="num">' + (r.unit === 'м.п.' ? fmtMp(r.qty) : r.qty) + '</td>' +
-      '<td>' + (r.unit || 'шт.') + '</td>' +
-      '<td class="num">' + fmtInvoice(invoicePrices[i] || 0) + '</td>' +
+      '<td class="num">' + qtyStr + '</td>' +
+      '<td>' + escapeHtml(r.unit || 'шт.') + '</td>' +
+      '<td class="num">' + fmtInvoice(r.price || 0) + '</td>' +
       '<td class="num">' + fmtInvoice(s) + '</td>' +
       '<td class="vat">20 %</td>' +
       '<td class="num">' + fmtInvoice(v) + '</td>' +
@@ -698,6 +833,7 @@ function renderPreview(){
     </div>`;
 }
 
+/* ---------- PDF ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -710,56 +846,48 @@ async function downloadPdf(){
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   const canvas = await window.html2canvas(target, {
-    scale: 3,
-    backgroundColor: '#ffffff',
-    useCORS: true,
-    logging: false,
-    width: target.offsetWidth,
-    height: target.offsetHeight,
-    windowWidth: target.offsetWidth,
-    windowHeight: target.offsetHeight
+    scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false,
+    width: target.offsetWidth, height: target.offsetHeight,
+    windowWidth: target.offsetWidth, windowHeight: target.offsetHeight
   });
 
   target.classList.remove('rendering');
 
   const imgData = canvas.toDataURL('image/png');
-
   const PW = 210, PH = 297;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-
   const imgW = PW;
   const imgH = PW * (canvas.height / canvas.width);
 
   if(imgH <= PH + 0.5){
     doc.addImage(imgData, 'PNG', 0, 0, imgW, imgH, undefined, 'FAST');
   }else{
-    let y = 0;
-    let remaining = imgH;
-    let firstPage = true;
+    let y = 0, remaining = imgH, firstPage = true;
     while(remaining > 0){
       if(!firstPage) doc.addPage();
       firstPage = false;
       doc.addImage(imgData, 'PNG', 0, y, imgW, imgH, undefined, 'FAST');
-      remaining -= PH;
-      y -= PH;
+      remaining -= PH; y -= PH;
     }
   }
-
   const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');
 }
 
+/* ---------- PAYLOAD ДЛЯ i0 ---------- */
 function buildClientPayload(){
   const deal = getDeal();
   const buyer = getBuyer();
-  const rowsForClient = ROWS.map((r, i) => {
-    const price = invoicePrices[i] || 0;
-    return { label: r.label, qty: r.qty, unit: r.unit || 'шт.', price: price };
-  });
+  const rowsForClient = ROWS.map(r => ({
+    label: r.label,
+    qty: rowTotalQty(r),
+    unit: r.unit || 'шт.',
+    price: r.price || 0
+  }));
 
   const payload = {
-    v: 5,
+    v: 6,
     rooms: ROOMS,
     i5_url: location.href.split('?')[0],
     L_in: (KP_META && KP_META.L_in) || 0,
@@ -781,7 +909,7 @@ function buildClientPayload(){
     subtotal: invoiceTotals.subtotal,
     vat: invoiceTotals.vat,
     currency: 'BYN',
-    deal: { delivery: deal.delivery, payment: deal.payment, days: deal.days },
+    deal: { delivery: deal.delivery, payment: deal.payment, days: deal.days, deliveryData: deal.deliveryData },
     buyer: buyer,
     company: COMPANY,
     manager: 'Менеджер CUBICA',
@@ -791,6 +919,7 @@ function buildClientPayload(){
   return payload;
 }
 
+/* ---------- ССЫЛКА КЛИЕНТУ ---------- */
 function openShareModal(){
   const payload = buildClientPayload();
   const data = b64enc(JSON.stringify(payload));
@@ -798,32 +927,83 @@ function openShareModal(){
   document.getElementById('shareLink').value = url;
   document.getElementById('shareModal').classList.add('open');
 }
-
 function copyShareLink(){
   const inp = document.getElementById('shareLink');
   inp.select();
   inp.setSelectionRange(0, 99999);
   try{
-    navigator.clipboard.writeText(inp.value).then(() => {
-      showCopyMsg();
-    }).catch(() => {
-      document.execCommand('copy');
-      showCopyMsg();
-    });
-  }catch(e){
-    document.execCommand('copy');
-    showCopyMsg();
-  }
+    navigator.clipboard.writeText(inp.value).then(showCopyMsg).catch(() => { document.execCommand('copy'); showCopyMsg(); });
+  }catch(e){ document.execCommand('copy'); showCopyMsg(); }
 }
-
 function showCopyMsg(){
   const m = document.getElementById('copyMsg');
   m.classList.add('show');
   setTimeout(() => m.classList.remove('show'), 2000);
 }
 
+/* ---------- ЗАЯВКА ЛОГИСТУ ---------- */
+function buildLogistText(){
+  const deal = getDeal();
+  const buyer = getBuyer();
+  const d = deal.deliveryData;
+  const lines = [];
+  lines.push('ЗАЯВКА НА ДОСТАВКУ CUBICA');
+  lines.push('='.repeat(40));
+  lines.push('');
+  lines.push('Покупатель:      ' + (buyer.bName || '—'));
+  lines.push('Адрес доставки:  ' + (d.address || '—'));
+  lines.push('Контактный тел.: ' + (d.phone || '—'));
+  lines.push('Дата доставки:   ' + (d.date || '—'));
+  lines.push('Время доставки:  ' + (d.time || '—'));
+  lines.push('');
+  lines.push('ГАБАРИТЫ ГРУЗА:');
+  lines.push('  Вес:              ' + (d.weight ? d.weight + ' кг' : '—'));
+  lines.push('  Объём:            ' + (d.volume ? d.volume + ' м³' : '—'));
+  lines.push('  Макс. длина:      ' + (d.maxLen ? d.maxLen + ' мм' : '—'));
+  lines.push('');
+  lines.push('СОСТАВ ЗАКАЗА:');
+  let totalWeight = Number(d.weight) || 0;
+  for(let i=0; i<ROWS.length; i++){
+    const r = ROWS[i];
+    const qty = rowTotalQty(r);
+    const qtyStr = (r.unit === 'м.п.') ? qty.toFixed(3).replace('.',',') : qty;
+    lines.push('  ' + (i+1) + '. ' + r.label + ' — ' + qtyStr + ' ' + (r.unit||'шт.'));
+  }
+  lines.push('');
+  lines.push('ИТОГО: ' + fmtInvoice(invoiceTotals.total) + ' BYN с НДС');
+  lines.push('');
+  lines.push('— — —');
+  lines.push('CUBICA · ' + COMPANY.phone + ' · ' + COMPANY.email);
+  return lines.join('\n');
+}
+function openLogistModal(){
+  // Проверка что выбрана доставка
+  const mode = document.querySelector('input[name="delivery"]:checked').value;
+  if(mode !== 'delivery'){
+    alert('Сначала выберите «Доставка» в условиях сделки.');
+    return;
+  }
+  document.getElementById('logistText').value = buildLogistText();
+  document.getElementById('logistModal').classList.add('open');
+}
+function copyLogistText(){
+  const ta = document.getElementById('logistText');
+  ta.select();
+  ta.setSelectionRange(0, 99999);
+  try{
+    navigator.clipboard.writeText(ta.value).then(showCopyMsg).catch(() => { document.execCommand('copy'); showCopyMsg(); });
+  }catch(e){ document.execCommand('copy'); showCopyMsg(); }
+}
+
+/* ---------- ОБРАБОТЧИКИ ---------- */
+function toggleDeliveryBlock(){
+  const mode = document.querySelector('input[name="delivery"]:checked').value;
+  document.getElementById('deliveryBlock').style.display = (mode === 'delivery') ? 'block' : 'none';
+  renderPreview();
+}
+
 if(ROWS.length){
-  // Prefill buyer из URL
+  // Prefill buyer
   if(PREFILL_BUYER){
     const keys = ['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
     keys.forEach(k => {
@@ -831,7 +1011,7 @@ if(ROWS.length){
       if(el && PREFILL_BUYER[k] != null) el.value = String(PREFILL_BUYER[k]);
     });
   }
-  // Prefill deal из URL
+  // Prefill deal
   if(PREFILL_DEAL){
     if(PREFILL_DEAL.delivery){
       const radio = document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');
@@ -848,10 +1028,23 @@ if(ROWS.length){
       const d = parseInt(s.value, 10);
       document.getElementById('deliveryDaysVal').textContent = d + ' ' + declOfNum(d, ['день','дня','дней']);
     }
+    if(PREFILL_DEAL.deliveryData){
+      const dd = PREFILL_DEAL.deliveryData;
+      if(dd.address) document.getElementById('delAddress').value = dd.address;
+      if(dd.phone) document.getElementById('delPhone').value = dd.phone;
+      if(dd.time) document.getElementById('delTime').value = dd.time;
+      if(dd.date) document.getElementById('delDate').value = dd.date;
+      if(dd.weight) document.getElementById('delWeight').value = dd.weight;
+      if(dd.volume) document.getElementById('delVolume').value = dd.volume;
+      if(dd.maxLen) document.getElementById('delMaxLen').value = dd.maxLen;
+    }
   }
 
   renderInvoiceTable();
+  renderPreview();
+  toggleDeliveryBlock();
 
+  // Покупатель
   document.getElementById('bUnp').addEventListener('input', e => {
     e.target.value = e.target.value.replace(/\D/g,'').slice(0,9);
     renderPreview();
@@ -870,6 +1063,7 @@ if(ROWS.length){
     document.getElementById(id).addEventListener('input', renderPreview);
   });
 
+  // Условия сделки
   document.getElementById('prepaySlider').addEventListener('input', e => {
     document.getElementById('prepayVal').textContent = e.target.value + ' %';
     renderPreview();
@@ -879,23 +1073,36 @@ if(ROWS.length){
     document.getElementById('deliveryDaysVal').textContent = d + ' ' + declOfNum(d, ['день','дня','дней']);
     renderPreview();
   });
-  document.querySelectorAll('input[name="delivery"]').forEach(el => el.addEventListener('input', renderPreview));
+  document.querySelectorAll('input[name="delivery"]').forEach(el => el.addEventListener('input', toggleDeliveryBlock));
 
+  // Поля доставки
+  ['delAddress','delPhone','delTime','delDate','delWeight','delVolume','delMaxLen'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', renderPreview);
+  });
+
+  // Инициализация подписей слайдеров
   document.getElementById('prepayVal').textContent = document.getElementById('prepaySlider').value + ' %';
   document.getElementById('deliveryDaysVal').textContent = document.getElementById('deliveryDaysSlider').value + ' ' + declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value, 10), ['день','дня','дней']);
 
+  // Кнопки
   document.getElementById('btnPdf').addEventListener('click', downloadPdf);
   document.getElementById('btnShare').addEventListener('click', openShareModal);
   document.getElementById('btnCopy').addEventListener('click', copyShareLink);
+  document.getElementById('btnLogist').addEventListener('click', openLogistModal);
+  document.getElementById('btnLogistCopy').addEventListener('click', copyLogistText);
+
+  // Закрытие модалок
   document.getElementById('shareModal').addEventListener('click', e => {
-    if(e.target === document.getElementById('shareModal')) document.getElementById('shareModal').classList.remove('open');
+    if(e.target === document.getElementById('shareModal')) e.target.classList.remove('open');
+  });
+  document.getElementById('logistModal').addEventListener('click', e => {
+    if(e.target === document.getElementById('logistModal')) e.target.classList.remove('open');
   });
 
-  // Автогенерация PDF при ?autopdf=1
+  // Автогенерация PDF
   if(AUTO_PDF){
-    setTimeout(() => {
-      try { downloadPdf(); } catch(e){ console.error('autopdf err', e); }
-    }, 900);
+    setTimeout(() => { try{ downloadPdf(); }catch(e){ console.error('autopdf err', e); } }, 900);
   }
 }
 </script>

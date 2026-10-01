@@ -372,6 +372,7 @@ function b64enc(s){
 }
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
@@ -426,11 +427,11 @@ function sumToWordsRU(total){
   return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
 }
 
-/* Нормализация названия рейки: убираем длину и пометку «объединено» */
+/* Нормализация названия рейки: СНАЧАЛА убираем «(объединено)», ПОТОМ длину */
 function normalizeRailLabel(label){
   return String(label)
-    .replace(/\s+\d+\s*мм\s*$/i,'')
-    .replace(/\s*\(объединено\)\s*$/i,'')
+    .replace(/\s*\(объединено\)\s*$/i,'')   // ← сначала пометка
+    .replace(/\s+\d+\s*мм\s*$/i,'')          // ← потом «\d+ мм»
     .trim();
 }
 
@@ -524,7 +525,7 @@ function renderInvoiceTable(){
     return '<tr>' +
       '<td class="pos">' + (i+1) + '</td>' +
       '<td>' + escapeHtml(r.label) + '</td>' +
-      '<td class="num">' + (r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty) + '</td>' +
+      '<td class="num">' + (r.unit === 'м.п.' ? fmtMp(r.qty) : r.qty) + '</td>' +
       '<td>' + (r.unit || 'шт.') + '</td>' +
       '<td class="num"><input type="text" inputmode="decimal" class="price-input" value="' + fmtPriceInput(price) + '" data-idx="' + i + '" placeholder="0,00"></td>' +
       '<td class="num" data-sum="' + i + '">' + fmtInvoice(s) + '</td>' +
@@ -615,7 +616,7 @@ function renderPreview(){
     return '<tr>' +
       '<td class="pos">' + (i+1) + '</td>' +
       '<td>' + escapeHtml(r.label) + '</td>' +
-      '<td class="num">' + (r.unit === 'м.п.' ? Number(r.qty).toFixed(3) : r.qty) + '</td>' +
+      '<td class="num">' + (r.unit === 'м.п.' ? fmtMp(r.qty) : r.qty) + '</td>' +
       '<td>' + (r.unit || 'шт.') + '</td>' +
       '<td class="num">' + fmtInvoice(invoicePrices[i] || 0) + '</td>' +
       '<td class="num">' + fmtInvoice(s) + '</td>' +

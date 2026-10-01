@@ -38,13 +38,10 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 }
 .cell-input:hover{border-color:#ddd}
 .cell-input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
-.cell-input.num{text-align:right;font-variant-numeric:tabular-nums}
 .cell-input.name{font-weight:600}
 .cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
 
-.qty-calc{color:#1565c0;font-weight:600}
-.qty-res{color:#b26a00;font-weight:600}
 .qty-total{color:#1a1a1a;font-weight:800}
 
 .btn-row-del{
@@ -85,7 +82,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .btn-logist{margin-top:14px;padding:11px 20px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:none;background:#b26a00;color:#fff}
 .btn-logist:hover{background:#8f5500}
 
-/* --- Визуализация загрузки --- */
 .truck-viz-wrap{margin-top:16px;padding:14px 16px 12px;background:#fff;border:1px solid #f0d896;border-radius:10px}
 .truck-viz-title{font-size:11px;font-weight:800;color:#b26a00;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .truck-viz-title .badge{font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:20px;background:#b26a00;color:#fff;letter-spacing:.3px}
@@ -422,13 +418,8 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.2 — счёт-договор
-   Изменения i5.2:
-     · Умный ввод чисел (выделение нуля при фокусе) во всех ячейках
-     · 2 знака после запятой в «Расчёт» / «Запас» / «Итого»
-     · Автоформат времени 10001100 → 10:00-11:00
-     · Расширены колонки таблицы
-     · Визуализация загрузки: Бус / Тент / Фура с коробками по весу и объёму
+   CUBICA · i5.2
+   Принцип ввода чисел в позициях счёта — 1:1 как в i5 (handleSmartInput).
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -469,16 +460,66 @@ function b64enc(s){
 }
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtMp(v){return Number(v||0).toFixed(2).replace('.', ',');}
-/* формат: 2 знака после запятой, запятая как разделитель */
+function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
+/* 2 знака после запятой для колонок Расчёт/Запас/Итого */
 function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
 function parseQtyInput(str){
   const n = parseFloat(String(str).replace(',','.'));
   if(!isFinite(n)) return 0;
-  return Math.round(n * 100) / 100; // округляем до 2 знаков
+  return Math.round(n * 100) / 100;
 }
+
+/* --- i5-принцип ввода: умное редактирование числа в ячейке --- */
+function handleSmartInput(inp, e){
+  const key = e.key;
+  if(!/^\d$/.test(key)) return false;
+  let val = inp.value;
+  let selStart = inp.selectionStart;
+  let selEnd = inp.selectionEnd;
+  // всё выделено → заменяем на digit + ",00"
+  if(selStart === 0 && selEnd === val.length){
+    inp.value = key + ',00';
+    inp.setSelectionRange(1,1);
+    return true;
+  }
+  const comma = val.indexOf(',');
+  // курсор в целой части
+  if(comma >= 0 && selStart <= comma){
+    let left = val.slice(0, comma);
+    let right = val.slice(comma + 1);
+    // «0,XX» — затираем ноль
+    if(left === '0' && (selStart === 0 || selStart === 1)){
+      inp.value = key + ',' + right;
+      inp.setSelectionRange(1,1);
+      return true;
+    }
+    const newLeft = left.slice(0, selStart) + key + left.slice(selEnd);
+    const cleaned = newLeft.replace(/^0+(\d)/, '$1').slice(0,9) || '0';
+    inp.value = cleaned + ',' + right;
+    const pos = Math.min(cleaned.length, selStart + 1);
+    inp.setSelectionRange(pos, pos);
+    return true;
+  }
+  // курсор в дробной части
+  if(comma >= 0 && selStart > comma){
+    let left = val.slice(0, comma) || '0';
+    let right = val.slice(comma + 1).padEnd(2,'0').slice(0,2);
+    const idxInFrac = selStart - comma - 1;
+    if(idxInFrac < 0) return false;
+    const posInFrac = Math.min(Math.max(idxInFrac,0),1);
+    let arr = right.split('');
+    arr[posInFrac] = key;
+    right = arr.join('');
+    inp.value = left + ',' + right;
+    const newPos = comma + 1 + posInFrac + 1;
+    inp.setSelectionRange(newPos, newPos);
+    return true;
+  }
+  return false;
+}
+
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
 function numToWordsRU(n){
   n=Math.floor(Math.abs(Number(n)||0));if(n===0)return'ноль';
@@ -524,24 +565,12 @@ function formatTimeInput(str){
   return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4,6) + ':' + d.slice(6,8);
 }
 
-/* Выделение «нулевого» значения при фокусе — принцип i5 */
+/* --- автоселект нуля для полей доставки (вес/объём/длина) --- */
 function attachZeroSelect(inp){
   inp.addEventListener('focus', function(){
-    const self = this;
-    const v = String(self.value).trim();
-    if(v === '' || /^0([.,]0+)?$/.test(v)){
-      requestAnimationFrame(() => self.select());
-    } else {
-      // даже для ненулевого значения — селектим всё (быстрый ввод)
-      requestAnimationFrame(() => self.select());
-    }
-  });
-  // клик мышью тоже должен выделять
-  inp.addEventListener('mouseup', function(e){
     const v = String(this.value).trim();
     if(v === '' || /^0([.,]0+)?$/.test(v)){
-      e.preventDefault();
-      this.select();
+      requestAnimationFrame(() => this.select());
     }
   });
 }
@@ -661,7 +690,7 @@ function renderInvoiceTable(){
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="' + calcStr + '"></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="' + resStr + '"></td>' +
       '<td class="num qty-total" data-total="' + i + '">' + totStr + '</td>' +
-      '<td><input type="text" class="cell-input unit" data-field="unit" value="' + escapeHtml(r.unit) + '"></td>' +
+      '<td><input type="text" class="cell-input" style="text-align:center;width:60px" data-field="unit" value="' + escapeHtml(r.unit) + '"></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="' + fmtPriceInput(r.price) + '"></td>' +
       '<td class="num" data-sum="' + i + '">' + fmtInvoice(s) + '</td>' +
       '<td class="vat">20 %</td>' +
@@ -674,53 +703,63 @@ function renderInvoiceTable(){
   tbody.querySelectorAll('.cell-input').forEach(inp => {
     const field = inp.getAttribute('data-field');
 
-    // Умный ввод: qtyCalc, qtyReserve, price — выделение нуля при фокусе
-    if(field === 'price' || field === 'qtyCalc' || field === 'qtyReserve'){
-      attachZeroSelect(inp);
+    // Текстовые поля — просто синхронизируем
+    if(field === 'label' || field === 'unit'){
+      inp.addEventListener('input', () => {
+        const idx = idxOf(inp);
+        if(field === 'label') ROWS[idx].label = inp.value;
+        else ROWS[idx].unit = inp.value;
+        // пересчёт сумм (ед. не влияет, но название — только превью)
+        updateRowTotals(idx);
+        updateTotalsView();
+        renderPreview();
+      });
+      return;
     }
 
-    inp.addEventListener('input', () => {
-      const tr = inp.closest('tr');
-      const idx = parseInt(tr.getAttribute('data-idx'), 10);
-      if(field === 'label'){
-        ROWS[idx].label = inp.value;
-      } else if(field === 'unit'){
-        ROWS[idx].unit = inp.value;
-      } else if(field === 'price'){
-        ROWS[idx].price = parsePriceInput(inp.value);
-        updateRowTotals(idx);
-        updateTotalsView();
-        renderPreview();
-      } else if(field === 'qtyCalc'){
-        ROWS[idx].qtyCalc = parseQtyInput(inp.value);
-        updateRowTotals(idx);
-        updateTotalsView();
-        renderPreview();
-      } else if(field === 'qtyReserve'){
-        ROWS[idx].qtyReserve = parseQtyInput(inp.value);
-        updateRowTotals(idx);
-        updateTotalsView();
-        renderPreview();
+    // === ЧИСЛОВЫЕ ПОЛЯ: РЕЖИМ I5 (handleSmartInput по keydown) ===
+    inp.addEventListener('keydown', (e) => {
+      if(e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+         e.key === 'Tab' || e.key === 'Enter' || e.key === 'Home' || e.key === 'End') return;
+      if(/^\d$/.test(e.key)){
+        if(handleSmartInput(inp, e)){
+          e.preventDefault();
+          commitNumericCell(inp);
+        }
+      } else if(e.key.length === 1){
+        e.preventDefault(); // не пускаем буквы, минус, точку и т.д.
       }
     });
 
-    inp.addEventListener('blur', () => {
+    // вставка из буфера — нормализуем
+    inp.addEventListener('input', () => {
+      commitNumericCell(inp);
+      const idx = idxOf(inp);
       if(field === 'price'){
-        const v = parsePriceInput(inp.value);
-        inp.value = fmtPriceInput(v);
+        inp.value = fmtPriceInput(ROWS[idx].price);
       } else if(field === 'qtyCalc'){
-        ROWS[idxOf(inp)].qtyCalc = parseQtyInput(inp.value);
-        inp.value = fmtQty2(ROWS[idxOf(inp)].qtyCalc);
-        updateRowTotals(idxOf(inp));
-        updateTotalsView();
-        renderPreview();
+        inp.value = fmtQty2(ROWS[idx].qtyCalc);
       } else if(field === 'qtyReserve'){
-        ROWS[idxOf(inp)].qtyReserve = parseQtyInput(inp.value);
-        inp.value = fmtQty2(ROWS[idxOf(inp)].qtyReserve);
-        updateRowTotals(idxOf(inp));
-        updateTotalsView();
-        renderPreview();
+        inp.value = fmtQty2(ROWS[idx].qtyReserve);
       }
+    });
+
+    // на blur — финальный формат
+    inp.addEventListener('blur', () => {
+      const idx = idxOf(inp);
+      if(field === 'price'){
+        ROWS[idx].price = parsePriceInput(inp.value);
+        inp.value = fmtPriceInput(ROWS[idx].price);
+      } else if(field === 'qtyCalc'){
+        ROWS[idx].qtyCalc = parseQtyInput(inp.value);
+        inp.value = fmtQty2(ROWS[idx].qtyCalc);
+      } else if(field === 'qtyReserve'){
+        ROWS[idx].qtyReserve = parseQtyInput(inp.value);
+        inp.value = fmtQty2(ROWS[idx].qtyReserve);
+      }
+      updateRowTotals(idx);
+      updateTotalsView();
+      renderPreview();
     });
   });
 
@@ -739,6 +778,21 @@ function renderInvoiceTable(){
 
 function idxOf(inp){
   return parseInt(inp.closest('tr').getAttribute('data-idx'), 10);
+}
+
+function commitNumericCell(inp){
+  const idx = idxOf(inp);
+  const field = inp.getAttribute('data-field');
+  if(field === 'price'){
+    ROWS[idx].price = parsePriceInput(inp.value);
+  } else if(field === 'qtyCalc'){
+    ROWS[idx].qtyCalc = parseQtyInput(inp.value);
+  } else if(field === 'qtyReserve'){
+    ROWS[idx].qtyReserve = parseQtyInput(inp.value);
+  }
+  updateRowTotals(idx);
+  updateTotalsView();
+  renderPreview();
 }
 
 function updateRowTotals(idx){
@@ -823,11 +877,10 @@ function renderTruckViz(){
   }
   wrap.style.display = 'block';
 
-  // Выбор машины
   const trucks = [
-    { name:'Бус',        maxW:1500,  maxV:12,  maxL:4300,  h:1.9  },
-    { name:'Тент 5 т',   maxW:5000,  maxV:35,  maxL:6200,  h:2.4  },
-    { name:'Фура 20 т',  maxW:20000, maxV:82,  maxL:13600, h:2.7  }
+    { name:'Бус',        maxW:1500,  maxV:12,  maxL:4300  },
+    { name:'Тент 5 т',   maxW:5000,  maxV:35,  maxL:6200  },
+    { name:'Фура 20 т',  maxW:20000, maxV:82,  maxL:13600 }
   ];
   let truck = trucks[trucks.length - 1];
   for(const t of trucks){
@@ -846,14 +899,12 @@ function renderTruckViz(){
 
   const color = fillPct > 90 ? '#d32f2f' : (fillPct > 60 ? '#f9a825' : '#2e7d32');
 
-  // SVG сцена
   const W = 720, H = 240;
   const cabX = 20, cabY = 90, cabW = 105, cabH = 85;
   const trX = 125, trY = 55, trW = 565, trH = 120;
   const wheelY = trY + trH + 14;
   const wheelR = 15;
 
-  // Коробки в кузове
   const cols = 11, rows = 4;
   const padX = 10, padY = 10;
   const innerW = trW - padX * 2;
@@ -878,7 +929,6 @@ function renderTruckViz(){
     }
   }
 
-  // Колёса
   const wheelXs = [cabX + cabW/2, trX + 70, trX + trW - 130, trX + trW - 45];
   let wheelsSvg = '';
   for(const wx of wheelXs){
@@ -887,20 +937,13 @@ function renderTruckViz(){
     wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;
   }
 
-  // Кабина
   const cabSvg = `
     <path d="M ${cabX} ${cabY + cabH} L ${cabX} ${cabY + 22} Q ${cabX} ${cabY} ${cabX + 22} ${cabY} L ${cabX + cabW} ${cabY} L ${cabX + cabW} ${cabY + cabH} Z"
       fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
     <rect x="${cabX + 8}" y="${cabY + 12}" width="${cabW - 24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/>
     <rect x="${cabX + cabW - 5}" y="${cabY + 8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>
   `;
-
-  // Кузов
-  const trailerSvg = `
-    <rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>
-  `;
-
-  // Земля
+  const trailerSvg = `<rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>`;
   const groundY = wheelY + wheelR;
   const groundSvg = `<line x1="8" y1="${groundY}" x2="${W - 8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
 
@@ -1275,12 +1318,11 @@ if(ROWS.length){
     renderTruckViz();
   });
 
-  // Остальные поля доставки → превью + схема
+  // Поля доставки
   ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('input', () => { renderPreview(); renderTruckViz(); });
   });
-  // числовые поля доставки тоже с автоселектом
   ['delWeight','delVolume','delMaxLen'].forEach(id => {
     const el = document.getElementById(id);
     if(el) attachZeroSelect(el);

@@ -6,6 +6,7 @@
 <title>Счёт-договор — CUBICA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -130,15 +131,15 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-hours .val{font-weight:600;word-break:break-word}
 .pv-hours .val small{display:block;font-weight:400;color:#888;font-size:7.5px;margin-top:1px;text-transform:uppercase;letter-spacing:.3px}
 .pv-side-bottom{display:flex;flex-direction:column;gap:6px}
-.pv-qr-wrap{display:flex;gap:6px;align-items:flex-start}
-.pv-qr{width:60px;height:60px;border:1.5px solid #e10004;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
-.pv-qr svg{display:block;width:100%;height:100%}
-.pv-qr-meta{display:flex;flex-direction:column;gap:2px;font-size:8.5px;color:#555;line-height:1.25;justify-content:center}
-.pv-qr-meta b{color:#e10004;font-weight:800;font-size:9px;letter-spacing:.3px;text-transform:uppercase}
-.pv-issue{font-size:8.5px;color:#333;line-height:1.35;border-top:1px dotted #ccc;padding-top:5px}
-.pv-issue .t1{font-size:8.5px;font-weight:800;color:#e10004;letter-spacing:.5px;margin-bottom:2px;text-transform:uppercase}
-.pv-issue .addr{font-weight:700;color:#1a1a1a;font-size:9.5px}
-.pv-issue .sub{color:#888;font-size:8px;margin-top:2px}
+.pv-nav-block{border:1px dashed #e10004;border-radius:6px;background:#fff8f8;padding:6px;display:flex;flex-direction:column;gap:6px}
+.pv-nav-title{font-size:8.5px;font-weight:800;color:#e10004;letter-spacing:.5px;text-transform:uppercase;text-align:center;margin-bottom:1px}
+.pv-nav-item{display:flex;align-items:center;gap:6px}
+.pv-nav-qr{width:52px;height:52px;flex-shrink:0;border:1px solid #e10004;border-radius:4px;padding:3px;background:#fff;display:flex;align-items:center;justify-content:center}
+.pv-nav-qr svg{display:block;width:100%;height:100%}
+.pv-nav-meta{font-size:8.5px;color:#333;line-height:1.25;flex:1}
+.pv-nav-meta b{display:block;color:#e10004;font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
+.pv-nav-meta .addr{font-weight:700;color:#1a1a1a;font-size:8.5px;line-height:1.2}
+.pv-nav-meta .sub{color:#888;font-size:7.5px;margin-top:1px;line-height:1.2}
 .pv-panel-thanks{margin-top:5px;padding-top:5px;border-top:1.5px solid #e10004;text-align:center}
 .pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#e10004}
 .pv-panel-thanks .t2{font-size:8px;color:#888;margin-top:1px}
@@ -204,7 +205,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 .preview-page.rendering{box-shadow:none !important}
 
-/* ============ ПИКЕР (обновлённый) ============ */
 .picker-inner{max-width:1000px;width:96vw;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh}
 .picker-head{padding:20px 28px 14px;border-bottom:1px solid #ececec}
 .picker-head h3{margin-bottom:4px}
@@ -491,7 +491,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
-<!-- ============ ПИКЕР КОНТРАГЕНТОВ ============ -->
 <div class="modal" id="buyerPickerModal">
   <div class="modal-inner picker-inner">
     <div class="picker-head">
@@ -517,11 +516,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.5 — счёт-договор + справочник номенклатуры + контрагентов
-   Изменения в i5.5:
-   - добавлен пикер контрагентов (кнопка 📁 у поля «Наименование организации»)
-   - при выборе контрагента автозаполняются: Наименование (полное), УНП, Юр.адрес
-   - ручной ввод сохранён
+   CUBICA · i5.6 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.6:
+   - два QR-кода навигации: Шаг 1 — офис (выписка ТТН/ТН, 5 этаж, оф. 508),
+     Шаг 2 — склад Армстронг. Оба открывают Яндекс.Навигатор.
+   - QR реквизитов (Word) — рабочий, ведёт на cubica-requisites/requisites.docx
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -533,6 +532,13 @@ const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
 /* >>> Справочник контрагентов <<< */
 const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
 const CONTRACTORS_CACHE_KEY = 'cubica_contractors_v1';
+
+/* >>> Ссылка на реквизиты в Word (для QR) <<< */
+const REQUISITES_URL = 'https://6471811-source.github.io/cubica-requisites/requisites.docx';
+
+/* >>> Координаты для навигации (Яндекс.Навигатор) <<< */
+const OFFICE_COORDS    = { lat: 53.955161, lon: 27.778077 };  /* Колодищи, Минская 5, оф. 508, 5 этаж */
+const WAREHOUSE_COORDS = { lat: 53.945140, lon: 27.741913 };  /* Склад Армстронг */
 
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
@@ -675,7 +681,40 @@ function attachZeroSelect(inp){
 }
 
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
-const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/><rect x="10" y="0" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="16" y="1" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="10" y="10" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="1" y="21" width="1" height="1"/><rect x="2" y="19" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="8" y="20" width="1" height="1"/><rect x="10" y="21" width="1" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="20" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="28" y="20" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="22" y="25" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="14" y="27" width="1" height="1"/><rect x="16" y="28" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="24" y="28" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/></g></svg>`;
+const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/></g></svg>`;
+
+/* Генерация QR-кода (SVG) — для любых ссылок, работает оффлайн */
+function makeQrSvg(data){
+  try{
+    if(typeof qrcode !== 'function') return QR_STUB;
+    const qr = qrcode(0, 'M');
+    qr.addData(data);
+    qr.make();
+    const count = qr.getModuleCount();
+    let path = '';
+    for(let r = 0; r < count; r++){
+      for(let c = 0; c < count; c++){
+        if(qr.isDark(r, c)){
+          path += `<rect x="${c}" y="${r}" width="1" height="1"/>`;
+        }
+      }
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${count} ${count}" shape-rendering="crispEdges" style="width:100%;height:100%;display:block"><rect width="${count}" height="${count}" fill="#fff"/><g fill="#1a1a1a">${path}</g></svg>`;
+  }catch(e){
+    console.warn('QR генерация:', e);
+    return QR_STUB;
+  }
+}
+
+/* QR на реквизиты Word */
+function makeRequisitesQR(){
+  return makeQrSvg(REQUISITES_URL);
+}
+
+/* QR на маршрут в Яндекс.Навигаторе */
+function makeNaviQR(coords){
+  return makeQrSvg('yandexnavi://build_route_on_map?lat_to=' + coords.lat + '&lon_to=' + coords.lon);
+}
 
 /* ---------- ЧТЕНИЕ URL ---------- */
 const urlParams = new URLSearchParams(location.search);
@@ -981,9 +1020,6 @@ async function fetchAndCache(){
   }
 }
 
-/* Парсер выгрузки 1С 8.2 номенклатуры
-   Сохраняем: Код, Наименование, ЭтоГруппа, РодительКод,
-   + Единица, Артикул, ПолноеНаименование, ВесБрутто */
 function parseNomenclatureXML(xmlText){
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
   const err = doc.querySelector('parsererror');
@@ -1319,9 +1355,6 @@ async function fetchAndCacheContractors(){
   }
 }
 
-/* Парсер выгрузки 1С: контрагенты
-   Атрибуты: Наименование, ПолноеНаименование, УНП, ЮридическийАдрес, ЭтоГруппа
-   Группы пропускаем. */
 function parseContractorsXML(xmlText){
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
   const err = doc.querySelector('parsererror');
@@ -1456,7 +1489,6 @@ function applyBuyerPicker(){
   if(!buyerPickerSelected.node) return;
   const c = buyerPickerSelected.node;
 
-  /* Приоритет — ПолноеНаименование (официальное), иначе короткое */
   const nameToFill = c.full || c.name;
 
   const elName = document.getElementById('bName');
@@ -1692,7 +1724,7 @@ function renderPreview(){
       <div class="pv-panel-req"><div>УНП: ${COMPANY.unp}</div><div>${COMPANY.address}</div></div>
       <hr class="pv-sep">
       <div class="pv-panel-req"><div>Р/с: ${COMPANY.account}</div><div>Банк: ${COMPANY.bank}</div><div>БИК: ${COMPANY.bic}</div></div>
-      <div class="pv-req-qr"><div class="box">${QR_STUB}</div><div class="meta"><b>Реквизиты в Word</b>Отсканируйте QR — бухгалтерия получит наши реквизиты в Word.<div class="sub">Для бухгалтера покупателя</div></div></div>
+      <div class="pv-req-qr"><div class="box">${makeRequisitesQR()}</div><div class="meta"><b>Реквизиты в Word</b>Отсканируйте QR — бухгалтерия получит наши реквизиты в Word.<div class="sub">Для бухгалтера покупателя</div></div></div>
       <div class="pv-side-contacts">
         <div class="pv-side-title">Контакты</div>
         <div class="pv-side-row"><span class="pv-side-ic">Т</span><span class="pv-side-val">${COMPANY.phone}<small>Телефон</small></span></div>
@@ -1702,8 +1734,26 @@ function renderPreview(){
       </div>
       <div class="pv-hours"><span class="ic">⏱</span><span class="val">${COMPANY.hours}<small>Режим работы</small></span></div>
       <div class="pv-side-bottom">
-        <div class="pv-qr-wrap"><div class="pv-qr">${QR_STUB}</div><div class="pv-qr-meta"><b>QR адреса выписки</b>Наведите телефон —<br>откроется навигатор<br>с адресом ТТН/ТН.</div></div>
-        <div class="pv-issue"><div class="t1">Адрес выписки ТТН / ТН</div><div class="addr">${COMPANY.issueAddress}</div><div class="sub">Срок действия счёта — 14 дней.</div></div>
+        <div class="pv-nav-block">
+          <div class="pv-nav-title">Как забрать товар</div>
+          <div class="pv-nav-item">
+            <div class="pv-nav-qr">${makeNaviQR(OFFICE_COORDS)}</div>
+            <div class="pv-nav-meta">
+              <b>Шаг 1. Офис</b>
+              <div class="addr">Выписка ТТН / ТН</div>
+              <div class="sub">Колодищи, Минская 5 · 5 этаж, оф. 508</div>
+            </div>
+          </div>
+          <div class="pv-nav-item">
+            <div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div>
+            <div class="pv-nav-meta">
+              <b>Шаг 2. Склад</b>
+              <div class="addr">Армстронг</div>
+              <div class="sub">Отгрузка товара</div>
+            </div>
+          </div>
+        </div>
+        <div class="pv-issue"><div class="t1">Срок действия счёта</div><div class="addr">14 календарных дней</div><div class="sub">с даты выписки</div></div>
       </div>
       <div class="pv-panel-thanks"><div class="t1">Спасибо за заказ!</div><div class="t2">${COMPANY.tagline}</div></div>
     </div>
@@ -1954,11 +2004,9 @@ if(ROWS.length){
   renderPreview();
   toggleDeliveryBlock();
 
-  /* прогреваем оба справочника в фоне */
   loadNomenclature().catch(()=>{});
   loadContractors().catch(()=>{});
 
-  /* инициализация пикера контрагентов */
   initBuyerPicker();
 
   document.getElementById('bUnp').addEventListener('input', e => {

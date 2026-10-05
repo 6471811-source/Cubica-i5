@@ -380,7 +380,10 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       <div class="buyer-grid">
         <div class="buyer-field full">
           <label for="bName">Наименование организации</label>
-          <input type="text" id="bName" placeholder="ООО «Пример»">
+          <div class="name-cell">
+            <input type="text" id="bName" placeholder="ООО «Пример» или нажмите 📁 для выбора из справочника">
+            <button type="button" class="btn-picker" id="btnBuyerPicker" title="Выбрать из справочника контрагентов">📁</button>
+          </div>
         </div>
         <div class="buyer-field">
           <label for="bUnp">УНП (9 цифр)</label>
@@ -488,25 +491,48 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 </div>
 
+<!-- ============ ПИКЕР КОНТРАГЕНТОВ ============ -->
+<div class="modal" id="buyerPickerModal">
+  <div class="modal-inner picker-inner">
+    <div class="picker-head">
+      <h3>🏢 Справочник контрагентов</h3>
+      <p>Поиск по названию, полному наименованию или УНП. При выборе заполнятся: наименование, УНП и юридический адрес. Остальные поля заполняются вручную.</p>
+    </div>
+    <div class="picker-search">
+      <input type="text" id="buyerPickerSearch" placeholder="🔍 Поиск по названию или УНП..." autocomplete="off">
+    </div>
+    <div class="picker-count" id="buyerPickerCount"></div>
+    <div class="picker-tree" id="buyerPickerTree"></div>
+    <div class="picker-actions">
+      <div class="picker-count sel-info empty" id="buyerPickerSelInfo" style="padding:0;border:none;background:none"></div>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="btn ghost" id="btnBuyerPickerCancel" style="padding:11px 20px;font-size:13px">Отмена</button>
+        <button type="button" class="btn red" id="btnBuyerPickerApply" disabled style="padding:11px 22px;font-size:13px">✓ Выбрать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
 /* =====================================================================
-   CUBICA · i5.4 — счёт-договор + справочник номенклатуры из 1С (XML)
-   Изменения в i5.4:
-   - парсер сохраняет Единица / Артикул / ПолноеНаименование / ВесБрутто
-   - ключ кэша поднят до v2 (браузер увидит новый файл)
-   - пикер переделан: широкий, папки по умолчанию свёрнуты,
-     показ ед. изм. в строке, кнопки Свернуть/Развернуть
+   CUBICA · i5.5 — счёт-договор + справочник номенклатуры + контрагентов
+   Изменения в i5.5:
+   - добавлен пикер контрагентов (кнопка 📁 у поля «Наименование организации»)
+   - при выборе контрагента автозаполняются: Наименование (полное), УНП, Юр.адрес
+   - ручной ввод сохранён
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 
-/* >>> URL справочника номенклатуры (GitHub Pages) <<< */
+/* >>> Справочник номенклатуры <<< */
 const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
-
-/* v2 — чтобы браузер не отдавал старый кэш после замены файла на GitHub */
 const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
+
+/* >>> Справочник контрагентов <<< */
+const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
+const CONTRACTORS_CACHE_KEY = 'cubica_contractors_v1';
 
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
@@ -910,7 +936,7 @@ document.getElementById('btnAddRow').addEventListener('click', () => {
 let NOMENCLATURE = null;
 let pickerTargetIdx = -1;
 const pickerSelected = { node: null };
-const pickerExpanded = new Set();   // ← по умолчанию ПУСТОЙ = всё свёрнуто
+const pickerExpanded = new Set();
 let pickerFilter = '';
 
 async function loadNomenclature(force){
@@ -955,9 +981,9 @@ async function fetchAndCache(){
   }
 }
 
-/* Парсер выгрузки 1С 8.2
+/* Парсер выгрузки 1С 8.2 номенклатуры
    Сохраняем: Код, Наименование, ЭтоГруппа, РодительКод,
-   + Единица, Артикул, ПолноеНаименование, ВесБрутто  ← новое */
+   + Единица, Артикул, ПолноеНаименование, ВесБрутто */
 function parseNomenclatureXML(xmlText){
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
   const err = doc.querySelector('parsererror');
@@ -976,7 +1002,6 @@ function parseNomenclatureXML(xmlText){
 
     const node = { id, name, type: isFolder ? 'folder' : 'item' };
 
-    /* === новые поля из 1С === */
     if(!isFolder){
       const unit = (el.getAttribute('Единица') || '').trim();
       if(unit) node.unit = unit;
@@ -1075,7 +1100,6 @@ async function openPicker(idx){
   pickerTargetIdx = idx;
   pickerSelected.node = null;
   pickerFilter = '';
-  /* НЕ разворачиваем ничего по умолчанию — папки свёрнуты */
   pickerExpanded.clear();
   document.getElementById('pickerSearch').value = '';
   document.getElementById('pickerModal').classList.add('open');
@@ -1124,7 +1148,6 @@ function renderPickerTree(){
   function renderNode(node){
     if(pickerFilter && !nodeMatches(node, pickerFilter)) return '';
     const isFolder = isFolderNode(node);
-    /* При активном фильтре — раскрываем автоматически, чтобы было видно совпадения */
     const isExpanded = pickerFilter ? true : pickerExpanded.has(node.id);
     const isSelected = pickerSelected.node && pickerSelected.node.id === node.id;
 
@@ -1237,8 +1260,6 @@ document.addEventListener('keydown', (e) => {
     closePicker();
   }
 });
-
-/* Кнопки Свернуть всё / Развернуть всё */
 document.getElementById('btnCollapseAll').addEventListener('click', () => {
   pickerExpanded.clear();
   renderPickerTree();
@@ -1248,6 +1269,250 @@ document.getElementById('btnExpandAll').addEventListener('click', () => {
   collectAllFolderIds(NOMENCLATURE.tree, pickerExpanded);
   renderPickerTree();
 });
+
+/* =====================================================================
+   СПРАВОЧНИК КОНТРАГЕНТОВ (1С XML → GitHub Pages)
+   ===================================================================== */
+let CONTRACTORS = null;
+const buyerPickerSelected = { node: null };
+let buyerPickerFilter = '';
+
+async function loadContractors(force){
+  if(CONTRACTORS && !force) return CONTRACTORS;
+
+  if(!force){
+    try{
+      const cached = localStorage.getItem(CONTRACTORS_CACHE_KEY);
+      if(cached){
+        const parsed = JSON.parse(cached);
+        if(parsed && Array.isArray(parsed.list) && parsed.list.length){
+          CONTRACTORS = parsed;
+          fetchAndCacheContractors().catch(()=>{});
+          return CONTRACTORS;
+        }
+      }
+    }catch(e){}
+  }
+  return await fetchAndCacheContractors();
+}
+
+async function fetchAndCacheContractors(){
+  try{
+    const res = await fetch(CONTRACTORS_URL, { cache: 'no-cache' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    let text = await res.text();
+    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+    const data = /^\s*</.test(text)
+      ? parseContractorsXML(text)
+      : JSON.parse(text);
+
+    if(!data || !Array.isArray(data.list) || !data.list.length){
+      throw new Error('Пустой список контрагентов');
+    }
+    CONTRACTORS = data;
+    try{ localStorage.setItem(CONTRACTORS_CACHE_KEY, JSON.stringify(data)); }catch(e){}
+    return data;
+  }catch(e){
+    console.warn('Справочник контрагентов:', e);
+    return CONTRACTORS;
+  }
+}
+
+/* Парсер выгрузки 1С: контрагенты
+   Атрибуты: Наименование, ПолноеНаименование, УНП, ЮридическийАдрес, ЭтоГруппа
+   Группы пропускаем. */
+function parseContractorsXML(xmlText){
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const err = doc.querySelector('parsererror');
+  if(err) throw new Error('XML parse error: ' + err.textContent);
+
+  const elements = doc.getElementsByTagName('Элемент');
+  const list = [];
+
+  for(let i = 0; i < elements.length; i++){
+    const el = elements[i];
+    const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
+    if(isFolder) continue;
+
+    const name = (el.getAttribute('Наименование') || '').replace(/\s+/g,' ').trim();
+    if(!name) continue;
+
+    const unp  = (el.getAttribute('УНП') || '').trim();
+    const addr = (el.getAttribute('ЮридическийАдрес') || '').trim();
+    const full = (el.getAttribute('ПолноеНаименование') || '').trim();
+
+    list.push({ name, full, unp, addr });
+  }
+
+  const collator = new Intl.Collator('ru', { numeric:true, sensitivity:'base' });
+  list.sort((a,b) => collator.compare(a.name, b.name));
+
+  return {
+    version: '1.0',
+    source: '1C Contractors XML',
+    generated: new Date().toISOString(),
+    list
+  };
+}
+
+function contractorMatches(node, filter){
+  if(!filter) return true;
+  const f = filter.toLowerCase();
+  if(String(node.name||'').toLowerCase().includes(f)) return true;
+  if(String(node.full||'').toLowerCase().includes(f)) return true;
+  if(String(node.unp||'').toLowerCase().includes(f)) return true;
+  return false;
+}
+
+async function openBuyerPicker(){
+  buyerPickerSelected.node = null;
+  buyerPickerFilter = '';
+  document.getElementById('buyerPickerSearch').value = '';
+  document.getElementById('buyerPickerModal').classList.add('open');
+  const treeEl = document.getElementById('buyerPickerTree');
+  treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
+
+  await loadContractors();
+  renderBuyerPicker();
+  setTimeout(() => document.getElementById('buyerPickerSearch').focus(), 60);
+}
+
+function closeBuyerPicker(){
+  document.getElementById('buyerPickerModal').classList.remove('open');
+  buyerPickerSelected.node = null;
+}
+
+function updateBuyerPickerSelInfo(){
+  const el = document.getElementById('buyerPickerSelInfo');
+  if(buyerPickerSelected.node){
+    el.classList.remove('empty');
+    el.innerHTML = 'Выбрано: <span style="color:#1a1a1a">' + escapeHtml(buyerPickerSelected.node.name) + '</span>' +
+      (buyerPickerSelected.node.unp ? ' · УНП ' + escapeHtml(buyerPickerSelected.node.unp) : '');
+  } else {
+    el.classList.add('empty');
+    el.textContent = 'Контрагент не выбран';
+  }
+}
+
+function renderBuyerPicker(){
+  const container = document.getElementById('buyerPickerTree');
+  const countEl = document.getElementById('buyerPickerCount');
+  const applyBtn = document.getElementById('btnBuyerPickerApply');
+  applyBtn.disabled = !buyerPickerSelected.node;
+
+  updateBuyerPickerSelInfo();
+
+  if(!CONTRACTORS || !CONTRACTORS.list || !CONTRACTORS.list.length){
+    container.innerHTML = '<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><br>' +
+      'Проверьте URL: <code>' + escapeHtml(CONTRACTORS_URL) + '</code></div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  const filtered = buyerPickerFilter
+    ? CONTRACTORS.list.filter(c => contractorMatches(c, buyerPickerFilter))
+    : CONTRACTORS.list;
+
+  if(!filtered.length){
+    container.innerHTML = '<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено по запросу «' + escapeHtml(buyerPickerFilter) + '»</div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => {
+    const isSelected = buyerPickerSelected.node && buyerPickerSelected.node.unp === c.unp && buyerPickerSelected.node.name === c.name;
+    let html = '<div class="picker-row item' + (isSelected ? ' selected' : '') + '" data-unp="' + escapeHtml(c.unp) + '" data-name="' + escapeHtml(c.name) + '">';
+    html += '<span class="arrow invisible">▶</span><span class="icon">🏢</span>';
+    html += '<span class="label">' + escapeHtml(c.name) + '</span>';
+    if(c.unp){
+      html += '<span class="unit-badge">УНП ' + escapeHtml(c.unp) + '</span>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+
+  countEl.textContent = buyerPickerFilter
+    ? ('Найдено: ' + filtered.length + ' из ' + CONTRACTORS.list.length)
+    : ('Всего контрагентов: ' + CONTRACTORS.list.length);
+
+  container.querySelectorAll('.picker-row.item').forEach(row => {
+    row.addEventListener('click', () => {
+      const unp = row.getAttribute('data-unp');
+      const name = row.getAttribute('data-name');
+      buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
+      renderBuyerPicker();
+    });
+    row.addEventListener('dblclick', () => {
+      const unp = row.getAttribute('data-unp');
+      const name = row.getAttribute('data-name');
+      buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
+      applyBuyerPicker();
+    });
+  });
+}
+
+function applyBuyerPicker(){
+  if(!buyerPickerSelected.node) return;
+  const c = buyerPickerSelected.node;
+
+  /* Приоритет — ПолноеНаименование (официальное), иначе короткое */
+  const nameToFill = c.full || c.name;
+
+  const elName = document.getElementById('bName');
+  const elUnp  = document.getElementById('bUnp');
+  const elAddr = document.getElementById('bAddress');
+
+  if(elName) elName.value = nameToFill;
+  if(elUnp && c.unp) elUnp.value = c.unp;
+  if(elAddr && c.addr) elAddr.value = c.addr;
+
+  renderPreview();
+  closeBuyerPicker();
+}
+
+function initBuyerPicker(){
+  const btn = document.getElementById('btnBuyerPicker');
+  if(btn) btn.addEventListener('click', openBuyerPicker);
+
+  const search = document.getElementById('buyerPickerSearch');
+  if(search){
+    search.addEventListener('input', e => {
+      buyerPickerFilter = e.target.value;
+      renderBuyerPicker();
+    });
+    search.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        const first = document.querySelector('#buyerPickerTree .picker-row.item');
+        if(first){
+          const unp = first.getAttribute('data-unp');
+          const name = first.getAttribute('data-name');
+          buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
+          renderBuyerPicker();
+          applyBuyerPicker();
+        }
+      }
+    });
+  }
+
+  const applyBtn = document.getElementById('btnBuyerPickerApply');
+  if(applyBtn) applyBtn.addEventListener('click', applyBuyerPicker);
+
+  const cancelBtn = document.getElementById('btnBuyerPickerCancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', closeBuyerPicker);
+
+  const modal = document.getElementById('buyerPickerModal');
+  if(modal) modal.addEventListener('click', e => {
+    if(e.target === modal) closeBuyerPicker();
+  });
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && modal && modal.classList.contains('open')){
+      closeBuyerPicker();
+    }
+  });
+}
 
 /* ---------- ДАННЫЕ СДЕЛКИ И ПОКУПАТЕЛЯ ---------- */
 function getDeal(){
@@ -1689,8 +1954,12 @@ if(ROWS.length){
   renderPreview();
   toggleDeliveryBlock();
 
-  /* прогреваем справочник в фоне */
+  /* прогреваем оба справочника в фоне */
   loadNomenclature().catch(()=>{});
+  loadContractors().catch(()=>{});
+
+  /* инициализация пикера контрагентов */
+  initBuyerPicker();
 
   document.getElementById('bUnp').addEventListener('input', e => {
     e.target.value = e.target.value.replace(/\D/g,'').slice(0,9);

@@ -131,7 +131,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-hours .val{font-weight:600;word-break:break-word}
 .pv-hours .val small{display:block;font-weight:400;color:#888;font-size:7.5px;margin-top:1px;text-transform:uppercase;letter-spacing:.3px}
 .pv-side-bottom{display:flex;flex-direction:column;gap:6px}
-.pv-nav-block{border:1px dashed #e10004;border-radius:6px;background:#fff8f8;padding:6px;display:flex;flex-direction:column;gap:6px}
+.pv-nav-block{border:1px dashed #e10004;border-radius:6px;background:#fff8f8;padding:8px 6px;display:flex;flex-direction:column;gap:12px}
 .pv-nav-title{font-size:8.5px;font-weight:800;color:#e10004;letter-spacing:.5px;text-transform:uppercase;text-align:center;margin-bottom:1px}
 .pv-nav-item{display:flex;align-items:center;gap:6px}
 .pv-nav-qr{width:52px;height:52px;flex-shrink:0;border:1px solid #e10004;border-radius:4px;padding:3px;background:#fff;display:flex;align-items:center;justify-content:center}
@@ -140,6 +140,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-nav-meta b{display:block;color:#e10004;font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
 .pv-nav-meta .addr{font-weight:700;color:#1a1a1a;font-size:8.5px;line-height:1.2}
 .pv-nav-meta .sub{color:#888;font-size:7.5px;margin-top:1px;line-height:1.2}
+.pv-nav-sep{border:none;border-top:1px dashed #e10004;margin:0;opacity:.5}
 .pv-panel-thanks{margin-top:5px;padding-top:5px;border-top:1.5px solid #e10004;text-align:center}
 .pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#e10004}
 .pv-panel-thanks .t2{font-size:8px;color:#888;margin-top:1px}
@@ -516,11 +517,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.6 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.6:
-   - два QR-кода навигации: Шаг 1 — офис (выписка ТТН/ТН, 5 этаж, оф. 508),
-     Шаг 2 — склад Армстронг. Оба открывают Яндекс.Навигатор.
-   - QR реквизитов (Word) — рабочий, ведёт на cubica-requisites/requisites.docx
+   CUBICA · i5.7 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.7:
+   - QR Шаг 1 / Шаг 2 раздвинуты (gap 12px) + разделительная линия между ними
+   - При выборе «Доставка» в тексте договора появляется пункт 3.4
+     про разгрузку силами Покупателя (водитель не выгружает)
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -683,7 +684,6 @@ function attachZeroSelect(inp){
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
 const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/></g></svg>`;
 
-/* Генерация QR-кода (SVG) — для любых ссылок, работает оффлайн */
 function makeQrSvg(data){
   try{
     if(typeof qrcode !== 'function') return QR_STUB;
@@ -705,16 +705,8 @@ function makeQrSvg(data){
     return QR_STUB;
   }
 }
-
-/* QR на реквизиты Word */
-function makeRequisitesQR(){
-  return makeQrSvg(REQUISITES_URL);
-}
-
-/* QR на маршрут в Яндекс.Навигаторе */
-function makeNaviQR(coords){
-  return makeQrSvg('yandexnavi://build_route_on_map?lat_to=' + coords.lat + '&lon_to=' + coords.lon);
-}
+function makeRequisitesQR(){ return makeQrSvg(REQUISITES_URL); }
+function makeNaviQR(coords){ return makeQrSvg('yandexnavi://build_route_on_map?lat_to=' + coords.lat + '&lon_to=' + coords.lon); }
 
 /* ---------- ЧТЕНИЕ URL ---------- */
 const urlParams = new URLSearchParams(location.search);
@@ -1694,6 +1686,11 @@ function renderPreview(){
   const buyerFio = buyer.bFio || '________________';
   const buyerBasis = buyer.bBasis || '________________';
 
+  /* Доп. пункт в разделе 3 про разгрузку — появляется ТОЛЬКО при доставке */
+  const unloadingClause = (deal.delivery === 'delivery')
+    ? '<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>'
+    : '';
+
   const rowsHtml = ROWS.map((r, i) => {
     const s = rowSum(r);
     const v = s * 0.20;
@@ -1741,9 +1738,10 @@ function renderPreview(){
             <div class="pv-nav-meta">
               <b>Шаг 1. Офис</b>
               <div class="addr">Выписка ТТН / ТН</div>
-              <div class="sub">Колодищи, Минская 5 · 5 этаж, оф. 508</div>
+              <div class="sub">Колодищи, Минская 5<br>5 этаж, оф. 508</div>
             </div>
           </div>
+          <hr class="pv-nav-sep">
           <div class="pv-nav-item">
             <div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div>
             <div class="pv-nav-meta">
@@ -1786,6 +1784,7 @@ function renderPreview(){
         <p>3.1. Поставка осуществляется: <b>${deliveryText}</b>.</p>
         <p>3.2. Срок поставки — <b>${deal.days} ${declOfNum(deal.days, ['день','дня','дней'])}</b> с момента оплаты.</p>
         <p>3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.</p>
+        ${unloadingClause}
         <div class="h2">4. Ответственность сторон</div>
         <p>4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.</p>
         <div class="h2">5. Срок действия и прочие условия</div>

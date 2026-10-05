@@ -204,30 +204,51 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 .preview-page.rendering{box-shadow:none !important}
 
-.picker-inner{max-width:720px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:90vh}
-.picker-head{padding:20px 24px 12px;border-bottom:1px solid #ececec}
+/* ============ ПИКЕР (обновлённый) ============ */
+.picker-inner{max-width:1000px;width:96vw;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh}
+.picker-head{padding:20px 28px 14px;border-bottom:1px solid #ececec}
 .picker-head h3{margin-bottom:4px}
 .picker-head p{margin:0;font-size:12px;color:#7a8a99;line-height:1.5}
-.picker-search{padding:12px 24px;border-bottom:1px solid #ececec}
-.picker-search input{width:100%;padding:11px 14px;border:1.5px solid #ccc;border-radius:10px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
+.picker-search{padding:14px 28px;border-bottom:1px solid #ececec;display:flex;gap:10px;align-items:center}
+.picker-search input{flex:1;padding:12px 16px;border:1.5px solid #ccc;border-radius:10px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff}
 .picker-search input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
-.picker-count{padding:7px 24px;font-size:11px;color:#888;border-bottom:1px solid #ececec;background:#fafbfc}
-.picker-tree{flex:1;overflow-y:auto;padding:8px 14px;min-height:280px;max-height:55vh}
-.picker-actions{padding:14px 24px;border-top:1px solid #ececec;display:flex;justify-content:flex-end;gap:10px;background:#fafbfc}
+.picker-toolbar{display:flex;gap:8px}
+.picker-toolbar button{padding:11px 16px;font-size:12.5px;font-weight:700;border-radius:10px;border:1px solid #ddd;background:#fff;color:#555;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.picker-toolbar button:hover{border-color:#e10004;color:#e10004;background:#fff5f5}
+.picker-count{padding:9px 28px;font-size:12px;color:#888;border-bottom:1px solid #ececec;background:#fafbfc;display:flex;justify-content:space-between;align-items:center}
+.picker-count .sel-info{font-weight:700;color:#e10004}
+.picker-count .sel-info.empty{color:#bbb;font-weight:500}
+.picker-tree{flex:1;overflow-y:auto;padding:10px 18px 14px;min-height:320px;max-height:62vh}
+.picker-actions{padding:16px 28px;border-top:1px solid #ececec;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fafbfc}
+.picker-actions .btn{transform:none}
+.picker-actions .btn:hover{transform:none}
+
 .picker-node{user-select:none}
-.picker-row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1.35;transition:background .12s}
+.picker-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1.4;transition:background .12s,border-color .12s;border:1.5px solid transparent}
 .picker-row:hover{background:#f4f5f7}
-.picker-row.folder{font-weight:600;color:#1a1a1a}
-.picker-row.item{color:#333}
-.picker-row.item.selected{background:#e10004;color:#fff}
-.picker-row .arrow{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#888;font-size:10px;transition:transform .15s}
+.picker-row.folder{font-weight:700;color:#1a1a1a}
+.picker-row.item{color:#2a2a2a}
+.picker-row.item.selected{background:#fff0f0;border-color:#e10004;color:#e10004;font-weight:700}
+.picker-row.item.selected .icon{color:#e10004}
+.picker-row .arrow{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#888;font-size:11px;transition:transform .15s}
+.picker-row .arrow.invisible{visibility:hidden}
 .picker-row.expanded .arrow{transform:rotate(90deg)}
-.picker-row .icon{flex-shrink:0;font-size:14px}
+.picker-row .icon{flex-shrink:0;font-size:16px}
 .picker-row .label{flex:1;word-break:break-word}
-.picker-children{margin-left:16px;border-left:1px dashed #e0e0e0;padding-left:6px;display:none}
+.picker-row .unit-badge{
+  flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;
+  background:#eef2f7;color:#5a6b7a;text-transform:uppercase;letter-spacing:.4px;
+}
+.picker-row.item.selected .unit-badge{background:#e10004;color:#fff}
+.picker-row .art-badge{
+  flex-shrink:0;font-size:10px;color:#999;font-family:Consolas,monospace;
+  padding:2px 6px;border-radius:4px;background:#f4f5f7;
+}
+.picker-children{margin-left:20px;border-left:2px solid #f0f0f0;padding-left:6px;display:none}
 .picker-children.open{display:block}
-.picker-empty{padding:50px 20px;text-align:center;color:#999;font-size:13px;line-height:1.6}
-.picker-empty code{background:#f4f5f7;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#555;word-break:break-all}
+.picker-empty{padding:60px 20px;text-align:center;color:#999;font-size:14px;line-height:1.7}
+.picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
+.picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
 
 @media(max-width:640px){
   .hero h1{font-size:24px}
@@ -235,6 +256,9 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   .buyer-grid{grid-template-columns:1fr}
   .deal-label{min-width:auto}
   .inv-wrap{border:none}
+  .picker-inner{width:100vw;max-height:100vh;border-radius:0}
+  .picker-search{flex-direction:column;align-items:stretch}
+  .picker-tree{padding:8px 10px}
 }
 </style>
 </head>
@@ -443,16 +467,23 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   <div class="modal-inner picker-inner">
     <div class="picker-head">
       <h3>📁 Справочник номенклатуры</h3>
-      <p>Разверните папку и выберите позицию — название подставится в строку. Можно вводить вручную, пикер не обязателен.</p>
+      <p>Разверните папку и выберите позицию — подставятся название, ед. изм. и артикул. Можно вводить вручную — пикер не обязателен.</p>
     </div>
     <div class="picker-search">
       <input type="text" id="pickerSearch" placeholder="🔍 Поиск по названию или артикулу..." autocomplete="off">
+      <div class="picker-toolbar">
+        <button type="button" id="btnCollapseAll" title="Свернуть все папки">⊟ Свернуть</button>
+        <button type="button" id="btnExpandAll" title="Развернуть все папки">⊞ Развернуть</button>
+      </div>
     </div>
     <div class="picker-count" id="pickerCount"></div>
     <div class="picker-tree" id="pickerTree"></div>
     <div class="picker-actions">
-      <button type="button" class="btn ghost" id="btnPickerCancel" style="padding:11px 20px;font-size:13px">Отмена</button>
-      <button type="button" class="btn red" id="btnPickerApply" disabled style="padding:11px 22px;font-size:13px">✓ Выбрать</button>
+      <div class="picker-count sel-info empty" id="pickerSelInfo" style="padding:0;border:none;background:none"></div>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="btn ghost" id="btnPickerCancel" style="padding:11px 20px;font-size:13px">Отмена</button>
+        <button type="button" class="btn red" id="btnPickerApply" disabled style="padding:11px 22px;font-size:13px">✓ Выбрать</button>
+      </div>
     </div>
   </div>
 </div>
@@ -461,7 +492,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.3 — счёт-договор + справочник номенклатуры из 1С (XML)
+   CUBICA · i5.4 — счёт-договор + справочник номенклатуры из 1С (XML)
+   Изменения в i5.4:
+   - парсер сохраняет Единица / Артикул / ПолноеНаименование / ВесБрутто
+   - ключ кэша поднят до v2 (браузер увидит новый файл)
+   - пикер переделан: широкий, папки по умолчанию свёрнуты,
+     показ ед. изм. в строке, кнопки Свернуть/Развернуть
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -469,7 +505,8 @@ const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 /* >>> URL справочника номенклатуры (GitHub Pages) <<< */
 const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
 
-const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v1';
+/* v2 — чтобы браузер не отдавал старый кэш после замены файла на GitHub */
+const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
 
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
@@ -517,7 +554,6 @@ function parseQtyInput(str){
   return Math.round(n * 100) / 100;
 }
 
-/* --- i5-принцип ввода чисел --- */
 function handleSmartInput(inp, e){
   const key = e.key;
   if(!/^\d$/.test(key)) return false;
@@ -874,7 +910,7 @@ document.getElementById('btnAddRow').addEventListener('click', () => {
 let NOMENCLATURE = null;
 let pickerTargetIdx = -1;
 const pickerSelected = { node: null };
-const pickerExpanded = new Set();
+const pickerExpanded = new Set();   // ← по умолчанию ПУСТОЙ = всё свёрнуто
 let pickerFilter = '';
 
 async function loadNomenclature(force){
@@ -919,7 +955,9 @@ async function fetchAndCache(){
   }
 }
 
-/* Парсер выгрузки 1С 8.2: плоский список → дерево */
+/* Парсер выгрузки 1С 8.2
+   Сохраняем: Код, Наименование, ЭтоГруппа, РодительКод,
+   + Единица, Артикул, ПолноеНаименование, ВесБрутто  ← новое */
 function parseNomenclatureXML(xmlText){
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
   const err = doc.querySelector('parsererror');
@@ -937,6 +975,23 @@ function parseNomenclatureXML(xmlText){
     const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
 
     const node = { id, name, type: isFolder ? 'folder' : 'item' };
+
+    /* === новые поля из 1С === */
+    if(!isFolder){
+      const unit = (el.getAttribute('Единица') || '').trim();
+      if(unit) node.unit = unit;
+
+      const article = (el.getAttribute('Артикул') || '').trim();
+      if(article) node.article = article;
+
+      const fullName = (el.getAttribute('ПолноеНаименование') || '').trim();
+      if(fullName) node.fullName = fullName;
+
+      const weightRaw = String(el.getAttribute('ВесБрутто') || '').replace(',', '.');
+      const weight = parseFloat(weightRaw);
+      if(isFinite(weight) && weight > 0) node.weight = weight;
+    }
+
     if(isFolder) node.children = [];
     map.set(id, node);
     parentOf.set(id, el.getAttribute('РодительКод') || null);
@@ -1006,23 +1061,28 @@ function nodeMatches(node, filter){
   return false;
 }
 
+function collectAllFolderIds(tree, acc){
+  for(const node of tree){
+    if(isFolderNode(node)){
+      acc.add(node.id);
+      if(node.children) collectAllFolderIds(node.children, acc);
+    }
+  }
+  return acc;
+}
+
 async function openPicker(idx){
   pickerTargetIdx = idx;
   pickerSelected.node = null;
   pickerFilter = '';
+  /* НЕ разворачиваем ничего по умолчанию — папки свёрнуты */
+  pickerExpanded.clear();
   document.getElementById('pickerSearch').value = '';
   document.getElementById('pickerModal').classList.add('open');
   const treeEl = document.getElementById('pickerTree');
-  treeEl.innerHTML = '<div class="picker-empty">⏳ Загрузка справочника...</div>';
+  treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
 
   await loadNomenclature();
-
-  if(NOMENCLATURE && NOMENCLATURE.tree && pickerExpanded.size === 0){
-    for(const node of NOMENCLATURE.tree){
-      if(isFolderNode(node)) pickerExpanded.add(node.id);
-    }
-  }
-
   renderPickerTree();
   setTimeout(() => document.getElementById('pickerSearch').focus(), 60);
 }
@@ -1033,14 +1093,28 @@ function closePicker(){
   pickerSelected.node = null;
 }
 
+function updatePickerSelInfo(){
+  const el = document.getElementById('pickerSelInfo');
+  if(pickerSelected.node){
+    el.classList.remove('empty');
+    el.innerHTML = 'Выбрано: <span style="color:#1a1a1a">' + escapeHtml(pickerSelected.node.name) + '</span>' +
+      (pickerSelected.node.unit ? ' · ' + escapeHtml(pickerSelected.node.unit) : '');
+  } else {
+    el.classList.add('empty');
+    el.textContent = 'Позиция не выбрана';
+  }
+}
+
 function renderPickerTree(){
   const container = document.getElementById('pickerTree');
   const countEl = document.getElementById('pickerCount');
   const applyBtn = document.getElementById('btnPickerApply');
   applyBtn.disabled = !pickerSelected.node;
 
+  updatePickerSelInfo();
+
   if(!NOMENCLATURE || !NOMENCLATURE.tree || !NOMENCLATURE.tree.length){
-    container.innerHTML = '<div class="picker-empty">Справочник недоступен.<br><br>' +
+    container.innerHTML = '<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><br>' +
       'Проверьте URL: <code>' + escapeHtml(NOMENCLATURE_URL) + '</code><br><br>' +
       'Или используйте ручной ввод — он работает всегда.</div>';
     countEl.textContent = '';
@@ -1050,7 +1124,8 @@ function renderPickerTree(){
   function renderNode(node){
     if(pickerFilter && !nodeMatches(node, pickerFilter)) return '';
     const isFolder = isFolderNode(node);
-    const isExpanded = pickerExpanded.has(node.id) || (pickerFilter && isFolder);
+    /* При активном фильтре — раскрываем автоматически, чтобы было видно совпадения */
+    const isExpanded = pickerFilter ? true : pickerExpanded.has(node.id);
     const isSelected = pickerSelected.node && pickerSelected.node.id === node.id;
 
     let html = '<div class="picker-node">';
@@ -1060,10 +1135,15 @@ function renderPickerTree(){
     if(isFolder){
       html += '<span class="arrow">▶</span><span class="icon">📁</span>';
     } else {
-      html += '<span class="arrow" style="visibility:hidden">▶</span><span class="icon">📄</span>';
+      html += '<span class="arrow invisible">▶</span><span class="icon">📄</span>';
     }
     html += '<span class="label">' + escapeHtml(node.name) + '</span>';
-    if(node.article) html += '<span class="picker-article">' + escapeHtml(node.article) + '</span>';
+    if(!isFolder && node.unit){
+      html += '<span class="unit-badge">' + escapeHtml(node.unit) + '</span>';
+    }
+    if(!isFolder && node.article){
+      html += '<span class="art-badge">' + escapeHtml(node.article) + '</span>';
+    }
     html += '</div>';
     if(node.children && node.children.length){
       html += '<div class="picker-children' + (isExpanded?' open':'') + '">';
@@ -1081,7 +1161,7 @@ function renderPickerTree(){
     html += renderNode(node);
   }
 
-  container.innerHTML = html || '<div class="picker-empty">Ничего не найдено по запросу «' + escapeHtml(pickerFilter) + '»</div>';
+  container.innerHTML = html || '<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено по запросу «' + escapeHtml(pickerFilter) + '»</div>';
   countEl.textContent = pickerFilter
     ? 'Найдено по фильтру'
     : ('Всего позиций: ' + countAllItems(NOMENCLATURE.tree));
@@ -1115,18 +1195,16 @@ function applyPicker(){
   const idx = pickerTargetIdx;
   if(idx < 0 || idx >= ROWS.length) { closePicker(); return; }
 
-  ROWS[idx].label = pickerSelected.node.name;
-  if(pickerSelected.node.unit) ROWS[idx].unit = pickerSelected.node.unit;
-  if(pickerSelected.node.price != null) ROWS[idx].price = Number(pickerSelected.node.price) || 0;
+  const node = pickerSelected.node;
+  ROWS[idx].label = node.name;
+  if(node.unit) ROWS[idx].unit = node.unit;
 
   const tr = document.querySelector('tr[data-idx="' + idx + '"]');
   if(tr){
     const nameInp = tr.querySelector('input[data-field="label"]');
     const unitInp = tr.querySelector('input[data-field="unit"]');
-    const priceInp = tr.querySelector('input[data-field="price"]');
     if(nameInp) nameInp.value = ROWS[idx].label;
-    if(unitInp && pickerSelected.node.unit) unitInp.value = ROWS[idx].unit;
-    if(priceInp && pickerSelected.node.price != null) priceInp.value = fmtPriceInput(ROWS[idx].price);
+    if(unitInp && node.unit) unitInp.value = ROWS[idx].unit;
   }
   updateRowTotals(idx);
   updateTotalsView();
@@ -1158,6 +1236,17 @@ document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && document.getElementById('pickerModal').classList.contains('open')){
     closePicker();
   }
+});
+
+/* Кнопки Свернуть всё / Развернуть всё */
+document.getElementById('btnCollapseAll').addEventListener('click', () => {
+  pickerExpanded.clear();
+  renderPickerTree();
+});
+document.getElementById('btnExpandAll').addEventListener('click', () => {
+  if(!NOMENCLATURE || !NOMENCLATURE.tree) return;
+  collectAllFolderIds(NOMENCLATURE.tree, pickerExpanded);
+  renderPickerTree();
 });
 
 /* ---------- ДАННЫЕ СДЕЛКИ И ПОКУПАТЕЛЯ ---------- */
@@ -1600,6 +1689,7 @@ if(ROWS.length){
   renderPreview();
   toggleDeliveryBlock();
 
+  /* прогреваем справочник в фоне */
   loadNomenclature().catch(()=>{});
 
   document.getElementById('bUnp').addEventListener('input', e => {

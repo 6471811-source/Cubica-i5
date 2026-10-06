@@ -517,28 +517,24 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.8 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.8:
-   - уменьшен шрифт и отступы в блоке текста договора (.pv-contract)
-     было: 8.4px / line-height 1.5 / margin-top 12px
-     стало: 7.2px / line-height 1.4 / margin-top 8px
-   - теперь влезает до 15-16 позиций без обрезки договора
+   CUBICA · i5.9 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.9:
+   - PDF теперь целиком помещается на A4 (временный transform:scale
+     превью на момент рендера, потом возврат как было)
+   - Поля PDF 10 мм со всех сторон, картинка центрируется
+   - Всё остальное (вёрстка, шрифты, QR) — без изменений
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 
-/* >>> Справочник номенклатуры <<< */
 const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
 const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
 
-/* >>> Справочник контрагентов <<< */
 const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
 const CONTRACTORS_CACHE_KEY = 'cubica_contractors_v1';
 
-/* >>> Ссылка на реквизиты в Word (для QR) <<< */
 const REQUISITES_URL = 'https://6471811-source.github.io/cubica-requisites/requisites.docx';
 
-/* >>> Координаты для навигации (Яндекс.Навигатор) <<< */
 const OFFICE_COORDS    = { lat: 53.955161, lon: 27.778077 };
 const WAREHOUSE_COORDS = { lat: 53.945140, lon: 27.741913 };
 
@@ -1800,7 +1796,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF ---------- */
+/* ---------- PDF (i5.9 — целиком влезает на A4) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1809,26 +1805,56 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  target.classList.add('rendering');
+  const realW = target.offsetWidth;
+  const realH = target.offsetHeight;
+
+  const PW = 210, PH = 297;
+  const MARGIN = 10;
+  const availW = PW - MARGIN * 2;
+  const availH = PH - MARGIN * 2;
+
+  const a4Ratio = availW / availH;
+  const pvRatio = realW / realH;
+
+  const scale = pvRatio > a4Ratio ? 1 : pvRatio / a4Ratio;
+
+  const prevTransform = target.style.transform;
+  const prevTransformOrigin = target.style.transformOrigin;
+  const prevWidth = target.style.width;
+  const prevHeight = target.style.height;
+
+  const wrap = target.parentElement;
+  const prevWrapOverflow = wrap ? wrap.style.overflow : '';
+  const prevWrapPadding = wrap ? wrap.style.padding : '';
+
+  if(wrap){ wrap.style.overflow = 'hidden'; wrap.style.padding = '0'; }
+  target.style.transformOrigin = 'top left';
+  target.style.transform = 'scale(' + scale + ')';
+
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const scaledW = Math.round(realW * scale);
+  const scaledH = Math.round(realH * scale);
+  target.style.width = scaledW + 'px';
+  target.style.height = scaledH + 'px';
+
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   const canvas = await window.html2canvas(target, {
     scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false,
-    width: target.offsetWidth, height: target.offsetHeight,
-    windowWidth: target.offsetWidth, windowHeight: target.offsetHeight
+    width: scaledW, height: scaledH,
+    windowWidth: scaledW, windowHeight: scaledH
   });
 
-  target.classList.remove('rendering');
+  target.style.transform = prevTransform;
+  target.style.transformOrigin = prevTransformOrigin;
+  target.style.width = prevWidth;
+  target.style.height = prevHeight;
+  if(wrap){ wrap.style.overflow = prevWrapOverflow; wrap.style.padding = prevWrapPadding; }
 
   const imgData = canvas.toDataURL('image/png');
-  const PW = 210, PH = 297;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-
-  /* Поля 10 мм со всех сторон + пропорциональное вписывание */
-  const MARGIN = 10;
-  const availW = PW - MARGIN * 2;
-  const availH = PH - MARGIN * 2;
 
   let imgW = availW;
   let imgH = imgW * (canvas.height / canvas.width);

@@ -165,14 +165,14 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-totals .row .val{font-weight:700;font-variant-numeric:tabular-nums}
 .pv-totals .grand{margin-top:3px;background:#e10004;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:800;display:flex;justify-content:space-between}
 .pv-note{font-size:8.5px;color:#1a1a1a;margin-top:4px;font-style:italic}
-.pv-contract{margin-top:8px;padding:10px 12px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:7.2px;color:#2a2a2a;line-height:1.4}
-.pv-contract .h{font-size:8.2px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px}
-.pv-contract .h2{font-size:7.5px;font-weight:800;color:#1a1a1a;margin-top:5px;margin-bottom:2px}
-.pv-contract p{margin:0 0 3px 0}
+.pv-contract{margin-top:6px;padding:8px 10px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:6.4px;color:#2a2a2a;line-height:1.35}
+.pv-contract .h{font-size:7.4px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px}
+.pv-contract .h2{font-size:6.8px;font-weight:800;color:#1a1a1a;margin-top:4px;margin-bottom:1px}
+.pv-contract p{margin:0 0 2px 0}
 .pv-contract b{color:#1a1a1a}
-.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:8px;padding-top:7px;border-top:1px dotted #ccc;font-size:7.2px;color:#555}
+.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:6px;padding-top:6px;border-top:1px dotted #ccc;font-size:6.4px;color:#555}
 .pv-contract .sign .col{flex:1}
-.pv-contract .sign .ln{margin-top:9px;border-bottom:1px solid #999;height:1px}
+.pv-contract .sign .ln{margin-top:8px;border-bottom:1px solid #999;height:1px}
 .pv-footer{position:absolute;left:0;right:0;bottom:0;height:16px;font-size:8px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:600;background:#fff;color:#1a1a1a;border-top:1.5px solid #e10004;z-index:3}
 .pv-footer span:first-child{color:#e10004;font-weight:800}
 .pv-footer span:last-child{color:#e10004}
@@ -517,11 +517,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.14 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.14:
-   - PDF: поля 8 мм, размеры QR/шапки/таблиц — как в i5.9, жёстко.
-   - Договор не растягивается. Размер шрифта договора АВТОМАТИЧЕСКИ
-     уменьшается, если картинка не влезает с 30 мм под печать.
+   CUBICA · i5.15 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.15:
+   - Шрифт договора уменьшен: 7.2px → 6.4px (влезает 15 позиций)
+   - Отступы договора сжаты пропорционально
+   - PDF: рендер превью как есть + вписывание в A4 по ширине 194 мм
+   - Всё остальное (шапка, QR, таблицы, футер) — как в i5.9
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1795,119 +1796,38 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.14 — авто-подбор шрифта договора) ---------- */
+/* ---------- PDF (i5.15 — рендер как есть + вписывание в A4) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
   if(!window.html2canvas){ alert('html2canvas не загружен'); return; }
 
   const target = document.getElementById('pvPage');
-  const mainEl = target.querySelector('.pv-main');
-  const panelEl = target.querySelector('.pv-panel');
-  const contractEl = target.querySelector('.pv-contract');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  /* Сохраняем текущие стили */
-  const prev = {
-    tHeight: target.style.height,
-    tMinHeight: target.style.minHeight,
-    tOverflow: target.style.overflow,
-    mOverflow: mainEl ? mainEl.style.overflow : '',
-    mFlex: mainEl ? mainEl.style.flex : '',
-    pOverflow: panelEl ? panelEl.style.overflow : '',
-    cFontSize: contractEl ? contractEl.style.fontSize : ''
-  };
+  /* Рендерим превью КАК ЕСТЬ (1074px, все стили) */
+  const canvas = await window.html2canvas(target, {
+    scale: 2,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+    width: target.offsetWidth,
+    height: target.offsetHeight,
+    windowWidth: target.offsetWidth,
+    windowHeight: target.offsetHeight
+  });
 
-  /* Снимаем фиксированную высоту и overflow — контент ужимается */
-  target.style.height = 'auto';
-  target.style.minHeight = '0';
-  target.style.overflow = 'visible';
-  if(mainEl){ mainEl.style.overflow = 'visible'; mainEl.style.flex = 'initial'; }
-  if(panelEl) panelEl.style.overflow = 'visible';
-
-  /* Константы A4 */
-  const PW = 210, PH = 297;
-  const MARGIN = 8;
-  const availW = PW - MARGIN * 2;    /* 194 мм */
-  const availH = PH - MARGIN * 2;    /* 281 мм */
-  const PRINT_BUFFER_MM = 30;         /* место под печать снизу */
-  const MAX_IMG_H = availH - PRINT_BUFFER_MM;  /* 251 мм — максимум для контента */
-
-  /* Итеративно подбираем размер шрифта договора */
-  const baseFontSize = 7.2;
-  const minFontSize = 5.0;
-  const step = 0.2;
-  let fontSize = baseFontSize;
-  let canvas = null;
-  let realW = 0, realH = 0;
-
-  for(let iter = 0; iter < 20; iter++){
-    if(contractEl) contractEl.style.fontSize = fontSize + 'px';
-
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    realW = target.scrollWidth;
-    realH = target.scrollHeight;
-
-    const mmPerPx = availW / realW;
-    const imgHeightMm = realH * mmPerPx;
-
-    if(imgHeightMm <= MAX_IMG_H){
-      canvas = await window.html2canvas(target, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
-        width: realW,
-        height: realH,
-        windowWidth: realW,
-        windowHeight: realH
-      });
-      break;
-    }
-
-    if(fontSize <= minFontSize) break;
-    fontSize = Math.max(minFontSize, fontSize - step);
-  }
-
-  /* Если не влезло даже с минимальным шрифтом — рендерим как есть */
-  if(!canvas){
-    if(contractEl) contractEl.style.fontSize = minFontSize + 'px';
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    realW = target.scrollWidth;
-    realH = target.scrollHeight;
-    canvas = await window.html2canvas(target, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      width: realW,
-      height: realH,
-      windowWidth: realW,
-      windowHeight: realH
-    });
-  }
-
-  /* Возвращаем стили */
-  target.style.height = prev.tHeight;
-  target.style.minHeight = prev.tMinHeight;
-  target.style.overflow = prev.tOverflow;
-  if(mainEl){ mainEl.style.overflow = prev.mOverflow; mainEl.style.flex = prev.mFlex; }
-  if(panelEl) panelEl.style.overflow = prev.pOverflow;
-  if(contractEl) contractEl.style.fontSize = prev.cFontSize;
-
-  /* Вписываем картинку в A4 — ВСЕГДА по ширине 194 мм, поля 8 мм */
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  const imgW = availW;
-  const imgH = imgW * (canvas.height / canvas.width);
+  /* Поля 8 мм по бокам, вписываем по ширине A4 */
+  const PW = 210;
+  const MARGIN = 8;
+  const imgW = PW - MARGIN * 2;                       /* 194 мм */
+  const imgH = imgW * (canvas.height / canvas.width); /* пропорционально */
 
-  const offsetX = MARGIN;
-  const offsetY = MARGIN;
-
-  doc.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+  doc.addImage(imgData, 'PNG', MARGIN, MARGIN, imgW, imgH, undefined, 'FAST');
 
   const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');

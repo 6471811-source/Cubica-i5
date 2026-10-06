@@ -145,11 +145,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#e10004}
 .pv-panel-thanks .t2{font-size:8px;color:#888;margin-top:1px}
 .pv-main{flex:1;padding:16px 16px 14px;display:flex;flex-direction:column;color:#1a1a1a;position:relative;z-index:1;background:#fff;overflow:hidden}
-.pv-title{font-size:24px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:3px}
-.pv-meta{font-size:10px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:6px}
-.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:5px 0 8px}
-.pv-cust-label{font-size:9.5px;font-weight:800;color:#000;margin-bottom:3px;letter-spacing:.4px}
-.pv-cust-line{font-size:9px;color:#5a5a5a;line-height:1.55}
+.pv-title{font-size:20px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:2px}
+.pv-meta{font-size:9px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:5px}
+.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:4px 0 6px}
+.pv-cust-label{font-size:8.5px;font-weight:800;color:#000;margin-bottom:2px;letter-spacing:.4px}
+.pv-cust-line{font-size:8px;color:#5a5a5a;line-height:1.5}
 .pv-cust-line b{color:#1a1a1a;font-weight:700}
 .pv-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px;background:#fff}
 .pv-table th{background:#e10004;color:#fff;font-weight:700;font-size:8.5px;text-align:left;padding:4px 5px;border:none}
@@ -517,12 +517,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.16 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.16:
-   - Шрифт договора: 5.2px, line-height 1.25
-   - Жёсткий отступ снизу под договором: 100px (≈30 мм под печать)
-   - PDF: рендер как есть + вписывание в A4 по ширине 194 мм
-   - Всё остальное (шапка, QR, таблицы, футер) — как в i5.9
+   CUBICA · i5.17 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.17:
+   - Уменьшена шапка: «Счёт-договор» 20px, номер/дата 9px
+   - Блок покупателя: 8px / 8.5px (как реквизиты ВК ТЕРМ слева)
+   - Договор: 5.2px + отступ 100px снизу под печать
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1796,7 +1795,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.16 — рендер как есть + вписывание в A4) ---------- */
+/* ---------- PDF ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1805,7 +1804,6 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  /* Рендерим превью КАК ЕСТЬ — со всеми стилями */
   const canvas = await window.html2canvas(target, {
     scale: 2,
     backgroundColor: '#ffffff',
@@ -1821,11 +1819,10 @@ async function downloadPdf(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  /* Поля 8 мм по бокам, вписываем по ширине A4 */
   const PW = 210;
   const MARGIN = 8;
-  const imgW = PW - MARGIN * 2;                       /* 194 мм */
-  const imgH = imgW * (canvas.height / canvas.width); /* пропорционально */
+  const imgW = PW - MARGIN * 2;
+  const imgH = imgW * (canvas.height / canvas.width);
 
   doc.addImage(imgData, 'PNG', MARGIN, MARGIN, imgW, imgH, undefined, 'FAST');
 

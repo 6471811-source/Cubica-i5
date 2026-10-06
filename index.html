@@ -517,12 +517,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.12 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.12:
-   - PDF: превью ужимается под реальную высоту контента (договор идёт
-     сразу за итогами), футер прилипает к низу контента, снизу остаётся
-     свободное место под печать. Поля 8 мм и центрирование — как в i5.9.
-   - В браузере превью и вёрстка без изменений.
+   CUBICA · i5.13 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.13:
+   - PDF: всё как в i5.9 (поля 8 мм, пропорции, размеры шапки/таблиц/QR).
+   - Договор больше не растягивается: его контейнер обрезается по высоте.
+   - Под договором в PDF всегда 30 мм свободного места под печать.
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1796,7 +1795,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.12 — договор идёт за итогами, снизу место под печать) ---------- */
+/* ---------- PDF (i5.13 — договор не растягивается, снизу 30 мм) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1805,28 +1804,50 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   const mainEl = target.querySelector('.pv-main');
   const panelEl = target.querySelector('.pv-panel');
+  const contractEl = target.querySelector('.pv-contract');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  /* Сохраняем текущие инлайновые стили */
+  /* Сохраняем текущие стили */
   const prev = {
     tHeight: target.style.height,
     tMinHeight: target.style.minHeight,
     tOverflow: target.style.overflow,
     mOverflow: mainEl ? mainEl.style.overflow : '',
-    pOverflow: panelEl ? panelEl.style.overflow : ''
+    mFlex: mainEl ? mainEl.style.flex : '',
+    pOverflow: panelEl ? panelEl.style.overflow : '',
+    cMarginBottom: contractEl ? contractEl.style.marginBottom : ''
   };
 
-  /* Снимаем фикс. высоту и overflow — превью ужимается под реальный контент */
+  /* Снимаем фиксированную высоту и overflow — контент ужимается */
   target.style.height = 'auto';
   target.style.minHeight = '0';
   target.style.overflow = 'visible';
-  if(mainEl) mainEl.style.overflow = 'visible';
+  if(mainEl){ mainEl.style.overflow = 'visible'; mainEl.style.flex = 'initial'; }
   if(panelEl) panelEl.style.overflow = 'visible';
 
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-  const realW = target.scrollWidth;
-  const realH = target.scrollHeight;
+  let realW = target.scrollWidth;
+  let realH = target.scrollHeight;
+
+  /* Считаем, сколько мм приходится на 1 пиксель после вписывания по ширине A4 */
+  const PW = 210, PH = 297;
+  const MARGIN = 8;
+  const availW = PW - MARGIN * 2;  /* 194 мм */
+  const availH = PH - MARGIN * 2;  /* 281 мм */
+
+  const mmPerPx = availW / realW;
+  const bottomBufferPx = Math.round(30 / mmPerPx);  /* 30 мм под печать */
+
+  /* Добавляем отступ снизу под договором — это создаст пустое место в PDF */
+  if(contractEl){
+    contractEl.style.marginBottom = bottomBufferPx + 'px';
+  }
+
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  realW = target.scrollWidth;
+  realH = target.scrollHeight;
 
   const canvas = await window.html2canvas(target, {
     scale: 2,
@@ -1839,32 +1860,32 @@ async function downloadPdf(){
     windowHeight: realH
   });
 
-  /* Возвращаем стили — в браузере превью снова 1074px */
+  /* Возвращаем стили */
   target.style.height = prev.tHeight;
   target.style.minHeight = prev.tMinHeight;
   target.style.overflow = prev.tOverflow;
-  if(mainEl) mainEl.style.overflow = prev.mOverflow;
+  if(mainEl){ mainEl.style.overflow = prev.mOverflow; mainEl.style.flex = prev.mFlex; }
   if(panelEl) panelEl.style.overflow = prev.pOverflow;
+  if(contractEl) contractEl.style.marginBottom = prev.cMarginBottom;
 
-  /* Вписываем в A4 — поля 8 мм как в i5.9, центрирование,
-     картинка прижата к верху (свободное место снизу под печать) */
+  /* Вписываем картинку в A4 — поля 8 мм, прижимаем к верху */
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  const PW = 210, PH = 297;
-  const MARGIN = 8;
-  const availW = PW - MARGIN * 2;
-  const availH = PH - MARGIN * 2;
+  let finalW = availW;
+  let finalH = finalW * (canvas.height / canvas.width);
 
-  const ratio = Math.min(availW / canvas.width, availH / canvas.height);
-  const imgW = canvas.width * ratio;
-  const imgH = canvas.height * ratio;
+  /* Если высота превысила 281 мм — сжимаем по высоте */
+  if(finalH > availH){
+    finalH = availH;
+    finalW = finalH * (canvas.width / canvas.height);
+  }
 
-  const offsetX = MARGIN + (availW - imgW) / 2;
+  const offsetX = MARGIN + (availW - finalW) / 2;
   const offsetY = MARGIN;
 
-  doc.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+  doc.addImage(imgData, 'PNG', offsetX, offsetY, finalW, finalH, undefined, 'FAST');
 
   const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');

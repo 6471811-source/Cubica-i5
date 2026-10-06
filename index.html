@@ -517,12 +517,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.11 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.11:
-   - PDF: поля 10 мм по бокам, 8 мм сверху, 25 мм снизу (под печать)
-   - рендер превью со снятой высотой и overflow — весь текст влезает
-   - картинка прижата к верху A4 (не центрируется по вертикали)
-   - в браузере превью и вёрстка без изменений
+   CUBICA · i5.12 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.12:
+   - PDF: превью ужимается под реальную высоту контента (договор идёт
+     сразу за итогами), футер прилипает к низу контента, снизу остаётся
+     свободное место под печать. Поля 8 мм и центрирование — как в i5.9.
+   - В браузере превью и вёрстка без изменений.
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1796,7 +1796,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.11 — поля 10 мм по бокам, 25 мм снизу под печать) ---------- */
+/* ---------- PDF (i5.12 — договор идёт за итогами, снизу место под печать) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1816,7 +1816,7 @@ async function downloadPdf(){
     pOverflow: panelEl ? panelEl.style.overflow : ''
   };
 
-  /* Временно снимаем высоту и overflow, чтобы снять весь контент */
+  /* Снимаем фикс. высоту и overflow — превью ужимается под реальный контент */
   target.style.height = 'auto';
   target.style.minHeight = '0';
   target.style.overflow = 'visible';
@@ -1825,46 +1825,44 @@ async function downloadPdf(){
 
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+  const realW = target.scrollWidth;
+  const realH = target.scrollHeight;
+
   const canvas = await window.html2canvas(target, {
     scale: 2,
     backgroundColor: '#ffffff',
     useCORS: true,
     logging: false,
-    width: target.scrollWidth,
-    height: target.scrollHeight,
-    windowWidth: target.scrollWidth,
-    windowHeight: target.scrollHeight
+    width: realW,
+    height: realH,
+    windowWidth: realW,
+    windowHeight: realH
   });
 
-  /* Возвращаем стили */
+  /* Возвращаем стили — в браузере превью снова 1074px */
   target.style.height = prev.tHeight;
   target.style.minHeight = prev.tMinHeight;
   target.style.overflow = prev.tOverflow;
   if(mainEl) mainEl.style.overflow = prev.mOverflow;
   if(panelEl) panelEl.style.overflow = prev.pOverflow;
 
-  /* Вписываем в A4: поля 10 по бокам, 8 сверху, 25 снизу под печать */
+  /* Вписываем в A4 — поля 8 мм как в i5.9, центрирование,
+     картинка прижата к верху (свободное место снизу под печать) */
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
   const PW = 210, PH = 297;
-  const MARGIN_X = 10;
-  const MARGIN_TOP = 8;
-  const MARGIN_BOTTOM = 25;
+  const MARGIN = 8;
+  const availW = PW - MARGIN * 2;
+  const availH = PH - MARGIN * 2;
 
-  const availW = PW - MARGIN_X * 2;
-  const availH = PH - MARGIN_TOP - MARGIN_BOTTOM;
-
-  const ratioW = availW / canvas.width;
-  const ratioH = availH / canvas.height;
-  const ratio = Math.min(ratioW, ratioH);
-
+  const ratio = Math.min(availW / canvas.width, availH / canvas.height);
   const imgW = canvas.width * ratio;
   const imgH = canvas.height * ratio;
 
-  const offsetX = MARGIN_X + (availW - imgW) / 2;
-  const offsetY = MARGIN_TOP;
+  const offsetX = MARGIN + (availW - imgW) / 2;
+  const offsetY = MARGIN;
 
   doc.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
 

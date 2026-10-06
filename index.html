@@ -517,11 +517,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.13 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.13:
-   - PDF: всё как в i5.9 (поля 8 мм, пропорции, размеры шапки/таблиц/QR).
-   - Договор больше не растягивается: его контейнер обрезается по высоте.
-   - Под договором в PDF всегда 30 мм свободного места под печать.
+   CUBICA · i5.14 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.14:
+   - PDF: поля 8 мм, размеры QR/шапки/таблиц — как в i5.9, жёстко.
+   - Договор не растягивается. Размер шрифта договора АВТОМАТИЧЕСКИ
+     уменьшается, если картинка не влезает с 30 мм под печать.
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1795,7 +1795,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.13 — договор не растягивается, снизу 30 мм) ---------- */
+/* ---------- PDF (i5.14 — авто-подбор шрифта договора) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1815,7 +1815,7 @@ async function downloadPdf(){
     mOverflow: mainEl ? mainEl.style.overflow : '',
     mFlex: mainEl ? mainEl.style.flex : '',
     pOverflow: panelEl ? panelEl.style.overflow : '',
-    cMarginBottom: contractEl ? contractEl.style.marginBottom : ''
+    cFontSize: contractEl ? contractEl.style.fontSize : ''
   };
 
   /* Снимаем фиксированную высоту и overflow — контент ужимается */
@@ -1825,40 +1825,68 @@ async function downloadPdf(){
   if(mainEl){ mainEl.style.overflow = 'visible'; mainEl.style.flex = 'initial'; }
   if(panelEl) panelEl.style.overflow = 'visible';
 
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-  let realW = target.scrollWidth;
-  let realH = target.scrollHeight;
-
-  /* Считаем, сколько мм приходится на 1 пиксель после вписывания по ширине A4 */
+  /* Константы A4 */
   const PW = 210, PH = 297;
   const MARGIN = 8;
-  const availW = PW - MARGIN * 2;  /* 194 мм */
-  const availH = PH - MARGIN * 2;  /* 281 мм */
+  const availW = PW - MARGIN * 2;    /* 194 мм */
+  const availH = PH - MARGIN * 2;    /* 281 мм */
+  const PRINT_BUFFER_MM = 30;         /* место под печать снизу */
+  const MAX_IMG_H = availH - PRINT_BUFFER_MM;  /* 251 мм — максимум для контента */
 
-  const mmPerPx = availW / realW;
-  const bottomBufferPx = Math.round(30 / mmPerPx);  /* 30 мм под печать */
+  /* Итеративно подбираем размер шрифта договора */
+  const baseFontSize = 7.2;
+  const minFontSize = 5.0;
+  const step = 0.2;
+  let fontSize = baseFontSize;
+  let canvas = null;
+  let realW = 0, realH = 0;
 
-  /* Добавляем отступ снизу под договором — это создаст пустое место в PDF */
-  if(contractEl){
-    contractEl.style.marginBottom = bottomBufferPx + 'px';
+  for(let iter = 0; iter < 20; iter++){
+    if(contractEl) contractEl.style.fontSize = fontSize + 'px';
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    realW = target.scrollWidth;
+    realH = target.scrollHeight;
+
+    const mmPerPx = availW / realW;
+    const imgHeightMm = realH * mmPerPx;
+
+    if(imgHeightMm <= MAX_IMG_H){
+      canvas = await window.html2canvas(target, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        width: realW,
+        height: realH,
+        windowWidth: realW,
+        windowHeight: realH
+      });
+      break;
+    }
+
+    if(fontSize <= minFontSize) break;
+    fontSize = Math.max(minFontSize, fontSize - step);
   }
 
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-  realW = target.scrollWidth;
-  realH = target.scrollHeight;
-
-  const canvas = await window.html2canvas(target, {
-    scale: 2,
-    backgroundColor: '#ffffff',
-    useCORS: true,
-    logging: false,
-    width: realW,
-    height: realH,
-    windowWidth: realW,
-    windowHeight: realH
-  });
+  /* Если не влезло даже с минимальным шрифтом — рендерим как есть */
+  if(!canvas){
+    if(contractEl) contractEl.style.fontSize = minFontSize + 'px';
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    realW = target.scrollWidth;
+    realH = target.scrollHeight;
+    canvas = await window.html2canvas(target, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      width: realW,
+      height: realH,
+      windowWidth: realW,
+      windowHeight: realH
+    });
+  }
 
   /* Возвращаем стили */
   target.style.height = prev.tHeight;
@@ -1866,26 +1894,20 @@ async function downloadPdf(){
   target.style.overflow = prev.tOverflow;
   if(mainEl){ mainEl.style.overflow = prev.mOverflow; mainEl.style.flex = prev.mFlex; }
   if(panelEl) panelEl.style.overflow = prev.pOverflow;
-  if(contractEl) contractEl.style.marginBottom = prev.cMarginBottom;
+  if(contractEl) contractEl.style.fontSize = prev.cFontSize;
 
-  /* Вписываем картинку в A4 — поля 8 мм, прижимаем к верху */
+  /* Вписываем картинку в A4 — ВСЕГДА по ширине 194 мм, поля 8 мм */
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  let finalW = availW;
-  let finalH = finalW * (canvas.height / canvas.width);
+  const imgW = availW;
+  const imgH = imgW * (canvas.height / canvas.width);
 
-  /* Если высота превысила 281 мм — сжимаем по высоте */
-  if(finalH > availH){
-    finalH = availH;
-    finalW = finalH * (canvas.width / canvas.height);
-  }
-
-  const offsetX = MARGIN + (availW - finalW) / 2;
+  const offsetX = MARGIN;
   const offsetY = MARGIN;
 
-  doc.addImage(imgData, 'PNG', offsetX, offsetY, finalW, finalH, undefined, 'FAST');
+  doc.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
 
   const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');

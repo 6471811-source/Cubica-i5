@@ -517,12 +517,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.9 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.9:
-   - PDF теперь целиком помещается на A4 (временный transform:scale
-     превью на момент рендера, потом возврат как было)
-   - Поля PDF 10 мм со всех сторон, картинка центрируется
-   - Всё остальное (вёрстка, шрифты, QR) — без изменений
+   CUBICA · i5.10 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.10:
+   - PDF теперь рендерится со ВСЕЙ страницей превью (временно снимаются
+     height и overflow, чтобы html2canvas снял весь договор до конца,
+     после рендера стили возвращаются — превью в браузере не меняется)
+   - картинка вписывается в A4 целиком с полями 8 мм
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -1796,72 +1796,69 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.9 — целиком влезает на A4) ---------- */
+/* ---------- PDF (i5.10 — весь договор целиком) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
   if(!window.html2canvas){ alert('html2canvas не загружен'); return; }
 
   const target = document.getElementById('pvPage');
+  const mainEl = target.querySelector('.pv-main');
+  const panelEl = target.querySelector('.pv-panel');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  const realW = target.offsetWidth;
-  const realH = target.offsetHeight;
+  /* Сохраняем текущие инлайновые стили */
+  const prev = {
+    tHeight: target.style.height,
+    tMinHeight: target.style.minHeight,
+    tOverflow: target.style.overflow,
+    mOverflow: mainEl ? mainEl.style.overflow : '',
+    pOverflow: panelEl ? panelEl.style.overflow : ''
+  };
 
-  const PW = 210, PH = 297;
-  const MARGIN = 10;
-  const availW = PW - MARGIN * 2;
-  const availH = PH - MARGIN * 2;
-
-  const a4Ratio = availW / availH;
-  const pvRatio = realW / realH;
-
-  const scale = pvRatio > a4Ratio ? 1 : pvRatio / a4Ratio;
-
-  const prevTransform = target.style.transform;
-  const prevTransformOrigin = target.style.transformOrigin;
-  const prevWidth = target.style.width;
-  const prevHeight = target.style.height;
-
-  const wrap = target.parentElement;
-  const prevWrapOverflow = wrap ? wrap.style.overflow : '';
-  const prevWrapPadding = wrap ? wrap.style.padding : '';
-
-  if(wrap){ wrap.style.overflow = 'hidden'; wrap.style.padding = '0'; }
-  target.style.transformOrigin = 'top left';
-  target.style.transform = 'scale(' + scale + ')';
+  /* Временно: снимаем фиксированную высоту и overflow,
+     чтобы контент «вырос» и html2canvas снял всё целиком */
+  target.style.height = 'auto';
+  target.style.minHeight = '0';
+  target.style.overflow = 'visible';
+  if(mainEl) mainEl.style.overflow = 'visible';
+  if(panelEl) panelEl.style.overflow = 'visible';
 
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-  const scaledW = Math.round(realW * scale);
-  const scaledH = Math.round(realH * scale);
-  target.style.width = scaledW + 'px';
-  target.style.height = scaledH + 'px';
-
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
+  /* Рендерим по реальным размерам — теперь ничего не обрезается */
   const canvas = await window.html2canvas(target, {
-    scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false,
-    width: scaledW, height: scaledH,
-    windowWidth: scaledW, windowHeight: scaledH
+    scale: 2,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+    width: target.scrollWidth,
+    height: target.scrollHeight,
+    windowWidth: target.scrollWidth,
+    windowHeight: target.scrollHeight
   });
 
-  target.style.transform = prevTransform;
-  target.style.transformOrigin = prevTransformOrigin;
-  target.style.width = prevWidth;
-  target.style.height = prevHeight;
-  if(wrap){ wrap.style.overflow = prevWrapOverflow; wrap.style.padding = prevWrapPadding; }
+  /* Возвращаем стили обратно — превью в браузере как было */
+  target.style.height = prev.tHeight;
+  target.style.minHeight = prev.tMinHeight;
+  target.style.overflow = prev.tOverflow;
+  if(mainEl) mainEl.style.overflow = prev.mOverflow;
+  if(panelEl) panelEl.style.overflow = prev.pOverflow;
 
+  /* Вписываем в A4 с полями 8 мм, целиком */
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-  let imgW = availW;
-  let imgH = imgW * (canvas.height / canvas.width);
-  if(imgH > availH){
-    imgH = availH;
-    imgW = imgH * (canvas.width / canvas.height);
-  }
+  const PW = 210, PH = 297;
+  const MARGIN = 8;
+  const availW = PW - MARGIN * 2;
+  const availH = PH - MARGIN * 2;
+
+  const ratio = Math.min(availW / canvas.width, availH / canvas.height);
+  const imgW = canvas.width * ratio;
+  const imgH = canvas.height * ratio;
+
   const offsetX = MARGIN + (availW - imgW) / 2;
   const offsetY = MARGIN + (availH - imgH) / 2;
 

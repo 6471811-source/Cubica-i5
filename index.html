@@ -165,14 +165,14 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-totals .row .val{font-weight:700;font-variant-numeric:tabular-nums}
 .pv-totals .grand{margin-top:3px;background:#e10004;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:800;display:flex;justify-content:space-between}
 .pv-note{font-size:8.5px;color:#1a1a1a;margin-top:4px;font-style:italic}
-.pv-contract{margin-top:12px;padding:12px 14px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:8.4px;color:#2a2a2a;line-height:1.5}
-.pv-contract .h{font-size:9.4px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px}
-.pv-contract .h2{font-size:8.7px;font-weight:800;color:#1a1a1a;margin-top:7px;margin-bottom:3px}
-.pv-contract p{margin:0 0 4px 0}
+.pv-contract{margin-top:8px;padding:10px 12px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:7.2px;color:#2a2a2a;line-height:1.4}
+.pv-contract .h{font-size:8.2px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px}
+.pv-contract .h2{font-size:7.5px;font-weight:800;color:#1a1a1a;margin-top:5px;margin-bottom:2px}
+.pv-contract p{margin:0 0 3px 0}
 .pv-contract b{color:#1a1a1a}
-.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:10px;padding-top:9px;border-top:1px dotted #ccc;font-size:8.4px;color:#555}
+.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:8px;padding-top:7px;border-top:1px dotted #ccc;font-size:7.2px;color:#555}
 .pv-contract .sign .col{flex:1}
-.pv-contract .sign .ln{margin-top:12px;border-bottom:1px solid #999;height:1px}
+.pv-contract .sign .ln{margin-top:9px;border-bottom:1px solid #999;height:1px}
 .pv-footer{position:absolute;left:0;right:0;bottom:0;height:16px;font-size:8px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:600;background:#fff;color:#1a1a1a;border-top:1.5px solid #e10004;z-index:3}
 .pv-footer span:first-child{color:#e10004;font-weight:800}
 .pv-footer span:last-child{color:#e10004}
@@ -517,11 +517,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.7 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.7:
-   - QR Шаг 1 / Шаг 2 раздвинуты (gap 12px) + разделительная линия между ними
-   - При выборе «Доставка» в тексте договора появляется пункт 3.4
-     про разгрузку силами Покупателя (водитель не выгружает)
+   CUBICA · i5.8 — счёт-договор + справочники + навигационные QR
+   Изменения в i5.8:
+   - уменьшен шрифт и отступы в блоке текста договора (.pv-contract)
+     было: 8.4px / line-height 1.5 / margin-top 12px
+     стало: 7.2px / line-height 1.4 / margin-top 8px
+   - теперь влезает до 15-16 позиций без обрезки договора
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -538,8 +539,8 @@ const CONTRACTORS_CACHE_KEY = 'cubica_contractors_v1';
 const REQUISITES_URL = 'https://6471811-source.github.io/cubica-requisites/requisites.docx';
 
 /* >>> Координаты для навигации (Яндекс.Навигатор) <<< */
-const OFFICE_COORDS    = { lat: 53.955161, lon: 27.778077 };  /* Колодищи, Минская 5, оф. 508, 5 этаж */
-const WAREHOUSE_COORDS = { lat: 53.945140, lon: 27.741913 };  /* Склад Армстронг */
+const OFFICE_COORDS    = { lat: 53.955161, lon: 27.778077 };
+const WAREHOUSE_COORDS = { lat: 53.945140, lon: 27.741913 };
 
 const COMPANY = {
   name:'ООО «ВК ТЕРМ»',
@@ -1686,7 +1687,6 @@ function renderPreview(){
   const buyerFio = buyer.bFio || '________________';
   const buyerBasis = buyer.bBasis || '________________';
 
-  /* Доп. пункт в разделе 3 про разгрузку — появляется ТОЛЬКО при доставке */
   const unloadingClause = (deal.delivery === 'delivery')
     ? '<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>'
     : '';
@@ -1824,20 +1824,23 @@ async function downloadPdf(){
   const PW = 210, PH = 297;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-  const imgW = PW;
-  const imgH = PW * (canvas.height / canvas.width);
 
-  if(imgH <= PH + 0.5){
-    doc.addImage(imgData, 'PNG', 0, 0, imgW, imgH, undefined, 'FAST');
-  }else{
-    let y = 0, remaining = imgH, firstPage = true;
-    while(remaining > 0){
-      if(!firstPage) doc.addPage();
-      firstPage = false;
-      doc.addImage(imgData, 'PNG', 0, y, imgW, imgH, undefined, 'FAST');
-      remaining -= PH; y -= PH;
-    }
+  /* Поля 10 мм со всех сторон + пропорциональное вписывание */
+  const MARGIN = 10;
+  const availW = PW - MARGIN * 2;
+  const availH = PH - MARGIN * 2;
+
+  let imgW = availW;
+  let imgH = imgW * (canvas.height / canvas.width);
+  if(imgH > availH){
+    imgH = availH;
+    imgW = imgH * (canvas.width / canvas.height);
   }
+  const offsetX = MARGIN + (availW - imgW) / 2;
+  const offsetY = MARGIN + (availH - imgH) / 2;
+
+  doc.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+
   const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('CUBICA_' + invNo + '.pdf');
 }

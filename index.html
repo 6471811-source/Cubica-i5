@@ -145,11 +145,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#e10004}
 .pv-panel-thanks .t2{font-size:8px;color:#888;margin-top:1px}
 .pv-main{flex:1;padding:16px 16px 14px;display:flex;flex-direction:column;color:#1a1a1a;position:relative;z-index:1;background:#fff;overflow:hidden}
-.pv-title{font-size:24px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:3px}
-.pv-meta{font-size:10px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:6px}
-.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:5px 0 8px}
-.pv-cust-label{font-size:9.5px;font-weight:800;color:#000;margin-bottom:3px;letter-spacing:.4px}
-.pv-cust-line{font-size:9px;color:#5a5a5a;line-height:1.55}
+.pv-title{font-size:20px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:2px}
+.pv-meta{font-size:9px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:5px}
+.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:4px 0 6px}
+.pv-cust-label{font-size:8.5px;font-weight:800;color:#000;margin-bottom:2px;letter-spacing:.4px}
+.pv-cust-line{font-size:8px;color:#5a5a5a;line-height:1.5}
 .pv-cust-line b{color:#1a1a1a;font-weight:700}
 .pv-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px;background:#fff}
 .pv-table th{background:#e10004;color:#fff;font-weight:700;font-size:8.5px;text-align:left;padding:4px 5px;border:none}
@@ -517,16 +517,19 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.20
-   На базе i5.18:
-   - Шрифт договора: 5.2px → 6.7px (+1.5 пункта) и в превью, и в PDF
-   - В PDF шапка 26px (как в i5.18)
-   - Всё остальное как в i5.18
+   CUBICA · i5.21
+   На базе i5.20, но шапка и покупатель — как в i5.17 (крупнее по превью):
+   - .pv-title 24px → 20px
+   - .pv-meta 10px → 9px
+   - .pv-cust-label 9.5px → 8.5px
+   - .pv-cust-line 9px → 8px
+   - В PDF шапка тоже 20px (убрано временное увеличение 26px)
+   - Договор 6.7px — как в i5.20
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 
-const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
+const NOMENCLATURE_URL = 'https://6471811-source.github.io/cubica-nomenclature/nomenclature.xml';
 const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
 
 const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
@@ -1762,7 +1765,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF (i5.20) ---------- */
+/* ---------- PDF (i5.21) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1771,13 +1774,7 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
-  /* Временно: шапка +2 пункта (24 → 26). Договор уже в CSS = 6.7px */
-  const titleEl = target.querySelector('.pv-title');
-  const prevTitleFS = titleEl ? titleEl.style.fontSize : '';
-  if(titleEl) titleEl.style.fontSize = '26px';
-
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
+  /* Рендерим превью как есть, ничего не увеличивая */
   const canvas = await window.html2canvas(target, {
     scale: 2,
     backgroundColor: '#ffffff',
@@ -1788,9 +1785,6 @@ async function downloadPdf(){
     windowWidth: target.offsetWidth,
     windowHeight: target.offsetHeight
   });
-
-  /* Возвращаем шапку как было */
-  if(titleEl) titleEl.style.fontSize = prevTitleFS;
 
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;

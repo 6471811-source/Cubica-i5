@@ -145,11 +145,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-panel-thanks .t1{font-size:10px;font-weight:800;color:#e10004}
 .pv-panel-thanks .t2{font-size:8px;color:#888;margin-top:1px}
 .pv-main{flex:1;padding:16px 16px 14px;display:flex;flex-direction:column;color:#1a1a1a;position:relative;z-index:1;background:#fff;overflow:hidden}
-.pv-title{font-size:20px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:2px}
-.pv-meta{font-size:9px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:5px}
-.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:4px 0 6px}
-.pv-cust-label{font-size:8.5px;font-weight:800;color:#000;margin-bottom:2px;letter-spacing:.4px}
-.pv-cust-line{font-size:8px;color:#5a5a5a;line-height:1.5}
+.pv-title{font-size:24px;font-weight:900;color:#1a1a1a;text-align:right;letter-spacing:.4px;line-height:1.05;margin-bottom:3px}
+.pv-meta{font-size:10px;color:#4a4a4a;text-align:right;line-height:1.4;margin-bottom:6px}
+.pv-hr{border:none;border-top:1px solid #dcdcdc;margin:5px 0 8px}
+.pv-cust-label{font-size:9.5px;font-weight:800;color:#000;margin-bottom:3px;letter-spacing:.4px}
+.pv-cust-line{font-size:9px;color:#5a5a5a;line-height:1.55}
 .pv-cust-line b{color:#1a1a1a;font-weight:700}
 .pv-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px;background:#fff}
 .pv-table th{background:#e10004;color:#fff;font-weight:700;font-size:8.5px;text-align:left;padding:4px 5px;border:none}
@@ -517,11 +517,11 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 
 <script>
 /* =====================================================================
-   CUBICA · i5.17 — счёт-договор + справочники + навигационные QR
-   Изменения в i5.17:
-   - Уменьшена шапка: «Счёт-договор» 20px, номер/дата 9px
-   - Блок покупателя: 8px / 8.5px (как реквизиты ВК ТЕРМ слева)
-   - Договор: 5.2px + отступ 100px снизу под печать
+   CUBICA · i5.18
+   Изменения относительно i5.16:
+   - В PDF на момент рендера: шапка «Счёт-договор» 24px → 26px,
+     текст договора 5.2px → 7.2px. В превью ничего не меняется.
+   - После рендера стили возвращаются.
    ===================================================================== */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
@@ -958,7 +958,7 @@ document.getElementById('btnAddRow').addEventListener('click', () => {
 });
 
 /* =====================================================================
-   СПРАВОЧНИК НОМЕНКЛАТУРЫ (1С XML → GitHub Pages)
+   СПРАВОЧНИК НОМЕНКЛАТУРЫ
    ===================================================================== */
 let NOMENCLATURE = null;
 let pickerTargetIdx = -1;
@@ -968,7 +968,6 @@ let pickerFilter = '';
 
 async function loadNomenclature(force){
   if(NOMENCLATURE && !force) return NOMENCLATURE;
-
   if(!force){
     try{
       const cached = localStorage.getItem(NOMENCLATURE_CACHE_KEY);
@@ -991,11 +990,9 @@ async function fetchAndCache(){
     if(!res.ok) throw new Error('HTTP ' + res.status);
     let text = await res.text();
     if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-
     const data = /^\s*</.test(text) && /<\s*Номенклатура/.test(text)
       ? parseNomenclatureXML(text)
       : JSON.parse(text);
-
     if(!data || !Array.isArray(data.tree) || !data.tree.length){
       throw new Error('Пустое дерево');
     }
@@ -1029,13 +1026,10 @@ function parseNomenclatureXML(xmlText){
     if(!isFolder){
       const unit = (el.getAttribute('Единица') || '').trim();
       if(unit) node.unit = unit;
-
       const article = (el.getAttribute('Артикул') || '').trim();
       if(article) node.article = article;
-
       const fullName = (el.getAttribute('ПолноеНаименование') || '').trim();
       if(fullName) node.fullName = fullName;
-
       const weightRaw = String(el.getAttribute('ВесБрутто') || '').replace(',', '.');
       const weight = parseFloat(weightRaw);
       if(isFinite(weight) && weight > 0) node.weight = weight;
@@ -1066,12 +1060,7 @@ function parseNomenclatureXML(xmlText){
     for(const n of nodes){ if(n.children) sortTree(n.children); }
   })(roots);
 
-  return {
-    version: '2.0',
-    source: '1C XML',
-    generated: new Date().toISOString(),
-    tree: roots
-  };
+  return { version: '2.0', source: '1C XML', generated: new Date().toISOString(), tree: roots };
 }
 
 function findNode(tree, id){
@@ -1129,7 +1118,6 @@ async function openPicker(idx){
   document.getElementById('pickerModal').classList.add('open');
   const treeEl = document.getElementById('pickerTree');
   treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
-
   await loadNomenclature();
   renderPickerTree();
   setTimeout(() => document.getElementById('pickerSearch').focus(), 60);
@@ -1158,7 +1146,6 @@ function renderPickerTree(){
   const countEl = document.getElementById('pickerCount');
   const applyBtn = document.getElementById('btnPickerApply');
   applyBtn.disabled = !pickerSelected.node;
-
   updatePickerSelInfo();
 
   if(!NOMENCLATURE || !NOMENCLATURE.tree || !NOMENCLATURE.tree.length){
@@ -1241,11 +1228,9 @@ function applyPicker(){
   if(!pickerSelected.node) return;
   const idx = pickerTargetIdx;
   if(idx < 0 || idx >= ROWS.length) { closePicker(); return; }
-
   const node = pickerSelected.node;
   ROWS[idx].label = node.name;
   if(node.unit) ROWS[idx].unit = node.unit;
-
   const tr = document.querySelector('tr[data-idx="' + idx + '"]');
   if(tr){
     const nameInp = tr.querySelector('input[data-field="label"]');
@@ -1295,7 +1280,7 @@ document.getElementById('btnExpandAll').addEventListener('click', () => {
 });
 
 /* =====================================================================
-   СПРАВОЧНИК КОНТРАГЕНТОВ (1С XML → GitHub Pages)
+   СПРАВОЧНИК КОНТРАГЕНТОВ
    ===================================================================== */
 let CONTRACTORS = null;
 const buyerPickerSelected = { node: null };
@@ -1303,7 +1288,6 @@ let buyerPickerFilter = '';
 
 async function loadContractors(force){
   if(CONTRACTORS && !force) return CONTRACTORS;
-
   if(!force){
     try{
       const cached = localStorage.getItem(CONTRACTORS_CACHE_KEY);
@@ -1326,11 +1310,9 @@ async function fetchAndCacheContractors(){
     if(!res.ok) throw new Error('HTTP ' + res.status);
     let text = await res.text();
     if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-
     const data = /^\s*</.test(text)
       ? parseContractorsXML(text)
       : JSON.parse(text);
-
     if(!data || !Array.isArray(data.list) || !data.list.length){
       throw new Error('Пустой список контрагентов');
     }
@@ -1355,26 +1337,18 @@ function parseContractorsXML(xmlText){
     const el = elements[i];
     const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
     if(isFolder) continue;
-
     const name = (el.getAttribute('Наименование') || '').replace(/\s+/g,' ').trim();
     if(!name) continue;
-
     const unp  = (el.getAttribute('УНП') || '').trim();
     const addr = (el.getAttribute('ЮридическийАдрес') || '').trim();
     const full = (el.getAttribute('ПолноеНаименование') || '').trim();
-
     list.push({ name, full, unp, addr });
   }
 
   const collator = new Intl.Collator('ru', { numeric:true, sensitivity:'base' });
   list.sort((a,b) => collator.compare(a.name, b.name));
 
-  return {
-    version: '1.0',
-    source: '1C Contractors XML',
-    generated: new Date().toISOString(),
-    list
-  };
+  return { version: '1.0', source: '1C Contractors XML', generated: new Date().toISOString(), list };
 }
 
 function contractorMatches(node, filter){
@@ -1393,7 +1367,6 @@ async function openBuyerPicker(){
   document.getElementById('buyerPickerModal').classList.add('open');
   const treeEl = document.getElementById('buyerPickerTree');
   treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
-
   await loadContractors();
   renderBuyerPicker();
   setTimeout(() => document.getElementById('buyerPickerSearch').focus(), 60);
@@ -1421,7 +1394,6 @@ function renderBuyerPicker(){
   const countEl = document.getElementById('buyerPickerCount');
   const applyBtn = document.getElementById('btnBuyerPickerApply');
   applyBtn.disabled = !buyerPickerSelected.node;
-
   updateBuyerPickerSelInfo();
 
   if(!CONTRACTORS || !CONTRACTORS.list || !CONTRACTORS.list.length){
@@ -1476,17 +1448,13 @@ function renderBuyerPicker(){
 function applyBuyerPicker(){
   if(!buyerPickerSelected.node) return;
   const c = buyerPickerSelected.node;
-
   const nameToFill = c.full || c.name;
-
   const elName = document.getElementById('bName');
   const elUnp  = document.getElementById('bUnp');
   const elAddr = document.getElementById('bAddress');
-
   if(elName) elName.value = nameToFill;
   if(elUnp && c.unp) elUnp.value = c.unp;
   if(elAddr && c.addr) elAddr.value = c.addr;
-
   renderPreview();
   closeBuyerPicker();
 }
@@ -1518,7 +1486,6 @@ function initBuyerPicker(){
 
   const applyBtn = document.getElementById('btnBuyerPickerApply');
   if(applyBtn) applyBtn.addEventListener('click', applyBuyerPicker);
-
   const cancelBtn = document.getElementById('btnBuyerPickerCancel');
   if(cancelBtn) cancelBtn.addEventListener('click', closeBuyerPicker);
 
@@ -1795,7 +1762,7 @@ function renderPreview(){
     </div>`;
 }
 
-/* ---------- PDF ---------- */
+/* ---------- PDF (i5.18 — временно меняем шрифты только на момент рендера) ---------- */
 async function downloadPdf(){
   if(!ROWS.length){ alert('Нет данных.'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ alert('jsPDF не загружен'); return; }
@@ -1804,6 +1771,21 @@ async function downloadPdf(){
   const target = document.getElementById('pvPage');
   if(!target){ alert('Нет превью для рендера.'); return; }
 
+  /* Запоминаем элементы, у которых временно меняем шрифт */
+  const titleEl = target.querySelector('.pv-title');
+  const contractEl = target.querySelector('.pv-contract');
+
+  const prevTitleFS = titleEl ? titleEl.style.fontSize : '';
+  const prevContractFS = contractEl ? contractEl.style.fontSize : '';
+
+  /* Временно: шапка +2 пункта (24 → 26), договор +2 пункта (5.2 → 7.2) */
+  if(titleEl) titleEl.style.fontSize = '26px';
+  if(contractEl) contractEl.style.fontSize = '7.2px';
+
+  /* Ждём перерисовки */
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  /* Рендерим превью с временно увеличенными шрифтами */
   const canvas = await window.html2canvas(target, {
     scale: 2,
     backgroundColor: '#ffffff',
@@ -1814,6 +1796,10 @@ async function downloadPdf(){
     windowWidth: target.offsetWidth,
     windowHeight: target.offsetHeight
   });
+
+  /* Возвращаем шрифты как было — превью в браузере остаётся неизменным */
+  if(titleEl) titleEl.style.fontSize = prevTitleFS;
+  if(contractEl) contractEl.style.fontSize = prevContractFS;
 
   const imgData = canvas.toDataURL('image/png');
   const { jsPDF } = window.jspdf;

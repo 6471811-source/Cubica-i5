@@ -7,13 +7,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-<script>
-  // Фолбэк: если jsdelivr заблокирован — тянем LZ-String с unpkg
-  if (typeof LZString === 'undefined') {
-    document.write('<script src="https://unpkg.com/lz-string@1.5.0/libs/lz-string.min.js"><\/script>');
-  }
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -26,8 +19,6 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .section{margin-bottom:20px;padding:24px 28px;background:#fff;border:1px solid #e6e6e6;border-radius:14px;box-shadow:0 8px 30px rgba(44,62,80,.04)}
 .sec-title{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:18px;letter-spacing:.2px}
 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e10004;color:#fff;font-size:14px;font-weight:800;flex-shrink:0}
-
-/* Тулбар над таблицей */
 .inv-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;padding:10px 14px;background:#fafbfc;border:1px solid #ececec;border-radius:10px}
 .inv-toolbar .inv-num-label{font-size:11px;font-weight:800;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
 .inv-toolbar input.inv-num{width:180px;padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
@@ -40,8 +31,6 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .btn-copy-row{border-color:#c8e6c9;color:#2e7d32}
 .btn-copy-row:hover:not(:disabled){border-color:#2e7d32;color:#2e7d32;background:#e8f5e9}
 .inv-toolbar .hint{font-size:11.5px;color:#999;flex-basis:100%}
-
-/* Секция 1: таблица позиций */
 .inv-wrap{overflow-x:auto;border:1px solid #ececec;border-radius:10px}
 table.inv{width:100%;border-collapse:collapse;font-size:11.5px;min-width:980px;table-layout:fixed}
 table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;text-align:left;padding:6px 5px;border:none;white-space:nowrap}
@@ -57,7 +46,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
 @keyframes rowFlash{0%{background:#fff8e1}40%{background:#ffe082}100%{background:transparent}}
 table.inv tr.flash td{animation:rowFlash .9s ease-out}
-
 .cell-input{width:100%;padding:4px 5px;border:1px solid transparent;border-radius:5px;font-size:11.5px;font-family:inherit;background:transparent;color:#1a1a1a;transition:border-color .15s,box-shadow .15s}
 .cell-input:hover{border-color:#ddd}
 .cell-input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12);background:#fff}
@@ -65,15 +53,11 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
 .qty-total{color:#1a1a1a;font-weight:800}
-
 .btn-picker{width:24px;height:24px;flex-shrink:0;border-radius:5px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .btn-picker:hover{background:#fff5f5;border-color:#e10004;color:#e10004}
-
 .name-cell{display:flex;gap:4px;align-items:center}
-
 .btn-row-del{width:24px;height:24px;border-radius:5px;border:1px solid #f0c0c0;background:#fff;color:#c00000;cursor:pointer;font-size:11px;line-height:1;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;margin:0 auto}
 .btn-row-del:hover{background:#fff5f5;border-color:#c00000}
-
 .add-row-bar{display:flex;justify-content:flex-start;margin-top:12px}
 .add-row-btn{padding:9px 16px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:1px dashed #c00000;background:#fff;color:#c00000;display:inline-flex;align-items:center;gap:6px}
 .add-row-btn:hover{background:#fff5f5}
@@ -81,7 +65,6 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .totals .lbl{color:#555}
 .totals .val{font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#1a1a1a}
 .totals .grand{font-size:18px;color:#e10004;border-top:1px solid #f0c0c0;padding-top:10px;margin-top:6px}
-
 .deal-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:10px}
 .deal-row:last-child{margin-bottom:0}
 .deal-label{font-size:12px;font-weight:700;color:#1a1a1a;min-width:160px;letter-spacing:.3px}
@@ -116,7 +99,6 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .buyer-field label{font-size:10.5px;font-weight:700;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
 .buyer-field input{padding:9px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border-color .2s,box-shadow .2s}
 .buyer-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
-
 .preview-wrap{background:#e8eaee;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
 .preview-page{background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);position:relative;display:flex;overflow:hidden;flex-shrink:0;font-family:'Segoe UI',Calibri,Arial,sans-serif}
 .pv-panel{width:230px;padding:18px 12px 14px;display:flex;flex-direction:column;position:relative;background:#fff;color:#1a1a1a;border-right:2px solid #e10004;z-index:2;flex-shrink:0}
@@ -250,18 +232,13 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .picker-empty{padding:60px 20px;text-align:center;color:#999;font-size:14px;line-height:1.7}
 .picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
 .picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
-/* ——— Стили для сокращателя ссылки ——— */
-.share-status{font-size:12.5px;margin:8px 0 14px;padding:9px 12px;border-radius:8px;
-  background:#f4f5f7;color:#666;display:none}
+.share-status{font-size:12.5px;margin:8px 0 14px;padding:9px 12px;border-radius:8px;background:#f4f5f7;color:#666;display:none}
 .share-status.show{display:block}
 .share-status.loading{background:#fff8e1;color:#b26a00}
 .share-status.ok{background:#e8f5e9;color:#2e7d32;font-weight:600}
 .share-status.warn{background:#ffebee;color:#c62828}
-.share-messengers{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  font-size:12px;color:#888;margin-bottom:4px}
-.share-messengers .msgr{padding:9px 14px;border-radius:8px;text-decoration:none;
-  font-weight:700;font-size:12px;color:#fff;transition:opacity .15s,transform .15s;
-  display:inline-flex;align-items:center;gap:4px}
+.share-messengers{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:#888;margin-bottom:4px}
+.share-messengers .msgr{padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:12px;color:#fff;transition:opacity .15s,transform .15s;display:inline-flex;align-items:center;gap:4px}
 .share-messengers .msgr:hover{opacity:.88;transform:translateY(-1px)}
 .msgr.tg{background:#229ED9}
 .msgr.wa{background:#25D366}
@@ -298,7 +275,6 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
 
-      <!-- Тулбар: стрелки + копировать слева, номер счёта справа -->
       <div class="inv-toolbar">
         <div class="move-group">
           <button type="button" class="btn-move-selected" id="btnMoveUp" disabled title="Переместить выделенную строку вверх">▲ Вверх</button>
@@ -420,16 +396,12 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 <div class="modal" id="shareModal">
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
-    <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя.
-       Мы автоматически сжимаем и сокращаем её для удобной отправки в мессенджерах.</p>
-
+    <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя.</p>
     <div class="copy-row">
       <input type="text" id="shareLink" readonly onclick="this.select()">
       <button type="button" id="btnCopy">📋 Копировать</button>
     </div>
-
     <div class="share-status" id="shareStatus"></div>
-
     <div class="share-messengers">
       <span>Отправить:</span>
       <a href="#" id="shareTg" target="_blank" rel="noopener" class="msgr tg">Telegram</a>
@@ -437,17 +409,12 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
       <a href="#" id="shareVb" target="_blank" rel="noopener" class="msgr vb">Viber</a>
       <a href="#" id="shareEm" class="msgr em">E-mail</a>
     </div>
-
     <details style="margin-top:14px">
       <summary style="cursor:pointer;font-size:12px;color:#888">Показать полную ссылку</summary>
-      <textarea id="originalWrap" readonly
-        style="width:100%;margin-top:8px;padding:10px;border:1px solid #ccc;border-radius:8px;
-               font-size:11px;font-family:Consolas,monospace;resize:vertical;min-height:90px"></textarea>
+      <textarea id="originalWrap" readonly style="width:100%;margin-top:8px;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:11px;font-family:Consolas,monospace;resize:vertical;min-height:90px"></textarea>
     </details>
-
     <div style="text-align:right;margin-top:16px">
-      <button class="btn ghost"
-        onclick="document.getElementById('shareModal').classList.remove('open')">Закрыть</button>
+      <button class="btn ghost" onclick="document.getElementById('shareModal').classList.remove('open')">Закрыть</button>
     </div>
   </div>
 </div>
@@ -809,7 +776,6 @@ function moveSelected(dir){
 document.getElementById('btnMoveUp').addEventListener('click', () => moveSelected('up'));
 document.getElementById('btnMoveDown').addEventListener('click', () => moveSelected('down'));
 
-/* ─── Копирование выделенной строки в конец списка ─── */
 document.getElementById('btnCopyRow').addEventListener('click', () => {
   let srcIdx = selectedRowIdx;
   const ae = document.activeElement;
@@ -833,12 +799,12 @@ document.getElementById('btnCopyRow').addEventListener('click', () => {
   };
   if(src._nomId) copy._nomId = src._nomId;
   if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
-  
+
   ROWS.push(copy);
   renderInvoiceTable();
   renderPreview();
   setSelectedRow(ROWS.length - 1);
-  
+
   requestAnimationFrame(() => {
     const newTr = document.querySelector('tr[data-idx="' + (ROWS.length-1) + '"]');
     if(newTr){
@@ -953,13 +919,13 @@ function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(n
 
 async function openPicker(idx){
   pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
-  
+
   const row = ROWS[idx];
   if(row && Array.isArray(row._nomPath) && row._nomPath.length){
     row._nomPath.forEach(id => pickerExpanded.add(id));
     console.log('[i5] Раскрываю путь номенклатуры для строки', idx, ':', row._nomPath);
   }
-  
+
   document.getElementById('pickerSearch').value='';
   document.getElementById('pickerModal').classList.add('open');
   const treeEl=document.getElementById('pickerTree');
@@ -1023,7 +989,6 @@ function applyPicker(){
   if(NOMENCLATURE && NOMENCLATURE.tree){
     const path = findNodePath(NOMENCLATURE.tree, node.id, []);
     ROWS[idx]._nomPath = path || [];
-    console.log('[i5] Запомнили путь номенклатуры для строки', idx, ':', ROWS[idx]._nomPath);
   }
   const tr=document.querySelector('tr[data-idx="'+idx+'"]');
   if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
@@ -1348,88 +1313,31 @@ function buildClientPayload(){
   return {v:6,rooms:ROOMS,i5_url:location.href.split('?')[0],L_in:(KP_META&&KP_META.L_in)||0,W_in:(KP_META&&KP_META.W_in)||0,area:(KP_META&&KP_META.area)||0,color:(KP_META&&KP_META.color)||'',railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',polygon:(KP_META&&KP_META.polygon)||null,p:{railW:(KP_META&&KP_META.railW)||50,railH:(KP_META&&KP_META.railH)||30,gap:(KP_META&&KP_META.gap)||15,caps:(KP_META&&KP_META.caps)?1:0,angle:(KP_META&&KP_META.angle)?1:0},r:(KP_META&&KP_META.rotation)||0,rows:rowsForClient,price:invoiceTotals.total,subtotal:invoiceTotals.subtotal,vat:invoiceTotals.vat,currency:'BYN',invoiceNumber:getInvoiceNumber(),deal:{delivery:deal.delivery,payment:deal.payment,days:deal.days,deliveryData:deal.deliveryData},buyer:buyer,company:COMPANY,manager:'Менеджер CUBICA',phone:COMPANY.phone,valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()};
 }
 
-/* ─── Сжатие payload в URL (LZ-String + base64url) ─────────────── */
+/* Кодирование payload — обычный base64url, без префиксов */
 function encodePayloadForUrl(payload){
-  const json = JSON.stringify(payload);
-  if(typeof LZString !== 'undefined'){
-    try{
-      const compressed = LZString.compressToBase64(json)
-        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-      console.log('[i5] LZ сжатие: %d → %d символов', json.length, compressed.length);
-      return 'L' + compressed;
-    }catch(e){ console.warn('[i5] LZ-String сбой, fallback на base64:', e); }
-  } else {
-    console.warn('[i5] LZString не подключён — используется обычный base64url');
-  }
-  return 'B' + b64enc(json);
+  return b64enc(JSON.stringify(payload));
 }
 
-/* ─── Сокращение ссылки — 7 параллельных попыток (прямые + через CORS-прокси) ─── */
+/* Сокращение ссылки — 7 параллельных попыток */
 async function shortenUrl(longUrl){
   const enc = encodeURIComponent(longUrl);
   const TIMEOUT = 12000;
-
-  const withTimeout = (p, ms) => Promise.race([
-    p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + ms + 'ms')), ms))
-  ]);
-
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + ms + 'ms')), ms))]);
   const validate = (raw, srcName) => {
     const t = String(raw || '').trim();
-    if (!/^https?:\/\/\S+$/.test(t)) {
-      throw new Error(srcName + ': не URL → "' + t.slice(0, 80) + '"');
-    }
-    if (t.length > 80) {
-      throw new Error(srcName + ': слишком длинный (' + t.length + ' симв.)');
-    }
+    if (!/^https?:\/\/\S+$/.test(t)) throw new Error(srcName + ': не URL');
+    if (t.length > 80) throw new Error(srcName + ': слишком длинный');
     return t;
   };
-
   const attempts = [
-    withTimeout(
-      fetch('https://tinyurl.com/api-create.php?url=' + enc)
-        .then(r => r.text())
-        .then(t => validate(t, 'tinyurl-direct')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://tinyurl.com/api-create.php?url=' + enc))
-        .then(r => r.text())
-        .then(t => validate(t, 'tinyurl-allorigins')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://is.gd/create.php?format=simple&url=' + enc)
-        .then(r => r.text())
-        .then(t => validate(t, 'is.gd-direct')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://is.gd/create.php?format=simple&url=' + enc))
-        .then(r => r.text())
-        .then(t => validate(t, 'is.gd-allorigins')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://v.gd/create.php?format=simple&url=' + enc)
-        .then(r => r.text())
-        .then(t => validate(t, 'v.gd-direct')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://clck.ru/--?url=' + enc))
-        .then(r => r.text())
-        .then(t => validate(t, 'clck-codetabs')),
-      TIMEOUT
-    ),
-    withTimeout(
-      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://spoo.me/?url=' + enc))
-        .then(r => r.text())
-        .then(t => validate(t, 'spoo-allorigins')),
-      TIMEOUT
-    )
+    withTimeout(fetch('https://tinyurl.com/api-create.php?url=' + enc).then(r => r.text()).then(t => validate(t, 'tinyurl-direct')), TIMEOUT),
+    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://tinyurl.com/api-create.php?url=' + enc)).then(r => r.text()).then(t => validate(t, 'tinyurl-allorigins')), TIMEOUT),
+    withTimeout(fetch('https://is.gd/create.php?format=simple&url=' + enc).then(r => r.text()).then(t => validate(t, 'is.gd-direct')), TIMEOUT),
+    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://is.gd/create.php?format=simple&url=' + enc)).then(r => r.text()).then(t => validate(t, 'is.gd-allorigins')), TIMEOUT),
+    withTimeout(fetch('https://v.gd/create.php?format=simple&url=' + enc).then(r => r.text()).then(t => validate(t, 'v.gd-direct')), TIMEOUT),
+    withTimeout(fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://clck.ru/--?url=' + enc)).then(r => r.text()).then(t => validate(t, 'clck-codetabs')), TIMEOUT),
+    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://spoo.me/?url=' + enc)).then(r => r.text()).then(t => validate(t, 'spoo-allorigins')), TIMEOUT)
   ];
-
   try {
     const url = await Promise.any(attempts);
     console.log('[i5] ✓ Сокращено:', url);
@@ -1484,7 +1392,7 @@ async function openShareModal(){
       'Длина ссылки: <b>' + longUrl.length + ' символов</b>. ' +
       (shortEnough
         ? 'Это <b>безопасная длина</b> — Telegram, WhatsApp и Viber её не обрежут. Можно смело отправлять как есть.'
-        : 'Это <b>слишком длинная ссылка</b> — Viber может обрезать. Откройте <b>F12 → Console</b> и пришлите лог: там видно, какие сервисы пытались и почему отказали.') +
+        : 'Это <b>слишком длинная ссылка</b> — Viber может обрезать. Откройте <b>F12 → Console</b> и пришлите лог.') +
       '</span>';
   }
 }
@@ -1492,14 +1400,10 @@ async function openShareModal(){
 function updateMessengerLinks(url){
   const text = 'Коммерческое предложение CUBICA';
   const enc  = encodeURIComponent;
-  document.getElementById('shareTg').href =
-    'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text);
-  document.getElementById('shareWa').href =
-    'https://wa.me/?text=' + enc(text + '\n' + url);
-  document.getElementById('shareVb').href =
-    'viber://forward?text=' + enc(text + '\n' + url);
-  document.getElementById('shareEm').href =
-    'mailto:?subject=' + enc(text) + '&body=' + enc(text + '\n\n' + url);
+  document.getElementById('shareTg').href = 'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text);
+  document.getElementById('shareWa').href = 'https://wa.me/?text=' + enc(text + '\n' + url);
+  document.getElementById('shareVb').href = 'viber://forward?text=' + enc(text + '\n' + url);
+  document.getElementById('shareEm').href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text + '\n\n' + url);
 }
 
 function copyShareLink(){

@@ -812,7 +812,6 @@ document.getElementById('btnMoveDown').addEventListener('click', () => moveSelec
 /* ─── Копирование выделенной строки в конец списка ─── */
 document.getElementById('btnCopyRow').addEventListener('click', () => {
   let srcIdx = selectedRowIdx;
-  // Приоритет: если курсор в поле строки — копируем именно эту строку
   const ae = document.activeElement;
   if(ae && ae.tagName === 'INPUT'){
     const tr = ae.closest('tr');
@@ -832,7 +831,6 @@ document.getElementById('btnCopyRow').addEventListener('click', () => {
     unit: src.unit || 'шт.',
     price: Number(src.price)||0
   };
-  // Переносим связь со справочником, чтобы 📁 на новой строке открылась та же папка
   if(src._nomId) copy._nomId = src._nomId;
   if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
   
@@ -841,7 +839,6 @@ document.getElementById('btnCopyRow').addEventListener('click', () => {
   renderPreview();
   setSelectedRow(ROWS.length - 1);
   
-  // Прокрутка и подсветка новой строки
   requestAnimationFrame(() => {
     const newTr = document.querySelector('tr[data-idx="' + (ROWS.length-1) + '"]');
     if(newTr){
@@ -938,7 +935,6 @@ function parseNomenclatureXML(xmlText){
   return {version:'2.0',source:'1C XML',generated:new Date().toISOString(),tree:roots};
 }
 function findNode(tree,id){for(const node of tree){if(node.id===id)return node;if(node.children){const f=findNode(node.children,id);if(f)return f;}}return null;}
-/* Возвращает массив id папок-родителей от корня до найденного узла (не включая сам узел) */
 function findNodePath(tree,targetId,ancestors){
   ancestors=ancestors||[];
   for(const node of tree){
@@ -958,7 +954,6 @@ function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(n
 async function openPicker(idx){
   pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
   
-  // Если у строки сохранён путь в справочнике — раскрываем папки до этой позиции
   const row = ROWS[idx];
   if(row && Array.isArray(row._nomPath) && row._nomPath.length){
     row._nomPath.forEach(id => pickerExpanded.add(id));
@@ -1024,7 +1019,6 @@ function applyPicker(){
   const node=pickerSelected.node;
   ROWS[idx].label=node.name;
   if(node.unit)ROWS[idx].unit=node.unit;
-  // Запоминаем связь с номенклатурой: id позиции + путь папок до неё
   ROWS[idx]._nomId = node.id;
   if(NOMENCLATURE && NOMENCLATURE.tree){
     const path = findNodePath(NOMENCLATURE.tree, node.id, []);
@@ -1357,7 +1351,6 @@ function buildClientPayload(){
 /* ─── Сжатие payload в URL (LZ-String + base64url) ─────────────── */
 function encodePayloadForUrl(payload){
   const json = JSON.stringify(payload);
-  // Префикс 'L' = LZ-String сжатие, 'B' = обычный base64url
   if(typeof LZString !== 'undefined'){
     try{
       const compressed = LZString.compressToBase64(json)
@@ -1371,64 +1364,81 @@ function encodePayloadForUrl(payload){
   return 'B' + b64enc(json);
 }
 
-/* ─── Сокращение ссылки (последовательный перебор с логами) ──── */
+/* ─── Сокращение ссылки — 7 параллельных попыток (прямые + через CORS-прокси) ─── */
 async function shortenUrl(longUrl){
-  const services = [
-    {
-      name: 'is.gd',
-      run: async () => {
-        const r = await fetch('https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
-        const j = await r.json();
-        if (j && j.errorcode) throw new Error(j.errormessage || 'is.gd error');
-        return j.shorturl;
-      }
-    },
-    {
-      name: 'v.gd',
-      run: async () => {
-        const r = await fetch('https://v.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
-        const j = await r.json();
-        if (j && j.errorcode) throw new Error(j.errormessage || 'v.gd error');
-        return j.shorturl;
-      }
-    },
-    {
-      name: 'shrtco.de',
-      run: async () => {
-        const r = await fetch('https://api.shrtco.de/v2/shorten?url=' + encodeURIComponent(longUrl));
-        const j = await r.json();
-        if (!j || !j.ok) throw new Error(j && j.error ? j.error : 'shrtco error');
-        return j.result && j.result.full_short_link;
-      }
-    },
-    {
-      name: 'tinyurl (via jina proxy)',
-      run: async () => {
-        const r = await fetch('https://r.jina.ai/https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl));
-        const t = await r.text();
-        const m = t.match(/https?:\/\/tinyurl\.com\/\S+/);
-        if (!m) throw new Error('tinyurl parse error');
-        return m[0].trim();
-      }
+  const enc = encodeURIComponent(longUrl);
+  const TIMEOUT = 12000;
+
+  const withTimeout = (p, ms) => Promise.race([
+    p,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + ms + 'ms')), ms))
+  ]);
+
+  const validate = (raw, srcName) => {
+    const t = String(raw || '').trim();
+    if (!/^https?:\/\/\S+$/.test(t)) {
+      throw new Error(srcName + ': не URL → "' + t.slice(0, 80) + '"');
     }
+    if (t.length > 80) {
+      throw new Error(srcName + ': слишком длинный (' + t.length + ' симв.)');
+    }
+    return t;
+  };
+
+  const attempts = [
+    withTimeout(
+      fetch('https://tinyurl.com/api-create.php?url=' + enc)
+        .then(r => r.text())
+        .then(t => validate(t, 'tinyurl-direct')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://tinyurl.com/api-create.php?url=' + enc))
+        .then(r => r.text())
+        .then(t => validate(t, 'tinyurl-allorigins')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://is.gd/create.php?format=simple&url=' + enc)
+        .then(r => r.text())
+        .then(t => validate(t, 'is.gd-direct')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://is.gd/create.php?format=simple&url=' + enc))
+        .then(r => r.text())
+        .then(t => validate(t, 'is.gd-allorigins')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://v.gd/create.php?format=simple&url=' + enc)
+        .then(r => r.text())
+        .then(t => validate(t, 'v.gd-direct')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://clck.ru/--?url=' + enc))
+        .then(r => r.text())
+        .then(t => validate(t, 'clck-codetabs')),
+      TIMEOUT
+    ),
+    withTimeout(
+      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://spoo.me/?url=' + enc))
+        .then(r => r.text())
+        .then(t => validate(t, 'spoo-allorigins')),
+      TIMEOUT
+    )
   ];
 
-  for (const svc of services) {
-    try {
-      console.log('[i5] → пробую', svc.name, '…');
-      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout 8s')), 8000));
-      const url = await Promise.race([svc.run(), timeout]);
-      if (url && /^https?:\/\//.test(url)) {
-        console.log('[i5] ✓', svc.name, '→', url);
-        return url;
-      }
-      console.warn('[i5] ✗', svc.name, '— пустой ответ');
-    } catch (e) {
-      console.warn('[i5] ✗', svc.name, '—', e.message || e);
-    }
+  try {
+    const url = await Promise.any(attempts);
+    console.log('[i5] ✓ Сокращено:', url);
+    return url;
+  } catch (aggErr) {
+    console.error('[i5] Все сервисы сокращения отказали.');
+    (aggErr.errors || []).forEach((e, i) => console.warn('  #' + (i+1), e && e.message));
+    return null;
   }
-  console.error('[i5] Все сервисы отказали.');
-  return null;
 }
 
 let _shareCache = { long:'', short:'' };

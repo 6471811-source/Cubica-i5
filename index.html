@@ -16,11 +16,9 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .hero h1{font-size:30px;font-weight:800;color:#1a1a1a;margin-bottom:6px;line-height:1.15}
 .hero .sub{font-size:13px;color:#888;letter-spacing:2px;text-transform:uppercase;font-weight:600}
 .hero .line{width:80px;height:2px;background:linear-gradient(90deg,transparent,#e10004,transparent);margin:14px auto 0}
-
 .section{margin-bottom:20px;padding:24px 28px;background:#fff;border:1px solid #e6e6e6;border-radius:14px;box-shadow:0 8px 30px rgba(44,62,80,.04)}
 .sec-title{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:18px;letter-spacing:.2px}
 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e10004;color:#fff;font-size:14px;font-weight:800;flex-shrink:0}
-
 .inv-wrap{overflow-x:auto;border:1px solid #ececec;border-radius:10px}
 table.inv{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1260px}
 table.inv th{background:#e10004;color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;text-align:left;padding:9px 10px;border:none;white-space:nowrap}
@@ -31,42 +29,25 @@ table.inv td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 table.inv td.pos{text-align:center;color:#888;font-weight:600;width:32px}
 table.inv td.vat{text-align:center;color:#888;font-weight:600;font-size:11.5px}
 table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-radius:4px}
-
 .name-cell{display:flex;gap:5px;align-items:center}
-.cell-input{
-  width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;
-  font-size:12.5px;font-family:inherit;background:#fff;color:#1a1a1a;
-  transition:border-color .15s,box-shadow .15s;
-}
+.cell-input{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;color:#1a1a1a;transition:border-color .15s,box-shadow .15s}
 .cell-input:hover{border-color:#ddd}
 .cell-input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
 .cell-input.name{font-weight:600}
 .cell-input.price{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cell-input.qty{text-align:right;font-variant-numeric:tabular-nums}
 .qty-total{color:#1a1a1a;font-weight:800}
-
-.btn-picker{
-  width:28px;height:28px;flex-shrink:0;border-radius:6px;border:1px solid #ddd;background:#fff;
-  color:#666;cursor:pointer;font-size:13px;line-height:1;padding:0;
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
-}
+.btn-picker{width:28px;height:28px;flex-shrink:0;border-radius:6px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;font-size:13px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .btn-picker:hover{background:#fff5f5;border-color:#e10004;color:#e10004}
-
-.btn-row-del{
-  width:26px;height:26px;border-radius:6px;border:1px solid #f0c0c0;background:#fff;color:#c00000;
-  cursor:pointer;font-size:14px;line-height:1;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;
-}
+.btn-row-del{width:26px;height:26px;border-radius:6px;border:1px solid #f0c0c0;background:#fff;color:#c00000;cursor:pointer;font-size:14px;line-height:1;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center}
 .btn-row-del:hover{background:#fff5f5;border-color:#c00000}
-
 .add-row-bar{display:flex;justify-content:flex-start;margin-top:12px}
 .add-row-btn{padding:9px 16px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:1px dashed #c00000;background:#fff;color:#c00000;display:inline-flex;align-items:center;gap:6px}
 .add-row-btn:hover{background:#fff5f5}
-
 .totals{display:grid;grid-template-columns:1fr auto;gap:6px 20px;margin-top:16px;font-size:14px;max-width:440px;margin-left:auto}
 .totals .lbl{color:#555}
 .totals .val{font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#1a1a1a}
 .totals .grand{font-size:18px;color:#e10004;border-top:1px solid #f0c0c0;padding-top:10px;margin-top:6px}
-
 .deal-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:10px}
 .deal-row:last-child{margin-bottom:0}
 .deal-label{font-size:12px;font-weight:700;color:#1a1a1a;min-width:160px;letter-spacing:.3px}
@@ -74,11 +55,9 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .deal-radio:hover{border-color:#e10004}
 .deal-radio input{accent-color:#e10004;margin:0}
 .deal-radio input:checked+span{font-weight:700;color:#e10004}
-
 .slider-wrap{display:flex;align-items:center;gap:12px;flex:1;min-width:280px}
 .slider-wrap input[type=range]{flex:1;accent-color:#e10004;height:4px}
 .slider-val{font-weight:800;color:#e10004;font-size:14px;min-width:80px;text-align:right;font-variant-numeric:tabular-nums}
-
 .delivery-block{margin-top:18px;padding:18px;background:#fef9f0;border:1px solid #f0d896;border-radius:10px}
 .delivery-block .dt{font-size:11px;font-weight:800;color:#b26a00;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
 .delivery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px}
@@ -89,7 +68,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .delivery-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
 .btn-logist{margin-top:14px;padding:11px 20px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:none;background:#b26a00;color:#fff}
 .btn-logist:hover{background:#8f5500}
-
 .truck-viz-wrap{margin-top:16px;padding:14px 16px 12px;background:#fff;border:1px solid #f0d896;border-radius:10px}
 .truck-viz-title{font-size:11px;font-weight:800;color:#b26a00;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .truck-viz-title .badge{font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:20px;background:#b26a00;color:#fff;letter-spacing:.3px}
@@ -98,14 +76,12 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .truck-viz-svg{width:100%;height:auto;display:block;border-radius:8px;background:#fafbfc}
 .truck-viz-legend{display:flex;gap:18px;font-size:11.5px;color:#666;margin-top:8px;flex-wrap:wrap}
 .truck-viz-legend b{color:#1a1a1a;font-weight:700}
-
 .buyer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
 .buyer-grid .full{grid-column:1 / -1}
 .buyer-field{display:flex;flex-direction:column;gap:5px}
 .buyer-field label{font-size:10.5px;font-weight:700;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
 .buyer-field input{padding:9px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border-color .2s,box-shadow .2s}
 .buyer-field input:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.15)}
-
 .preview-wrap{background:#e8eaee;border-radius:12px;padding:24px;display:flex;justify-content:center;overflow-x:auto}
 .preview-page{background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);position:relative;display:flex;overflow:hidden;flex-shrink:0;font-family:'Segoe UI',Calibri,Arial,sans-serif}
 .pv-panel{width:230px;padding:18px 12px 14px;display:flex;flex-direction:column;position:relative;background:#fff;color:#1a1a1a;border-right:2px solid #e10004;z-index:2;flex-shrink:0}
@@ -165,18 +141,17 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .pv-totals .row .val{font-weight:700;font-variant-numeric:tabular-nums}
 .pv-totals .grand{margin-top:3px;background:#e10004;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:800;display:flex;justify-content:space-between}
 .pv-note{font-size:8.5px;color:#1a1a1a;margin-top:4px;font-style:italic}
-.pv-contract{margin-top:5px;margin-bottom:0;padding:6px 8px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:7.25px;color:#2a2a2a;line-height:1.25}
-.pv-contract .h{font-size:8.375px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
-.pv-contract .h2{font-size:7.75px;font-weight:800;color:#1a1a1a;margin-top:3px;margin-bottom:1px}
+.pv-contract{margin-top:5px;margin-bottom:0;padding:6px 8px;background:#fafafa;border:1px solid #ececec;border-radius:5px;font-size:5.8px;color:#2a2a2a;line-height:1.25}
+.pv-contract .h{font-size:6.7px;font-weight:800;color:#e10004;letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
+.pv-contract .h2{font-size:6.2px;font-weight:800;color:#1a1a1a;margin-top:3px;margin-bottom:1px}
 .pv-contract p{margin:0 0 1.5px 0}
 .pv-contract b{color:#1a1a1a}
-.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:5px;padding-top:5px;border-top:1px dotted #ccc;font-size:7.25px;color:#555}
+.pv-contract .sign{display:flex;justify-content:space-between;gap:20px;margin-top:5px;padding-top:5px;border-top:1px dotted #ccc;font-size:5.8px;color:#555}
 .pv-contract .sign .col{flex:1}
 .pv-contract .sign .ln{margin-top:8px;border-bottom:1px solid #999;height:1px}
 .pv-footer{position:absolute;left:0;right:0;bottom:0;height:16px;font-size:8px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:600;background:#fff;color:#1a1a1a;border-top:1.5px solid #e10004;z-index:3}
 .pv-footer span:first-child{color:#e10004;font-weight:800}
 .pv-footer span:last-child{color:#e10004}
-
 .actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:24px}
 .btn{padding:14px 28px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit;border:none;display:inline-flex;align-items:center;gap:8px;transition:transform .2s,box-shadow .2s}
 .btn:hover{transform:translateY(-2px)}
@@ -186,7 +161,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .btn.red:hover{box-shadow:0 12px 32px rgba(225,0,4,.5)}
 .btn.green{background:#2e7d32;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,.3)}
 .btn.green:hover{box-shadow:0 12px 32px rgba(46,125,50,.5)}
-
 .modal{position:fixed;inset:0;background:rgba(15,15,25,.72);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.open{display:flex}
 .modal-inner{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);max-width:760px;width:100%;padding:32px;max-height:90vh;overflow:auto}
@@ -201,11 +175,9 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .copy-msg{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:14px 26px;border-radius:10px;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:3000;display:none}
 .copy-msg.show{display:block;animation:slideDown .4s ease-out}
 @keyframes slideDown{from{transform:translateX(-50%) translateY(-30px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
-
 .no-data{padding:80px 40px;text-align:center;color:#888;font-size:20px;font-weight:800}
 .no-data b{color:#e10004;display:block;margin-top:10px;font-size:15px;font-weight:500}
 .preview-page.rendering{box-shadow:none !important}
-
 .picker-inner{max-width:1000px;width:96vw;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh}
 .picker-head{padding:20px 28px 14px;border-bottom:1px solid #ececec}
 .picker-head h3{margin-bottom:4px}
@@ -223,7 +195,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .picker-actions{padding:16px 28px;border-top:1px solid #ececec;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fafbfc}
 .picker-actions .btn{transform:none}
 .picker-actions .btn:hover{transform:none}
-
 .picker-node{user-select:none}
 .picker-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1.4;transition:background .12s,border-color .12s;border:1.5px solid transparent}
 .picker-row:hover{background:#f4f5f7}
@@ -236,21 +207,14 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 .picker-row.expanded .arrow{transform:rotate(90deg)}
 .picker-row .icon{flex-shrink:0;font-size:16px}
 .picker-row .label{flex:1;word-break:break-word}
-.picker-row .unit-badge{
-  flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;
-  background:#eef2f7;color:#5a6b7a;text-transform:uppercase;letter-spacing:.4px;
-}
+.picker-row .unit-badge{flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:#eef2f7;color:#5a6b7a;text-transform:uppercase;letter-spacing:.4px}
 .picker-row.item.selected .unit-badge{background:#e10004;color:#fff}
-.picker-row .art-badge{
-  flex-shrink:0;font-size:10px;color:#999;font-family:Consolas,monospace;
-  padding:2px 6px;border-radius:4px;background:#f4f5f7;
-}
+.picker-row .art-badge{flex-shrink:0;font-size:10px;color:#999;font-family:Consolas,monospace;padding:2px 6px;border-radius:4px;background:#f4f5f7}
 .picker-children{margin-left:20px;border-left:2px solid #f0f0f0;padding-left:6px;display:none}
 .picker-children.open{display:block}
 .picker-empty{padding:60px 20px;text-align:center;color:#999;font-size:14px;line-height:1.7}
 .picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
 .picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
-
 @media(max-width:640px){
   .hero h1{font-size:24px}
   .preview-wrap{padding:12px;overflow-x:scroll}
@@ -278,7 +242,6 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   </div>
 
   <div id="content" style="display:none">
-
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
       <div class="inv-wrap">
@@ -329,49 +292,22 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
           <span class="slider-val" id="deliveryDaysVal">3 дня</span>
         </div>
       </div>
-
       <div class="delivery-block" id="deliveryBlock" style="display:none">
         <div class="dt">🚚 Данные для доставки</div>
         <div class="delivery-grid">
-          <div class="delivery-field full">
-            <label for="delAddress">Адрес доставки</label>
-            <input type="text" id="delAddress" placeholder="г. Минск, ул. Примерная, д. 1">
-          </div>
-          <div class="delivery-field">
-            <label for="delPhone">Контактный телефон</label>
-            <input type="text" id="delPhone" placeholder="+375 (29) 000-00-00">
-          </div>
-          <div class="delivery-field">
-            <label for="delTime">Рекомендуемое время</label>
-            <input type="text" id="delTime" inputmode="numeric" placeholder="например: 09:00-15:00" maxlength="11">
-          </div>
-          <div class="delivery-field">
-            <label for="delDate">Дата доставки</label>
-            <input type="date" id="delDate">
-          </div>
-          <div class="delivery-field">
-            <label for="delWeight">Вес груза, кг</label>
-            <input type="number" id="delWeight" step="0.1" min="0" placeholder="0">
-          </div>
-          <div class="delivery-field">
-            <label for="delVolume">Объём груза, м³</label>
-            <input type="number" id="delVolume" step="0.01" min="0" placeholder="0">
-          </div>
-          <div class="delivery-field">
-            <label for="delMaxLen">Макс. длина груза, мм</label>
-            <input type="number" id="delMaxLen" step="100" min="0" placeholder="0">
-          </div>
+          <div class="delivery-field full"><label for="delAddress">Адрес доставки</label><input type="text" id="delAddress" placeholder="г. Минск, ул. Примерная, д. 1"></div>
+          <div class="delivery-field"><label for="delPhone">Контактный телефон</label><input type="text" id="delPhone" placeholder="+375 (29) 000-00-00"></div>
+          <div class="delivery-field"><label for="delTime">Рекомендуемое время</label><input type="text" id="delTime" inputmode="numeric" placeholder="например: 09:00-15:00" maxlength="11"></div>
+          <div class="delivery-field"><label for="delDate">Дата доставки</label><input type="date" id="delDate"></div>
+          <div class="delivery-field"><label for="delWeight">Вес груза, кг</label><input type="number" id="delWeight" step="0.1" min="0" placeholder="0"></div>
+          <div class="delivery-field"><label for="delVolume">Объём груза, м³</label><input type="number" id="delVolume" step="0.01" min="0" placeholder="0"></div>
+          <div class="delivery-field"><label for="delMaxLen">Макс. длина груза, мм</label><input type="number" id="delMaxLen" step="100" min="0" placeholder="0"></div>
         </div>
-
         <div class="truck-viz-wrap" id="truckVizWrap" style="display:none">
-          <div class="truck-viz-title">
-            <span>🚛 Схема загрузки автомобиля</span>
-            <span class="badge" id="truckBadge">—</span>
-          </div>
+          <div class="truck-viz-title"><span>🚛 Схема загрузки автомобиля</span><span class="badge" id="truckBadge">—</span></div>
           <div id="truckViz"></div>
           <div class="truck-viz-legend" id="truckLegend"></div>
         </div>
-
         <button type="button" class="btn-logist" id="btnLogist">📋 Сформировать заявку логисту</button>
       </div>
     </div>
@@ -386,42 +322,15 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
             <button type="button" class="btn-picker" id="btnBuyerPicker" title="Выбрать из справочника контрагентов">📁</button>
           </div>
         </div>
-        <div class="buyer-field">
-          <label for="bUnp">УНП (9 цифр)</label>
-          <input type="text" id="bUnp" inputmode="numeric" maxlength="9" placeholder="000000000">
-        </div>
-        <div class="buyer-field">
-          <label for="bAccount">Номер счёта</label>
-          <input type="text" id="bAccount" maxlength="34" placeholder="BY00 XXXX 0000 0000 0000 0000 0000">
-        </div>
-        <div class="buyer-field full">
-          <label for="bAddress">Юридический адрес</label>
-          <input type="text" id="bAddress" placeholder="г. Минск, ул. Примерная, д. 1, офис 1">
-        </div>
-        <div class="buyer-field">
-          <label for="bBank">Банк</label>
-          <input type="text" id="bBank" placeholder="ОАО «Банк Пример», г. Минск">
-        </div>
-        <div class="buyer-field">
-          <label for="bBic">БИК (7 символов)</label>
-          <input type="text" id="bBic" maxlength="7" placeholder="MTBKBY22" style="text-transform:uppercase">
-        </div>
-        <div class="buyer-field">
-          <label for="bPosition">Должность подписанта</label>
-          <input type="text" id="bPosition" placeholder="Директор">
-        </div>
-        <div class="buyer-field">
-          <label for="bFio">ФИО подписанта</label>
-          <input type="text" id="bFio" placeholder="Иванов Иван Иванович">
-        </div>
-        <div class="buyer-field full">
-          <label for="bBasis">Основание полномочий</label>
-          <input type="text" id="bBasis" placeholder="Устава">
-        </div>
-        <div class="buyer-field full">
-          <label for="bPhone">Контактный телефон</label>
-          <input type="text" id="bPhone" placeholder="+375 (29) 000-00-00">
-        </div>
+        <div class="buyer-field"><label for="bUnp">УНП (9 цифр)</label><input type="text" id="bUnp" inputmode="numeric" maxlength="9" placeholder="000000000"></div>
+        <div class="buyer-field"><label for="bAccount">Номер счёта</label><input type="text" id="bAccount" maxlength="34" placeholder="BY00 XXXX 0000 0000 0000 0000 0000"></div>
+        <div class="buyer-field full"><label for="bAddress">Юридический адрес</label><input type="text" id="bAddress" placeholder="г. Минск, ул. Примерная, д. 1, офис 1"></div>
+        <div class="buyer-field"><label for="bBank">Банк</label><input type="text" id="bBank" placeholder="ОАО «Банк Пример», г. Минск"></div>
+        <div class="buyer-field"><label for="bBic">БИК (7 символов)</label><input type="text" id="bBic" maxlength="7" placeholder="MTBKBY22" style="text-transform:uppercase"></div>
+        <div class="buyer-field"><label for="bPosition">Должность подписанта</label><input type="text" id="bPosition" placeholder="Директор"></div>
+        <div class="buyer-field"><label for="bFio">ФИО подписанта</label><input type="text" id="bFio" placeholder="Иванов Иван Иванович"></div>
+        <div class="buyer-field full"><label for="bBasis">Основание полномочий</label><input type="text" id="bBasis" placeholder="Устава"></div>
+        <div class="buyer-field full"><label for="bPhone">Контактный телефон</label><input type="text" id="bPhone" placeholder="+375 (29) 000-00-00"></div>
       </div>
     </div>
 
@@ -437,14 +346,13 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
       <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
       <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
     </div>
-
   </div>
 </div>
 
 <div class="modal" id="shareModal">
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
-    <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя. Отправьте её клиенту — он увидит красивую презентацию КП с 2D-схемой и 3D-объёмом.</p>
+    <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя.</p>
     <div class="copy-row">
       <input type="text" id="shareLink" readonly onclick="this.select()">
       <button type="button" id="btnCopy">📋 Копировать</button>
@@ -471,13 +379,13 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   <div class="modal-inner picker-inner">
     <div class="picker-head">
       <h3>📁 Справочник номенклатуры</h3>
-      <p>Разверните папку и выберите позицию — подставятся название, ед. изм. и артикул. Можно вводить вручную — пикер не обязателен.</p>
+      <p>Разверните папку и выберите позицию — подставятся название, ед. изм. и артикул.</p>
     </div>
     <div class="picker-search">
       <input type="text" id="pickerSearch" placeholder="🔍 Поиск по названию или артикулу..." autocomplete="off">
       <div class="picker-toolbar">
-        <button type="button" id="btnCollapseAll" title="Свернуть все папки">⊟ Свернуть</button>
-        <button type="button" id="btnExpandAll" title="Развернуть все папки">⊞ Развернуть</button>
+        <button type="button" id="btnCollapseAll">⊟ Свернуть</button>
+        <button type="button" id="btnExpandAll">⊞ Развернуть</button>
       </div>
     </div>
     <div class="picker-count" id="pickerCount"></div>
@@ -496,7 +404,7 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
   <div class="modal-inner picker-inner">
     <div class="picker-head">
       <h3>🏢 Справочник контрагентов</h3>
-      <p>Поиск по названию, полному наименованию или УНП. При выборе заполнятся: наименование, УНП и юридический адрес. Остальные поля заполняются вручную.</p>
+      <p>Поиск по названию, полному наименованию или УНП.</p>
     </div>
     <div class="picker-search">
       <input type="text" id="buyerPickerSearch" placeholder="🔍 Поиск по названию или УНП..." autocomplete="off">
@@ -516,25 +424,14 @@ table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-rad
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
-/* =====================================================================
-   CUBICA · i5.24
-   На базе i5.22, шрифты блока договора увеличены на 25%:
-   - .pv-contract: 5.8px → 7.25px
-   - .pv-contract .h: 6.7px → 8.375px
-   - .pv-contract .h2: 6.2px → 7.75px
-   - .pv-contract .sign: 5.8px → 7.25px
-   ===================================================================== */
+/* CUBICA · i5.22 */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
-
 const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
 const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
-
 const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
 const CONTRACTORS_CACHE_KEY = 'cubica_contractors_v1';
-
 const REQUISITES_URL = 'https://6471811-source.github.io/cubica-requisites/requisites.docx';
-
 const OFFICE_COORDS    = { lat: 53.955161, lon: 27.778077 };
 const WAREHOUSE_COORDS = { lat: 53.945140, lon: 27.741913 };
 
@@ -557,70 +454,42 @@ const COMPANY = {
   hours:'Пн–Пт, 09:00–15:00'
 };
 
-/* ---------- УТИЛИТЫ ---------- */
 function b64dec(s){
   if(!s) return null;
   s = String(s).replace(/-/g,'+').replace(/_/g,'/');
   while(s.length%4) s += '=';
-  try{
-    const bin = atob(s);
-    const bytes = new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder('utf-8').decode(bytes);
-  }catch(e){return null;}
+  try{const bin=atob(s);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new TextDecoder('utf-8').decode(bytes);}catch(e){return null;}
 }
-function b64enc(s){
-  return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtMp(v){return Number(v||0).toFixed(3).replace('.', ',');}
 function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
-function parseQtyInput(str){
-  const n = parseFloat(String(str).replace(',','.'));
-  if(!isFinite(n)) return 0;
-  return Math.round(n * 100) / 100;
-}
+function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return Math.round(n*100)/100;}
 
-function handleSmartInput(inp, e){
-  const key = e.key;
-  if(!/^\d$/.test(key)) return false;
-  let val = inp.value, selStart = inp.selectionStart, selEnd = inp.selectionEnd;
-  if(selStart === 0 && selEnd === val.length){
-    inp.value = key + ',00';
-    inp.setSelectionRange(1,1);
-    return true;
+function handleSmartInput(inp,e){
+  const key=e.key;
+  if(!/^\d$/.test(key))return false;
+  let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
+  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
+  const comma=val.indexOf(',');
+  if(comma>=0&&selStart<=comma){
+    let left=val.slice(0,comma),right=val.slice(comma+1);
+    if(left==='0'&&(selStart===0||selStart===1)){inp.value=key+','+right;inp.setSelectionRange(1,1);return true;}
+    const newLeft=left.slice(0,selStart)+key+left.slice(selEnd);
+    const cleaned=newLeft.replace(/^0+(\d)/,'$1').slice(0,9)||'0';
+    inp.value=cleaned+','+right;
+    const pos=Math.min(cleaned.length,selStart+1);inp.setSelectionRange(pos,pos);return true;
   }
-  const comma = val.indexOf(',');
-  if(comma >= 0 && selStart <= comma){
-    let left = val.slice(0, comma), right = val.slice(comma + 1);
-    if(left === '0' && (selStart === 0 || selStart === 1)){
-      inp.value = key + ',' + right;
-      inp.setSelectionRange(1,1);
-      return true;
-    }
-    const newLeft = left.slice(0, selStart) + key + left.slice(selEnd);
-    const cleaned = newLeft.replace(/^0+(\d)/, '$1').slice(0,9) || '0';
-    inp.value = cleaned + ',' + right;
-    const pos = Math.min(cleaned.length, selStart + 1);
-    inp.setSelectionRange(pos, pos);
-    return true;
-  }
-  if(comma >= 0 && selStart > comma){
-    let left = val.slice(0, comma) || '0';
-    let right = val.slice(comma + 1).padEnd(2,'0').slice(0,2);
-    const idxInFrac = selStart - comma - 1;
-    if(idxInFrac < 0) return false;
-    const posInFrac = Math.min(Math.max(idxInFrac,0),1);
-    let arr = right.split('');
-    arr[posInFrac] = key;
-    right = arr.join('');
-    inp.value = left + ',' + right;
-    const newPos = comma + 1 + posInFrac + 1;
-    inp.setSelectionRange(newPos, newPos);
-    return true;
+  if(comma>=0&&selStart>comma){
+    let left=val.slice(0,comma)||'0';
+    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
+    const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
+    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
+    let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
+    inp.value=left+','+right;
+    const newPos=comma+1+posInFrac+1;inp.setSelectionRange(newPos,newPos);return true;
   }
   return false;
 }
@@ -653,1031 +522,506 @@ function sumToWordsRU(total){
   return rubStr.charAt(0).toUpperCase()+rubStr.slice(1)+' '+rubForm+' '+kopStr+' '+kopForm;
 }
 
-function normalizeRailLabel(label){
-  return String(label)
-    .replace(/\s*\(объединено\)\s*$/i,'')
-    .replace(/\s+\d+\s*мм\s*$/i,'')
-    .trim();
-}
-
-function formatTimeInput(str){
-  const d = String(str).replace(/\D/g,'').slice(0,8);
-  if(!d) return '';
-  if(d.length <= 2) return d;
-  if(d.length <= 4) return d.slice(0,2) + ':' + d.slice(2);
-  if(d.length <= 6) return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4);
-  return d.slice(0,2) + ':' + d.slice(2,4) + '-' + d.slice(4,6) + ':' + d.slice(6,8);
-}
-
-function attachZeroSelect(inp){
-  inp.addEventListener('focus', function(){
-    const v = String(this.value).trim();
-    if(v === '' || /^0([.,]0+)?$/.test(v)){
-      requestAnimationFrame(() => this.select());
-    }
-  });
-}
+function normalizeRailLabel(label){return String(label).replace(/\s*\(объединено\)\s*$/i,'').replace(/\s+\d+\s*мм\s*$/i,'').trim();}
+function formatTimeInput(str){const d=String(str).replace(/\D/g,'').slice(0,8);if(!d)return'';if(d.length<=2)return d;if(d.length<=4)return d.slice(0,2)+':'+d.slice(2);if(d.length<=6)return d.slice(0,2)+':'+d.slice(2,4)+'-'+d.slice(4);return d.slice(0,2)+':'+d.slice(2,4)+'-'+d.slice(4,6)+':'+d.slice(6,8);}
+function attachZeroSelect(inp){inp.addEventListener('focus',function(){const v=String(this.value).trim();if(v===''||/^0([.,]0+)?$/.test(v)){requestAnimationFrame(()=>this.select());}});}
 
 const LOGO_SVG_COLOR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 110"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e10004"/><stop offset="100%" stop-color="#a50003"/></linearGradient></defs><g fill="url(#cg)" transform="translate(6,10)"><polygon points="0,20 22,0 34,0 12,20"/><polygon points="0,30 30,4 42,4 12,30"/><polygon points="8,50 55,4 67,4 20,50"/><polygon points="8,60 80,0 92,0 20,60"/><polygon points="8,70 100,0 112,0 20,70"/><polygon points="20,90 90,20 102,20 32,90"/><polygon points="35,90 105,20 117,20 47,90"/><polygon points="50,90 110,32 122,32 62,90"/><polygon points="65,90 115,42 127,42 77,90"/></g><text x="145" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="44" fill="#000">CUBICA</text><text x="147" y="78" font-family="Calibri,Arial,sans-serif" font-size="15" fill="#5f6a69">modern ceiling solutions</text></svg>`;
 const QR_STUB = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><rect width="29" height="29" fill="#fff"/><g fill="#1a1a1a"><rect x="0" y="0" width="7" height="7"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3"/><rect x="22" y="0" width="7" height="7"/><rect x="23" y="1" width="5" height="5" fill="#fff"/><rect x="24" y="2" width="3" height="3"/><rect x="0" y="22" width="7" height="7"/><rect x="1" y="23" width="5" height="5" fill="#fff"/><rect x="2" y="24" width="3" height="3"/></g></svg>`;
 
 function makeQrSvg(data){
   try{
-    if(typeof qrcode !== 'function') return QR_STUB;
-    const qr = qrcode(0, 'M');
-    qr.addData(data);
-    qr.make();
-    const count = qr.getModuleCount();
-    let path = '';
-    for(let r = 0; r < count; r++){
-      for(let c = 0; c < count; c++){
-        if(qr.isDark(r, c)){
-          path += `<rect x="${c}" y="${r}" width="1" height="1"/>`;
-        }
-      }
-    }
+    if(typeof qrcode!=='function')return QR_STUB;
+    const qr=qrcode(0,'M');qr.addData(data);qr.make();
+    const count=qr.getModuleCount();let path='';
+    for(let r=0;r<count;r++)for(let c=0;c<count;c++)if(qr.isDark(r,c))path+=`<rect x="${c}" y="${r}" width="1" height="1"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${count} ${count}" shape-rendering="crispEdges" style="width:100%;height:100%;display:block"><rect width="${count}" height="${count}" fill="#fff"/><g fill="#1a1a1a">${path}</g></svg>`;
-  }catch(e){
-    console.warn('QR генерация:', e);
-    return QR_STUB;
-  }
+  }catch(e){console.warn('QR:',e);return QR_STUB;}
 }
-function makeRequisitesQR(){ return makeQrSvg(REQUISITES_URL); }
-function makeNaviQR(coords){ return makeQrSvg('yandexnavi://build_route_on_map?lat_to=' + coords.lat + '&lon_to=' + coords.lon); }
+function makeRequisitesQR(){return makeQrSvg(REQUISITES_URL);}
+function makeNaviQR(coords){return makeQrSvg('yandexnavi://build_route_on_map?lat_to='+coords.lat+'&lon_to='+coords.lon);}
 
-/* ---------- ЧТЕНИЕ URL ---------- */
-const urlParams = new URLSearchParams(location.search);
-const rawData = urlParams.get('data');
-const AUTO_PDF = urlParams.get('autopdf') === '1';
-let ROWS = [];
-let ROOMS = [];
-let KP_META = null;
-let PREFILL_BUYER = null;
-let PREFILL_DEAL = null;
+const urlParams=new URLSearchParams(location.search);
+const rawData=urlParams.get('data');
+const AUTO_PDF=urlParams.get('autopdf')==='1';
+let ROWS=[],ROOMS=[],KP_META=null,PREFILL_BUYER=null,PREFILL_DEAL=null;
 
 if(rawData){
   try{
-    const parsed = JSON.parse(b64dec(rawData));
-    if(Array.isArray(parsed.rows)){
-      ROWS = parsed.rows.map(r=>({
-        label: String(r.label||''),
-        qtyCalc: Number(r.qty)||0,
-        qtyReserve: 0,
-        unit: r.unit || 'шт.',
-        price: Number(r.price) || 0
-      }));
-    }
-    if(Array.isArray(parsed.rooms)) ROOMS = parsed.rooms;
-    if(parsed.company && typeof parsed.company === 'object') Object.assign(COMPANY, parsed.company);
-    if(parsed.meta) KP_META = parsed.meta;
-    if(parsed.buyer && typeof parsed.buyer === 'object') PREFILL_BUYER = parsed.buyer;
-    if(parsed.deal && typeof parsed.deal === 'object') PREFILL_DEAL = parsed.deal;
-  }catch(e){
-    console.warn('Не удалось распарсить ?data:', e);
-  }
+    const parsed=JSON.parse(b64dec(rawData));
+    if(Array.isArray(parsed.rows))ROWS=parsed.rows.map(r=>({label:String(r.label||''),qtyCalc:Number(r.qty)||0,qtyReserve:0,unit:r.unit||'шт.',price:Number(r.price)||0}));
+    if(Array.isArray(parsed.rooms))ROOMS=parsed.rooms;
+    if(parsed.company&&typeof parsed.company==='object')Object.assign(COMPANY,parsed.company);
+    if(parsed.meta)KP_META=parsed.meta;
+    if(parsed.buyer&&typeof parsed.buyer==='object')PREFILL_BUYER=parsed.buyer;
+    if(parsed.deal&&typeof parsed.deal==='object')PREFILL_DEAL=parsed.deal;
+  }catch(e){console.warn('?data:',e);}
 }
 
 (function normalizeAndMergeRows(){
-  const map = new Map();
-  const order = [];
+  const map=new Map(),order=[];
   for(const r of ROWS){
-    let label = String(r.label||'');
-    let unit  = r.unit || 'шт.';
-    let qtyCalc = Number(r.qtyCalc)||0;
-    let qtyReserve = Number(r.qtyReserve)||0;
-    let price = Number(r.price)||0;
-
+    let label=String(r.label||''),unit=r.unit||'шт.';
+    let qtyCalc=Number(r.qtyCalc)||0,qtyReserve=Number(r.qtyReserve)||0,price=Number(r.price)||0;
     if(/^Рейка Cubica /.test(label)){
-      const m = label.match(/(\d+)\s*мм/i);
-      if(m && unit !== 'м.п.'){
-        const lenMm = parseInt(m[1], 10);
-        qtyCalc = (lenMm / 1000) * qtyCalc;
-        qtyReserve = (lenMm / 1000) * qtyReserve;
-      }
-      unit = 'м.п.';
-      label = normalizeRailLabel(label);
+      const m=label.match(/(\d+)\s*мм/i);
+      if(m&&unit!=='м.п.'){const lenMm=parseInt(m[1],10);qtyCalc=(lenMm/1000)*qtyCalc;qtyReserve=(lenMm/1000)*qtyReserve;}
+      unit='м.п.';label=normalizeRailLabel(label);
     }
-
-    const key = label + '|' + unit;
-    if(map.has(key)){
-      map.get(key).qtyCalc += qtyCalc;
-      map.get(key).qtyReserve += qtyReserve;
-    }else{
-      map.set(key, {label, qtyCalc, qtyReserve, unit, price});
-      order.push(key);
-    }
+    const key=label+'|'+unit;
+    if(map.has(key)){map.get(key).qtyCalc+=qtyCalc;map.get(key).qtyReserve+=qtyReserve;}
+    else{map.set(key,{label,qtyCalc,qtyReserve,unit,price});order.push(key);}
   }
-  ROWS = order.map(k => {
-    const r = map.get(k);
-    r.qtyCalc = Math.round(r.qtyCalc * 100) / 100;
-    r.qtyReserve = Math.round(r.qtyReserve * 100) / 100;
-    return r;
-  });
+  ROWS=order.map(k=>{const r=map.get(k);r.qtyCalc=Math.round(r.qtyCalc*100)/100;r.qtyReserve=Math.round(r.qtyReserve*100)/100;return r;});
 })();
 
-if(!ROWS.length){
-  document.getElementById('noData').style.display = 'block';
-}else{
-  document.getElementById('content').style.display = 'block';
-}
+if(!ROWS.length){document.getElementById('noData').style.display='block';}
+else{document.getElementById('content').style.display='block';}
 
-/* ---------- ИТОГИ ---------- */
-let invoiceTotals = {subtotal:0, vat:0, total:0};
+let invoiceTotals={subtotal:0,vat:0,total:0};
+function rowTotalQty(r){return (Number(r.qtyCalc)||0)+(Number(r.qtyReserve)||0);}
+function rowSum(r){return rowTotalQty(r)*(Number(r.price)||0);}
+function computeTotals(){let sub=0,vat=0,tot=0;for(const r of ROWS){const s=rowSum(r);const v=s*0.20;sub+=s;vat+=v;tot+=s+v;}invoiceTotals={subtotal:sub,vat,total:tot};}
 
-function rowTotalQty(r){
-  return (Number(r.qtyCalc)||0) + (Number(r.qtyReserve)||0);
-}
-function rowSum(r){
-  return rowTotalQty(r) * (Number(r.price)||0);
-}
-function computeTotals(){
-  let sub=0, vat=0, tot=0;
-  for(const r of ROWS){
-    const s = rowSum(r);
-    const v = s * 0.20;
-    sub += s; vat += v; tot += s+v;
-  }
-  invoiceTotals = {subtotal:sub, vat, total:tot};
-}
-
-/* ---------- РЕНДЕР ТАБЛИЦЫ ПОЗИЦИЙ ---------- */
 function renderInvoiceTable(){
-  const tbody = document.getElementById('invTbody');
-  tbody.innerHTML = ROWS.map((r, i) => {
-    const s = rowSum(r);
-    const v = s * 0.20;
-    const t = s + v;
-    const calcStr = fmtQty2(r.qtyCalc);
-    const resStr  = fmtQty2(r.qtyReserve);
-    const totStr  = fmtQty2(rowTotalQty(r));
-    return '<tr data-idx="'+i+'">' +
-      '<td class="pos">' + (i+1) + '</td>' +
-      '<td><div class="name-cell">' +
-        '<input type="text" class="cell-input name" data-field="label" value="' + escapeHtml(r.label) + '" title="Двойной клик или F2 — открыть справочник">' +
-        '<button type="button" class="btn-picker" data-picker="' + i + '" title="Выбрать из справочника (F2)">📁</button>' +
-      '</div></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="' + calcStr + '"></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="' + resStr + '"></td>' +
-      '<td class="num qty-total" data-total="' + i + '">' + totStr + '</td>' +
-      '<td><input type="text" class="cell-input" style="text-align:center;width:60px" data-field="unit" value="' + escapeHtml(r.unit) + '"></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="' + fmtPriceInput(r.price) + '"></td>' +
-      '<td class="num" data-sum="' + i + '">' + fmtInvoice(s) + '</td>' +
-      '<td class="vat">20 %</td>' +
-      '<td class="num" data-vat="' + i + '">' + fmtInvoice(v) + '</td>' +
-      '<td class="num sum-vat" data-svat="' + i + '">' + fmtInvoice(t) + '</td>' +
-      '<td><button type="button" class="btn-row-del" data-del="'+i+'" title="Удалить">✕</button></td>' +
+  const tbody=document.getElementById('invTbody');
+  tbody.innerHTML=ROWS.map((r,i)=>{
+    const s=rowSum(r),v=s*0.20,t=s+v;
+    const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve),totStr=fmtQty2(rowTotalQty(r));
+    return '<tr data-idx="'+i+'">'+
+      '<td class="pos">'+(i+1)+'</td>'+
+      '<td><div class="name-cell">'+
+        '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">'+
+        '<button type="button" class="btn-picker" data-picker="'+i+'">📁</button>'+
+      '</div></td>'+
+      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>'+
+      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>'+
+      '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>'+
+      '<td><input type="text" class="cell-input" style="text-align:center;width:60px" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>'+
+      '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>'+
+      '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>'+
+      '<td class="vat">20 %</td>'+
+      '<td class="num" data-vat="'+i+'">'+fmtInvoice(v)+'</td>'+
+      '<td class="num sum-vat" data-svat="'+i+'">'+fmtInvoice(t)+'</td>'+
+      '<td><button type="button" class="btn-row-del" data-del="'+i+'">✕</button></td>'+
     '</tr>';
   }).join('');
 
-  tbody.querySelectorAll('.cell-input').forEach(inp => {
-    const field = inp.getAttribute('data-field');
-
-    if(field === 'label'){
-      inp.addEventListener('input', () => {
-        const idx = idxOf(inp);
-        ROWS[idx].label = inp.value;
-        renderPreview();
-      });
-      inp.addEventListener('keydown', (e) => {
-        if(e.key === 'F2'){ e.preventDefault(); openPicker(idxOf(inp)); }
-      });
-      inp.addEventListener('dblclick', () => openPicker(idxOf(inp)));
+  tbody.querySelectorAll('.cell-input').forEach(inp=>{
+    const field=inp.getAttribute('data-field');
+    if(field==='label'){
+      inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].label=inp.value;renderPreview();});
+      inp.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();openPicker(idxOf(inp));}});
+      inp.addEventListener('dblclick',()=>openPicker(idxOf(inp)));
       return;
     }
-
-    if(field === 'unit'){
-      inp.addEventListener('input', () => {
-        const idx = idxOf(inp);
-        ROWS[idx].unit = inp.value;
-        updateRowTotals(idx);
-        updateTotalsView();
-        renderPreview();
-      });
+    if(field==='unit'){
+      inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].unit=inp.value;updateRowTotals(idx);updateTotalsView();renderPreview();});
       return;
     }
-
-    inp.addEventListener('keydown', (e) => {
-      if(e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-         e.key === 'Tab' || e.key === 'Enter' || e.key === 'Home' || e.key === 'End') return;
-      if(/^\d$/.test(e.key)){
-        if(handleSmartInput(inp, e)){
-          e.preventDefault();
-          commitNumericCell(inp);
-        }
-      } else if(e.key.length === 1){
-        e.preventDefault();
-      }
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'||e.key==='Delete'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Tab'||e.key==='Enter'||e.key==='Home'||e.key==='End')return;
+      if(/^\d$/.test(e.key)){if(handleSmartInput(inp,e)){e.preventDefault();commitNumericCell(inp);}}
+      else if(e.key.length===1){e.preventDefault();}
     });
-
-    inp.addEventListener('input', () => {
+    inp.addEventListener('input',()=>{
       commitNumericCell(inp);
-      const idx = idxOf(inp);
-      if(field === 'price') inp.value = fmtPriceInput(ROWS[idx].price);
-      else if(field === 'qtyCalc') inp.value = fmtQty2(ROWS[idx].qtyCalc);
-      else if(field === 'qtyReserve') inp.value = fmtQty2(ROWS[idx].qtyReserve);
+      const idx=idxOf(inp);
+      if(field==='price')inp.value=fmtPriceInput(ROWS[idx].price);
+      else if(field==='qtyCalc')inp.value=fmtQty2(ROWS[idx].qtyCalc);
+      else if(field==='qtyReserve')inp.value=fmtQty2(ROWS[idx].qtyReserve);
     });
-
-    inp.addEventListener('blur', () => {
-      const idx = idxOf(inp);
-      if(field === 'price'){
-        ROWS[idx].price = parsePriceInput(inp.value);
-        inp.value = fmtPriceInput(ROWS[idx].price);
-      } else if(field === 'qtyCalc'){
-        ROWS[idx].qtyCalc = parseQtyInput(inp.value);
-        inp.value = fmtQty2(ROWS[idx].qtyCalc);
-      } else if(field === 'qtyReserve'){
-        ROWS[idx].qtyReserve = parseQtyInput(inp.value);
-        inp.value = fmtQty2(ROWS[idx].qtyReserve);
-      }
-      updateRowTotals(idx);
-      updateTotalsView();
-      renderPreview();
+    inp.addEventListener('blur',()=>{
+      const idx=idxOf(inp);
+      if(field==='price'){ROWS[idx].price=parsePriceInput(inp.value);inp.value=fmtPriceInput(ROWS[idx].price);}
+      else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyCalc);}
+      else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyReserve);}
+      updateRowTotals(idx);updateTotalsView();renderPreview();
     });
   });
-
-  tbody.querySelectorAll('.btn-picker').forEach(btn => {
-    btn.addEventListener('click', () => openPicker(parseInt(btn.getAttribute('data-picker'), 10)));
-  });
-
-  tbody.querySelectorAll('.btn-row-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-del'), 10);
-      if(!confirm('Удалить позицию «' + (ROWS[idx].label || '') + '»?')) return;
-      ROWS.splice(idx, 1);
-      renderInvoiceTable();
-      renderPreview();
+  tbody.querySelectorAll('.btn-picker').forEach(btn=>btn.addEventListener('click',()=>openPicker(parseInt(btn.getAttribute('data-picker'),10))));
+  tbody.querySelectorAll('.btn-row-del').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const idx=parseInt(btn.getAttribute('data-del'),10);
+      if(!confirm('Удалить позицию «'+(ROWS[idx].label||'')+'»?'))return;
+      ROWS.splice(idx,1);renderInvoiceTable();renderPreview();
     });
   });
-
   updateTotalsView();
 }
 
-function idxOf(inp){
-  return parseInt(inp.closest('tr').getAttribute('data-idx'), 10);
-}
-
+function idxOf(inp){return parseInt(inp.closest('tr').getAttribute('data-idx'),10);}
 function commitNumericCell(inp){
-  const idx = idxOf(inp);
-  const field = inp.getAttribute('data-field');
-  if(field === 'price') ROWS[idx].price = parsePriceInput(inp.value);
-  else if(field === 'qtyCalc') ROWS[idx].qtyCalc = parseQtyInput(inp.value);
-  else if(field === 'qtyReserve') ROWS[idx].qtyReserve = parseQtyInput(inp.value);
-  updateRowTotals(idx);
-  updateTotalsView();
-  renderPreview();
+  const idx=idxOf(inp),field=inp.getAttribute('data-field');
+  if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
+  else if(field==='qtyCalc')ROWS[idx].qtyCalc=parseQtyInput(inp.value);
+  else if(field==='qtyReserve')ROWS[idx].qtyReserve=parseQtyInput(inp.value);
+  updateRowTotals(idx);updateTotalsView();renderPreview();
 }
-
 function updateRowTotals(idx){
-  const r = ROWS[idx];
-  const s = rowSum(r);
-  const v = s * 0.20;
-  const t = s + v;
-  const tr = document.querySelector('tr[data-idx="'+idx+'"]');
-  if(!tr) return;
-  const totEl = tr.querySelector('[data-total="'+idx+'"]');
-  const sumEl = tr.querySelector('[data-sum="'+idx+'"]');
-  const vatEl = tr.querySelector('[data-vat="'+idx+'"]');
-  const svatEl = tr.querySelector('[data-svat="'+idx+'"]');
-  if(totEl) totEl.textContent = fmtQty2(rowTotalQty(r));
-  if(sumEl) sumEl.textContent = fmtInvoice(s);
-  if(vatEl) vatEl.textContent = fmtInvoice(v);
-  if(svatEl) svatEl.textContent = fmtInvoice(t);
+  const r=ROWS[idx],s=rowSum(r),v=s*0.20,t=s+v;
+  const tr=document.querySelector('tr[data-idx="'+idx+'"]');
+  if(!tr)return;
+  const totEl=tr.querySelector('[data-total="'+idx+'"]');
+  const sumEl=tr.querySelector('[data-sum="'+idx+'"]');
+  const vatEl=tr.querySelector('[data-vat="'+idx+'"]');
+  const svatEl=tr.querySelector('[data-svat="'+idx+'"]');
+  if(totEl)totEl.textContent=fmtQty2(rowTotalQty(r));
+  if(sumEl)sumEl.textContent=fmtInvoice(s);
+  if(vatEl)vatEl.textContent=fmtInvoice(v);
+  if(svatEl)svatEl.textContent=fmtInvoice(t);
 }
-
 function updateTotalsView(){
   computeTotals();
-  document.getElementById('invTotals').innerHTML =
-    '<div class="lbl">Стоимость без НДС:</div><div class="val">' + fmtInvoice(invoiceTotals.subtotal) + ' BYN</div>' +
-    '<div class="lbl">НДС 20 %:</div><div class="val">' + fmtInvoice(invoiceTotals.vat) + ' BYN</div>' +
-    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">' + fmtInvoice(invoiceTotals.total) + ' BYN</div>';
+  document.getElementById('invTotals').innerHTML=
+    '<div class="lbl">Стоимость без НДС:</div><div class="val">'+fmtInvoice(invoiceTotals.subtotal)+' BYN</div>'+
+    '<div class="lbl">НДС 20 %:</div><div class="val">'+fmtInvoice(invoiceTotals.vat)+' BYN</div>'+
+    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">'+fmtInvoice(invoiceTotals.total)+' BYN</div>';
 }
-
-document.getElementById('btnAddRow').addEventListener('click', () => {
-  ROWS.push({ label: 'Новая позиция', qtyCalc: 1, qtyReserve: 0, unit: 'шт.', price: 0 });
-  renderInvoiceTable();
-  renderPreview();
+document.getElementById('btnAddRow').addEventListener('click',()=>{
+  ROWS.push({label:'Новая позиция',qtyCalc:1,qtyReserve:0,unit:'шт.',price:0});
+  renderInvoiceTable();renderPreview();
 });
 
-/* =====================================================================
-   СПРАВОЧНИК НОМЕНКЛАТУРЫ
-   ===================================================================== */
-let NOMENCLATURE = null;
-let pickerTargetIdx = -1;
-const pickerSelected = { node: null };
-const pickerExpanded = new Set();
-let pickerFilter = '';
+/* Номенклатура */
+let NOMENCLATURE=null,pickerTargetIdx=-1;
+const pickerSelected={node:null},pickerExpanded=new Set();
+let pickerFilter='';
 
 async function loadNomenclature(force){
-  if(NOMENCLATURE && !force) return NOMENCLATURE;
-  if(!force){
-    try{
-      const cached = localStorage.getItem(NOMENCLATURE_CACHE_KEY);
-      if(cached){
-        const parsed = JSON.parse(cached);
-        if(parsed && Array.isArray(parsed.tree) && parsed.tree.length){
-          NOMENCLATURE = parsed;
-          fetchAndCache().catch(()=>{});
-          return NOMENCLATURE;
-        }
-      }
-    }catch(e){}
-  }
+  if(NOMENCLATURE&&!force)return NOMENCLATURE;
+  if(!force){try{const cached=localStorage.getItem(NOMENCLATURE_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.tree)&&parsed.tree.length){NOMENCLATURE=parsed;fetchAndCache().catch(()=>{});return NOMENCLATURE;}}}catch(e){}}
   return await fetchAndCache();
 }
-
 async function fetchAndCache(){
   try{
-    const res = await fetch(NOMENCLATURE_URL, { cache: 'no-cache' });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    let text = await res.text();
-    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    const data = /^\s*</.test(text) && /<\s*Номенклатура/.test(text)
-      ? parseNomenclatureXML(text)
-      : JSON.parse(text);
-    if(!data || !Array.isArray(data.tree) || !data.tree.length){
-      throw new Error('Пустое дерево');
-    }
-    NOMENCLATURE = data;
-    try{ localStorage.setItem(NOMENCLATURE_CACHE_KEY, JSON.stringify(data)); }catch(e){}
+    const res=await fetch(NOMENCLATURE_URL,{cache:'no-cache'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    let text=await res.text();
+    if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+    const data=/^\s*</.test(text)&&/<\s*Номенклатура/.test(text)?parseNomenclatureXML(text):JSON.parse(text);
+    if(!data||!Array.isArray(data.tree)||!data.tree.length)throw new Error('Пусто');
+    NOMENCLATURE=data;
+    try{localStorage.setItem(NOMENCLATURE_CACHE_KEY,JSON.stringify(data));}catch(e){}
     return data;
-  }catch(e){
-    console.warn('Справочник:', e);
-    return NOMENCLATURE;
-  }
+  }catch(e){console.warn('Справочник:',e);return NOMENCLATURE;}
 }
-
 function parseNomenclatureXML(xmlText){
-  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
-  const err = doc.querySelector('parsererror');
-  if(err) throw new Error('XML parse error: ' + err.textContent);
-
-  const elements = doc.getElementsByTagName('Элемент');
-  const map = new Map();
-  const parentOf = new Map();
-
-  for(let i = 0; i < elements.length; i++){
-    const el = elements[i];
-    const id = el.getAttribute('Код');
-    const name = (el.getAttribute('Наименование') || '').replace(/\s+/g,' ').trim();
-    if(!id || !name) continue;
-    const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
-
-    const node = { id, name, type: isFolder ? 'folder' : 'item' };
-
+  const doc=new DOMParser().parseFromString(xmlText,'application/xml');
+  const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
+  const elements=doc.getElementsByTagName('Элемент'),map=new Map(),parentOf=new Map();
+  for(let i=0;i<elements.length;i++){
+    const el=elements[i],id=el.getAttribute('Код'),name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();
+    if(!id||!name)continue;
+    const isFolder=el.getAttribute('ЭтоГруппа')==='Да';
+    const node={id,name,type:isFolder?'folder':'item'};
     if(!isFolder){
-      const unit = (el.getAttribute('Единица') || '').trim();
-      if(unit) node.unit = unit;
-      const article = (el.getAttribute('Артикул') || '').trim();
-      if(article) node.article = article;
-      const fullName = (el.getAttribute('ПолноеНаименование') || '').trim();
-      if(fullName) node.fullName = fullName;
-      const weightRaw = String(el.getAttribute('ВесБрутто') || '').replace(',', '.');
-      const weight = parseFloat(weightRaw);
-      if(isFinite(weight) && weight > 0) node.weight = weight;
+      const unit=(el.getAttribute('Единица')||'').trim();if(unit)node.unit=unit;
+      const article=(el.getAttribute('Артикул')||'').trim();if(article)node.article=article;
+      const fullName=(el.getAttribute('ПолноеНаименование')||'').trim();if(fullName)node.fullName=fullName;
+      const weightRaw=String(el.getAttribute('ВесБрутто')||'').replace(',','.');const weight=parseFloat(weightRaw);if(isFinite(weight)&&weight>0)node.weight=weight;
     }
-
-    if(isFolder) node.children = [];
-    map.set(id, node);
-    parentOf.set(id, el.getAttribute('РодительКод') || null);
+    if(isFolder)node.children=[];
+    map.set(id,node);parentOf.set(id,el.getAttribute('РодительКод')||null);
   }
-
-  const roots = [];
-  parentOf.forEach((pCode, id) => {
-    const node = map.get(id);
-    if(!node) return;
-    if(!pCode){ roots.push(node); return; }
-    const p = map.get(pCode);
-    if(p && p.children){ p.children.push(node); }
-    else { roots.push(node); }
-  });
-
-  const collator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
-  (function sortTree(nodes){
-    nodes.sort((a,b) =>
-      a.type !== b.type
-        ? (a.type === 'folder' ? -1 : 1)
-        : collator.compare(a.name, b.name)
-    );
-    for(const n of nodes){ if(n.children) sortTree(n.children); }
-  })(roots);
-
-  return { version: '2.0', source: '1C XML', generated: new Date().toISOString(), tree: roots };
+  const roots=[];
+  parentOf.forEach((pCode,id)=>{const node=map.get(id);if(!node)return;if(!pCode){roots.push(node);return;}const p=map.get(pCode);if(p&&p.children)p.children.push(node);else roots.push(node);});
+  const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
+  (function sortTree(nodes){nodes.sort((a,b)=>a.type!==b.type?(a.type==='folder'?-1:1):collator.compare(a.name,b.name));for(const n of nodes)if(n.children)sortTree(n.children);})(roots);
+  return {version:'2.0',source:'1C XML',generated:new Date().toISOString(),tree:roots};
 }
-
-function findNode(tree, id){
-  for(const node of tree){
-    if(node.id === id) return node;
-    if(node.children){
-      const found = findNode(node.children, id);
-      if(found) return found;
-    }
-  }
-  return null;
-}
-
-function countAllItems(tree){
-  let n = 0;
-  for(const node of tree){
-    if(node.children && node.children.length){
-      n += countAllItems(node.children);
-    } else {
-      n++;
-    }
-  }
-  return n;
-}
-
-function isFolderNode(node){
-  return node.type === 'folder' || (node.children && node.children.length > 0);
-}
-
-function nodeMatches(node, filter){
-  if(!filter) return true;
-  const f = filter.toLowerCase();
-  if(String(node.name||'').toLowerCase().includes(f)) return true;
-  if(node.article && String(node.article).toLowerCase().includes(f)) return true;
-  if(node.children && node.children.some(ch => nodeMatches(ch, filter))) return true;
-  return false;
-}
-
-function collectAllFolderIds(tree, acc){
-  for(const node of tree){
-    if(isFolderNode(node)){
-      acc.add(node.id);
-      if(node.children) collectAllFolderIds(node.children, acc);
-    }
-  }
-  return acc;
-}
+function findNode(tree,id){for(const node of tree){if(node.id===id)return node;if(node.children){const f=findNode(node.children,id);if(f)return f;}}return null;}
+function countAllItems(tree){let n=0;for(const node of tree){if(node.children&&node.children.length)n+=countAllItems(node.children);else n++;}return n;}
+function isFolderNode(node){return node.type==='folder'||(node.children&&node.children.length>0);}
+function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
+function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(node)){acc.add(node.id);if(node.children)collectAllFolderIds(node.children,acc);}}return acc;}
 
 async function openPicker(idx){
-  pickerTargetIdx = idx;
-  pickerSelected.node = null;
-  pickerFilter = '';
-  pickerExpanded.clear();
-  document.getElementById('pickerSearch').value = '';
+  pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
+  document.getElementById('pickerSearch').value='';
   document.getElementById('pickerModal').classList.add('open');
-  const treeEl = document.getElementById('pickerTree');
-  treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
-  await loadNomenclature();
-  renderPickerTree();
-  setTimeout(() => document.getElementById('pickerSearch').focus(), 60);
+  const treeEl=document.getElementById('pickerTree');
+  treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
+  await loadNomenclature();renderPickerTree();
+  setTimeout(()=>document.getElementById('pickerSearch').focus(),60);
 }
-
-function closePicker(){
-  document.getElementById('pickerModal').classList.remove('open');
-  pickerTargetIdx = -1;
-  pickerSelected.node = null;
-}
-
+function closePicker(){document.getElementById('pickerModal').classList.remove('open');pickerTargetIdx=-1;pickerSelected.node=null;}
 function updatePickerSelInfo(){
-  const el = document.getElementById('pickerSelInfo');
-  if(pickerSelected.node){
-    el.classList.remove('empty');
-    el.innerHTML = 'Выбрано: <span style="color:#1a1a1a">' + escapeHtml(pickerSelected.node.name) + '</span>' +
-      (pickerSelected.node.unit ? ' · ' + escapeHtml(pickerSelected.node.unit) : '');
-  } else {
-    el.classList.add('empty');
-    el.textContent = 'Позиция не выбрана';
-  }
+  const el=document.getElementById('pickerSelInfo');
+  if(pickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(pickerSelected.node.name)+'</span>'+(pickerSelected.node.unit?' · '+escapeHtml(pickerSelected.node.unit):'');}
+  else{el.classList.add('empty');el.textContent='Позиция не выбрана';}
 }
-
 function renderPickerTree(){
-  const container = document.getElementById('pickerTree');
-  const countEl = document.getElementById('pickerCount');
-  const applyBtn = document.getElementById('btnPickerApply');
-  applyBtn.disabled = !pickerSelected.node;
+  const container=document.getElementById('pickerTree');
+  const countEl=document.getElementById('pickerCount');
+  const applyBtn=document.getElementById('btnPickerApply');
+  applyBtn.disabled=!pickerSelected.node;
   updatePickerSelInfo();
-
-  if(!NOMENCLATURE || !NOMENCLATURE.tree || !NOMENCLATURE.tree.length){
-    container.innerHTML = '<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><br>' +
-      'Проверьте URL: <code>' + escapeHtml(NOMENCLATURE_URL) + '</code><br><br>' +
-      'Или используйте ручной ввод — он работает всегда.</div>';
-    countEl.textContent = '';
-    return;
+  if(!NOMENCLATURE||!NOMENCLATURE.tree||!NOMENCLATURE.tree.length){
+    container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><code>'+escapeHtml(NOMENCLATURE_URL)+'</code></div>';
+    countEl.textContent='';return;
   }
-
   function renderNode(node){
-    if(pickerFilter && !nodeMatches(node, pickerFilter)) return '';
-    const isFolder = isFolderNode(node);
-    const isExpanded = pickerFilter ? true : pickerExpanded.has(node.id);
-    const isSelected = pickerSelected.node && pickerSelected.node.id === node.id;
-
-    let html = '<div class="picker-node">';
-    html += '<div class="picker-row ' + (isFolder?'folder':'item') +
-      (isSelected?' selected':'') + (isExpanded?' expanded':'') +
-      '" data-id="' + escapeHtml(node.id) + '" data-type="' + (isFolder?'folder':'item') + '">';
-    if(isFolder){
-      html += '<span class="arrow">▶</span><span class="icon">📁</span>';
-    } else {
-      html += '<span class="arrow invisible">▶</span><span class="icon">📄</span>';
-    }
-    html += '<span class="label">' + escapeHtml(node.name) + '</span>';
-    if(!isFolder && node.unit){
-      html += '<span class="unit-badge">' + escapeHtml(node.unit) + '</span>';
-    }
-    if(!isFolder && node.article){
-      html += '<span class="art-badge">' + escapeHtml(node.article) + '</span>';
-    }
-    html += '</div>';
-    if(node.children && node.children.length){
-      html += '<div class="picker-children' + (isExpanded?' open':'') + '">';
-      for(const child of node.children){
-        html += renderNode(child);
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
+    if(pickerFilter&&!nodeMatches(node,pickerFilter))return '';
+    const isFolder=isFolderNode(node),isExpanded=pickerFilter?true:pickerExpanded.has(node.id);
+    const isSelected=pickerSelected.node&&pickerSelected.node.id===node.id;
+    let html='<div class="picker-node">';
+    html+='<div class="picker-row '+(isFolder?'folder':'item')+(isSelected?' selected':'')+(isExpanded?' expanded':'')+'" data-id="'+escapeHtml(node.id)+'" data-type="'+(isFolder?'folder':'item')+'">';
+    if(isFolder)html+='<span class="arrow">▶</span><span class="icon">📁</span>';
+    else html+='<span class="arrow invisible">▶</span><span class="icon">📄</span>';
+    html+='<span class="label">'+escapeHtml(node.name)+'</span>';
+    if(!isFolder&&node.unit)html+='<span class="unit-badge">'+escapeHtml(node.unit)+'</span>';
+    if(!isFolder&&node.article)html+='<span class="art-badge">'+escapeHtml(node.article)+'</span>';
+    html+='</div>';
+    if(node.children&&node.children.length){html+='<div class="picker-children'+(isExpanded?' open':'')+'">';for(const child of node.children)html+=renderNode(child);html+='</div>';}
+    html+='</div>';return html;
   }
-
-  let html = '';
-  for(const node of NOMENCLATURE.tree){
-    html += renderNode(node);
-  }
-
-  container.innerHTML = html || '<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено по запросу «' + escapeHtml(pickerFilter) + '»</div>';
-  countEl.textContent = pickerFilter
-    ? 'Найдено по фильтру'
-    : ('Всего позиций: ' + countAllItems(NOMENCLATURE.tree));
-
-  container.querySelectorAll('.picker-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const id = row.getAttribute('data-id');
-      const type = row.getAttribute('data-type');
-      const node = findNode(NOMENCLATURE.tree, id);
-      if(!node) return;
-      if(type === 'folder'){
-        if(pickerExpanded.has(id)) pickerExpanded.delete(id);
-        else pickerExpanded.add(id);
-        renderPickerTree();
-      } else {
-        pickerSelected.node = node;
-        renderPickerTree();
-      }
+  let html='';for(const node of NOMENCLATURE.tree)html+=renderNode(node);
+  container.innerHTML=html||'<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';
+  countEl.textContent=pickerFilter?'Найдено по фильтру':('Всего позиций: '+countAllItems(NOMENCLATURE.tree));
+  container.querySelectorAll('.picker-row').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const id=row.getAttribute('data-id'),type=row.getAttribute('data-type');
+      const node=findNode(NOMENCLATURE.tree,id);if(!node)return;
+      if(type==='folder'){if(pickerExpanded.has(id))pickerExpanded.delete(id);else pickerExpanded.add(id);renderPickerTree();}
+      else{pickerSelected.node=node;renderPickerTree();}
     });
-    if(row.getAttribute('data-type') === 'item'){
-      row.addEventListener('dblclick', () => {
-        pickerSelected.node = findNode(NOMENCLATURE.tree, row.getAttribute('data-id'));
-        applyPicker();
-      });
+    if(row.getAttribute('data-type')==='item'){
+      row.addEventListener('dblclick',()=>{pickerSelected.node=findNode(NOMENCLATURE.tree,row.getAttribute('data-id'));applyPicker();});
     }
   });
 }
-
 function applyPicker(){
-  if(!pickerSelected.node) return;
-  const idx = pickerTargetIdx;
-  if(idx < 0 || idx >= ROWS.length) { closePicker(); return; }
-  const node = pickerSelected.node;
-  ROWS[idx].label = node.name;
-  if(node.unit) ROWS[idx].unit = node.unit;
-  const tr = document.querySelector('tr[data-idx="' + idx + '"]');
-  if(tr){
-    const nameInp = tr.querySelector('input[data-field="label"]');
-    const unitInp = tr.querySelector('input[data-field="unit"]');
-    if(nameInp) nameInp.value = ROWS[idx].label;
-    if(unitInp && node.unit) unitInp.value = ROWS[idx].unit;
-  }
-  updateRowTotals(idx);
-  updateTotalsView();
-  renderPreview();
-  closePicker();
+  if(!pickerSelected.node)return;
+  const idx=pickerTargetIdx;if(idx<0||idx>=ROWS.length){closePicker();return;}
+  const node=pickerSelected.node;
+  ROWS[idx].label=node.name;if(node.unit)ROWS[idx].unit=node.unit;
+  const tr=document.querySelector('tr[data-idx="'+idx+'"]');
+  if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
+  updateRowTotals(idx);updateTotalsView();renderPreview();closePicker();
 }
+document.getElementById('pickerSearch').addEventListener('input',e=>{pickerFilter=e.target.value;renderPickerTree();});
+document.getElementById('pickerSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();const firstItem=document.querySelector('#pickerTree .picker-row.item');if(firstItem){pickerSelected.node=findNode(NOMENCLATURE.tree,firstItem.getAttribute('data-id'));renderPickerTree();applyPicker();}}
+});
+document.getElementById('btnPickerApply').addEventListener('click',applyPicker);
+document.getElementById('btnPickerCancel').addEventListener('click',closePicker);
+document.getElementById('pickerModal').addEventListener('click',e=>{if(e.target===document.getElementById('pickerModal'))closePicker();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pickerModal').classList.contains('open'))closePicker();});
+document.getElementById('btnCollapseAll').addEventListener('click',()=>{pickerExpanded.clear();renderPickerTree();});
+document.getElementById('btnExpandAll').addEventListener('click',()=>{if(!NOMENCLATURE||!NOMENCLATURE.tree)return;collectAllFolderIds(NOMENCLATURE.tree,pickerExpanded);renderPickerTree();});
 
-document.getElementById('pickerSearch').addEventListener('input', (e) => {
-  pickerFilter = e.target.value;
-  renderPickerTree();
-});
-document.getElementById('pickerSearch').addEventListener('keydown', (e) => {
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    const firstItem = document.querySelector('#pickerTree .picker-row.item');
-    if(firstItem){
-      pickerSelected.node = findNode(NOMENCLATURE.tree, firstItem.getAttribute('data-id'));
-      renderPickerTree();
-      applyPicker();
-    }
-  }
-});
-document.getElementById('btnPickerApply').addEventListener('click', applyPicker);
-document.getElementById('btnPickerCancel').addEventListener('click', closePicker);
-document.getElementById('pickerModal').addEventListener('click', (e) => {
-  if(e.target === document.getElementById('pickerModal')) closePicker();
-});
-document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape' && document.getElementById('pickerModal').classList.contains('open')){
-    closePicker();
-  }
-});
-document.getElementById('btnCollapseAll').addEventListener('click', () => {
-  pickerExpanded.clear();
-  renderPickerTree();
-});
-document.getElementById('btnExpandAll').addEventListener('click', () => {
-  if(!NOMENCLATURE || !NOMENCLATURE.tree) return;
-  collectAllFolderIds(NOMENCLATURE.tree, pickerExpanded);
-  renderPickerTree();
-});
-
-/* =====================================================================
-   СПРАВОЧНИК КОНТРАГЕНТОВ
-   ===================================================================== */
-let CONTRACTORS = null;
-const buyerPickerSelected = { node: null };
-let buyerPickerFilter = '';
+/* Контрагенты */
+let CONTRACTORS=null;
+const buyerPickerSelected={node:null};
+let buyerPickerFilter='';
 
 async function loadContractors(force){
-  if(CONTRACTORS && !force) return CONTRACTORS;
-  if(!force){
-    try{
-      const cached = localStorage.getItem(CONTRACTORS_CACHE_KEY);
-      if(cached){
-        const parsed = JSON.parse(cached);
-        if(parsed && Array.isArray(parsed.list) && parsed.list.length){
-          CONTRACTORS = parsed;
-          fetchAndCacheContractors().catch(()=>{});
-          return CONTRACTORS;
-        }
-      }
-    }catch(e){}
-  }
+  if(CONTRACTORS&&!force)return CONTRACTORS;
+  if(!force){try{const cached=localStorage.getItem(CONTRACTORS_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.list)&&parsed.list.length){CONTRACTORS=parsed;fetchAndCacheContractors().catch(()=>{});return CONTRACTORS;}}}catch(e){}}
   return await fetchAndCacheContractors();
 }
-
 async function fetchAndCacheContractors(){
   try{
-    const res = await fetch(CONTRACTORS_URL, { cache: 'no-cache' });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    let text = await res.text();
-    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    const data = /^\s*</.test(text)
-      ? parseContractorsXML(text)
-      : JSON.parse(text);
-    if(!data || !Array.isArray(data.list) || !data.list.length){
-      throw new Error('Пустой список контрагентов');
-    }
-    CONTRACTORS = data;
-    try{ localStorage.setItem(CONTRACTORS_CACHE_KEY, JSON.stringify(data)); }catch(e){}
+    const res=await fetch(CONTRACTORS_URL,{cache:'no-cache'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    let text=await res.text();if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+    const data=/^\s*</.test(text)?parseContractorsXML(text):JSON.parse(text);
+    if(!data||!Array.isArray(data.list)||!data.list.length)throw new Error('Пусто');
+    CONTRACTORS=data;try{localStorage.setItem(CONTRACTORS_CACHE_KEY,JSON.stringify(data));}catch(e){}
     return data;
-  }catch(e){
-    console.warn('Справочник контрагентов:', e);
-    return CONTRACTORS;
-  }
+  }catch(e){console.warn('Контрагенты:',e);return CONTRACTORS;}
 }
-
 function parseContractorsXML(xmlText){
-  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
-  const err = doc.querySelector('parsererror');
-  if(err) throw new Error('XML parse error: ' + err.textContent);
-
-  const elements = doc.getElementsByTagName('Элемент');
-  const list = [];
-
-  for(let i = 0; i < elements.length; i++){
-    const el = elements[i];
-    const isFolder = el.getAttribute('ЭтоГруппа') === 'Да';
-    if(isFolder) continue;
-    const name = (el.getAttribute('Наименование') || '').replace(/\s+/g,' ').trim();
-    if(!name) continue;
-    const unp  = (el.getAttribute('УНП') || '').trim();
-    const addr = (el.getAttribute('ЮридическийАдрес') || '').trim();
-    const full = (el.getAttribute('ПолноеНаименование') || '').trim();
-    list.push({ name, full, unp, addr });
+  const doc=new DOMParser().parseFromString(xmlText,'application/xml');
+  const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
+  const elements=doc.getElementsByTagName('Элемент'),list=[];
+  for(let i=0;i<elements.length;i++){
+    const el=elements[i];
+    const isFolder=el.getAttribute('ЭтоГруппа')==='Да';if(isFolder)continue;
+    const name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();if(!name)continue;
+    const unp=(el.getAttribute('УНП')||'').trim();
+    const addr=(el.getAttribute('ЮридическийАдрес')||'').trim();
+    const full=(el.getAttribute('ПолноеНаименование')||'').trim();
+    list.push({name,full,unp,addr});
   }
-
-  const collator = new Intl.Collator('ru', { numeric:true, sensitivity:'base' });
-  list.sort((a,b) => collator.compare(a.name, b.name));
-
-  return { version: '1.0', source: '1C Contractors XML', generated: new Date().toISOString(), list };
+  const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
+  list.sort((a,b)=>collator.compare(a.name,b.name));
+  return {version:'1.0',source:'1C XML',generated:new Date().toISOString(),list};
 }
-
-function contractorMatches(node, filter){
-  if(!filter) return true;
-  const f = filter.toLowerCase();
-  if(String(node.name||'').toLowerCase().includes(f)) return true;
-  if(String(node.full||'').toLowerCase().includes(f)) return true;
-  if(String(node.unp||'').toLowerCase().includes(f)) return true;
-  return false;
-}
+function contractorMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(String(node.full||'').toLowerCase().includes(f))return true;if(String(node.unp||'').toLowerCase().includes(f))return true;return false;}
 
 async function openBuyerPicker(){
-  buyerPickerSelected.node = null;
-  buyerPickerFilter = '';
-  document.getElementById('buyerPickerSearch').value = '';
+  buyerPickerSelected.node=null;buyerPickerFilter='';
+  document.getElementById('buyerPickerSearch').value='';
   document.getElementById('buyerPickerModal').classList.add('open');
-  const treeEl = document.getElementById('buyerPickerTree');
-  treeEl.innerHTML = '<div class="picker-empty"><span class="big">⏳</span>Загрузка справочника...</div>';
-  await loadContractors();
-  renderBuyerPicker();
-  setTimeout(() => document.getElementById('buyerPickerSearch').focus(), 60);
+  const treeEl=document.getElementById('buyerPickerTree');
+  treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
+  await loadContractors();renderBuyerPicker();
+  setTimeout(()=>document.getElementById('buyerPickerSearch').focus(),60);
 }
-
-function closeBuyerPicker(){
-  document.getElementById('buyerPickerModal').classList.remove('open');
-  buyerPickerSelected.node = null;
-}
-
+function closeBuyerPicker(){document.getElementById('buyerPickerModal').classList.remove('open');buyerPickerSelected.node=null;}
 function updateBuyerPickerSelInfo(){
-  const el = document.getElementById('buyerPickerSelInfo');
-  if(buyerPickerSelected.node){
-    el.classList.remove('empty');
-    el.innerHTML = 'Выбрано: <span style="color:#1a1a1a">' + escapeHtml(buyerPickerSelected.node.name) + '</span>' +
-      (buyerPickerSelected.node.unp ? ' · УНП ' + escapeHtml(buyerPickerSelected.node.unp) : '');
-  } else {
-    el.classList.add('empty');
-    el.textContent = 'Контрагент не выбран';
-  }
+  const el=document.getElementById('buyerPickerSelInfo');
+  if(buyerPickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(buyerPickerSelected.node.name)+'</span>'+(buyerPickerSelected.node.unp?' · УНП '+escapeHtml(buyerPickerSelected.node.unp):'');}
+  else{el.classList.add('empty');el.textContent='Контрагент не выбран';}
 }
-
 function renderBuyerPicker(){
-  const container = document.getElementById('buyerPickerTree');
-  const countEl = document.getElementById('buyerPickerCount');
-  const applyBtn = document.getElementById('btnBuyerPickerApply');
-  applyBtn.disabled = !buyerPickerSelected.node;
+  const container=document.getElementById('buyerPickerTree');
+  const countEl=document.getElementById('buyerPickerCount');
+  const applyBtn=document.getElementById('btnBuyerPickerApply');
+  applyBtn.disabled=!buyerPickerSelected.node;
   updateBuyerPickerSelInfo();
-
-  if(!CONTRACTORS || !CONTRACTORS.list || !CONTRACTORS.list.length){
-    container.innerHTML = '<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><br>' +
-      'Проверьте URL: <code>' + escapeHtml(CONTRACTORS_URL) + '</code></div>';
-    countEl.textContent = '';
-    return;
+  if(!CONTRACTORS||!CONTRACTORS.list||!CONTRACTORS.list.length){
+    container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.</div>';
+    countEl.textContent='';return;
   }
-
-  const filtered = buyerPickerFilter
-    ? CONTRACTORS.list.filter(c => contractorMatches(c, buyerPickerFilter))
-    : CONTRACTORS.list;
-
-  if(!filtered.length){
-    container.innerHTML = '<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено по запросу «' + escapeHtml(buyerPickerFilter) + '»</div>';
-    countEl.textContent = '';
-    return;
-  }
-
-  container.innerHTML = filtered.map(c => {
-    const isSelected = buyerPickerSelected.node && buyerPickerSelected.node.unp === c.unp && buyerPickerSelected.node.name === c.name;
-    let html = '<div class="picker-row item' + (isSelected ? ' selected' : '') + '" data-unp="' + escapeHtml(c.unp) + '" data-name="' + escapeHtml(c.name) + '">';
-    html += '<span class="arrow invisible">▶</span><span class="icon">🏢</span>';
-    html += '<span class="label">' + escapeHtml(c.name) + '</span>';
-    if(c.unp){
-      html += '<span class="unit-badge">УНП ' + escapeHtml(c.unp) + '</span>';
-    }
-    html += '</div>';
-    return html;
+  const filtered=buyerPickerFilter?CONTRACTORS.list.filter(c=>contractorMatches(c,buyerPickerFilter)):CONTRACTORS.list;
+  if(!filtered.length){container.innerHTML='<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';countEl.textContent='';return;}
+  container.innerHTML=filtered.map(c=>{
+    const isSelected=buyerPickerSelected.node&&buyerPickerSelected.node.unp===c.unp&&buyerPickerSelected.node.name===c.name;
+    let html='<div class="picker-row item'+(isSelected?' selected':'')+'" data-unp="'+escapeHtml(c.unp)+'" data-name="'+escapeHtml(c.name)+'">';
+    html+='<span class="arrow invisible">▶</span><span class="icon">🏢</span>';
+    html+='<span class="label">'+escapeHtml(c.name)+'</span>';
+    if(c.unp)html+='<span class="unit-badge">УНП '+escapeHtml(c.unp)+'</span>';
+    html+='</div>';return html;
   }).join('');
-
-  countEl.textContent = buyerPickerFilter
-    ? ('Найдено: ' + filtered.length + ' из ' + CONTRACTORS.list.length)
-    : ('Всего контрагентов: ' + CONTRACTORS.list.length);
-
-  container.querySelectorAll('.picker-row.item').forEach(row => {
-    row.addEventListener('click', () => {
-      const unp = row.getAttribute('data-unp');
-      const name = row.getAttribute('data-name');
-      buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
+  countEl.textContent=buyerPickerFilter?('Найдено: '+filtered.length+' из '+CONTRACTORS.list.length):('Всего контрагентов: '+CONTRACTORS.list.length);
+  container.querySelectorAll('.picker-row.item').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
+      buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
       renderBuyerPicker();
     });
-    row.addEventListener('dblclick', () => {
-      const unp = row.getAttribute('data-unp');
-      const name = row.getAttribute('data-name');
-      buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
+    row.addEventListener('dblclick',()=>{
+      const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
+      buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
       applyBuyerPicker();
     });
   });
 }
-
 function applyBuyerPicker(){
-  if(!buyerPickerSelected.node) return;
-  const c = buyerPickerSelected.node;
-  const nameToFill = c.full || c.name;
-  const elName = document.getElementById('bName');
-  const elUnp  = document.getElementById('bUnp');
-  const elAddr = document.getElementById('bAddress');
-  if(elName) elName.value = nameToFill;
-  if(elUnp && c.unp) elUnp.value = c.unp;
-  if(elAddr && c.addr) elAddr.value = c.addr;
-  renderPreview();
-  closeBuyerPicker();
+  if(!buyerPickerSelected.node)return;
+  const c=buyerPickerSelected.node;
+  const nameToFill=c.full||c.name;
+  const elName=document.getElementById('bName'),elUnp=document.getElementById('bUnp'),elAddr=document.getElementById('bAddress');
+  if(elName)elName.value=nameToFill;
+  if(elUnp&&c.unp)elUnp.value=c.unp;
+  if(elAddr&&c.addr)elAddr.value=c.addr;
+  renderPreview();closeBuyerPicker();
 }
-
 function initBuyerPicker(){
-  const btn = document.getElementById('btnBuyerPicker');
-  if(btn) btn.addEventListener('click', openBuyerPicker);
-
-  const search = document.getElementById('buyerPickerSearch');
+  const btn=document.getElementById('btnBuyerPicker');if(btn)btn.addEventListener('click',openBuyerPicker);
+  const search=document.getElementById('buyerPickerSearch');
   if(search){
-    search.addEventListener('input', e => {
-      buyerPickerFilter = e.target.value;
-      renderBuyerPicker();
-    });
-    search.addEventListener('keydown', e => {
-      if(e.key === 'Enter'){
-        e.preventDefault();
-        const first = document.querySelector('#buyerPickerTree .picker-row.item');
-        if(first){
-          const unp = first.getAttribute('data-unp');
-          const name = first.getAttribute('data-name');
-          buyerPickerSelected.node = CONTRACTORS.list.find(c => c.unp === unp && c.name === name) || null;
-          renderBuyerPicker();
-          applyBuyerPicker();
-        }
-      }
+    search.addEventListener('input',e=>{buyerPickerFilter=e.target.value;renderBuyerPicker();});
+    search.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){e.preventDefault();const first=document.querySelector('#buyerPickerTree .picker-row.item');if(first){const unp=first.getAttribute('data-unp'),name=first.getAttribute('data-name');buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;renderBuyerPicker();applyBuyerPicker();}}
     });
   }
-
-  const applyBtn = document.getElementById('btnBuyerPickerApply');
-  if(applyBtn) applyBtn.addEventListener('click', applyBuyerPicker);
-  const cancelBtn = document.getElementById('btnBuyerPickerCancel');
-  if(cancelBtn) cancelBtn.addEventListener('click', closeBuyerPicker);
-
-  const modal = document.getElementById('buyerPickerModal');
-  if(modal) modal.addEventListener('click', e => {
-    if(e.target === modal) closeBuyerPicker();
-  });
-
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && modal && modal.classList.contains('open')){
-      closeBuyerPicker();
-    }
-  });
+  const applyBtn=document.getElementById('btnBuyerPickerApply');if(applyBtn)applyBtn.addEventListener('click',applyBuyerPicker);
+  const cancelBtn=document.getElementById('btnBuyerPickerCancel');if(cancelBtn)cancelBtn.addEventListener('click',closeBuyerPicker);
+  const modal=document.getElementById('buyerPickerModal');
+  if(modal)modal.addEventListener('click',e=>{if(e.target===modal)closeBuyerPicker();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal&&modal.classList.contains('open'))closeBuyerPicker();});
 }
 
-/* ---------- ДАННЫЕ СДЕЛКИ И ПОКУПАТЕЛЯ ---------- */
+/* Данные сделки и покупателя */
 function getDeal(){
-  const deliveryMode = document.querySelector('input[name="delivery"]:checked').value;
+  const deliveryMode=document.querySelector('input[name="delivery"]:checked').value;
   return {
-    delivery: deliveryMode,
-    payment: parseInt(document.getElementById('prepaySlider').value, 10),
-    days: parseInt(document.getElementById('deliveryDaysSlider').value, 10),
-    deliveryData: {
-      address: document.getElementById('delAddress').value.trim(),
-      phone: document.getElementById('delPhone').value.trim(),
-      time: document.getElementById('delTime').value.trim(),
-      date: document.getElementById('delDate').value,
-      weight: parseFloat(document.getElementById('delWeight').value) || 0,
-      volume: parseFloat(document.getElementById('delVolume').value) || 0,
-      maxLen: parseFloat(document.getElementById('delMaxLen').value) || 0
+    delivery:deliveryMode,
+    payment:parseInt(document.getElementById('prepaySlider').value,10),
+    days:parseInt(document.getElementById('deliveryDaysSlider').value,10),
+    deliveryData:{
+      address:document.getElementById('delAddress').value.trim(),
+      phone:document.getElementById('delPhone').value.trim(),
+      time:document.getElementById('delTime').value.trim(),
+      date:document.getElementById('delDate').value,
+      weight:parseFloat(document.getElementById('delWeight').value)||0,
+      volume:parseFloat(document.getElementById('delVolume').value)||0,
+      maxLen:parseFloat(document.getElementById('delMaxLen').value)||0
     }
   };
 }
 function getBuyer(){
-  const keys = ['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
-  const o = {};
-  keys.forEach(k => o[k] = document.getElementById(k).value.trim());
-  return o;
+  const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
+  const o={};keys.forEach(k=>o[k]=document.getElementById(k).value.trim());return o;
 }
 
-/* ---------- ВИЗУАЛИЗАЦИЯ ЗАГРУЗКИ ---------- */
+/* Визуализация загрузки */
 function renderTruckViz(){
-  const wrap = document.getElementById('truckVizWrap');
-  const container = document.getElementById('truckViz');
-  const badge = document.getElementById('truckBadge');
-  const legend = document.getElementById('truckLegend');
-  if(!wrap) return;
-
-  const mode = document.querySelector('input[name="delivery"]:checked').value;
-  const weight = parseFloat(document.getElementById('delWeight').value) || 0;
-  const volume = parseFloat(document.getElementById('delVolume').value) || 0;
-  const maxLen = parseFloat(document.getElementById('delMaxLen').value) || 0;
-
-  if(mode !== 'delivery' || (weight === 0 && volume === 0)){
-    wrap.style.display = 'none';
-    return;
-  }
-  wrap.style.display = 'block';
-
-  const trucks = [
-    { name:'Бус',        maxW:1500,  maxV:12,  maxL:4300  },
-    { name:'Тент 5 т',   maxW:5000,  maxV:35,  maxL:6200  },
-    { name:'Фура 20 т',  maxW:20000, maxV:82,  maxL:13600 }
-  ];
-  let truck = trucks[trucks.length - 1];
-  for(const t of trucks){
-    if(weight <= t.maxW && volume <= t.maxV && maxLen <= t.maxL){ truck = t; break; }
-  }
-
-  const fillW = truck.maxW ? weight / truck.maxW : 0;
-  const fillV = truck.maxV ? volume / truck.maxV : 0;
-  const fill  = Math.min(1, Math.max(fillW, fillV));
-  const fillPct = Math.round(fill * 100);
-
-  badge.textContent = truck.name + ' · ' + fillPct + '%';
+  const wrap=document.getElementById('truckVizWrap');
+  const container=document.getElementById('truckViz');
+  const badge=document.getElementById('truckBadge');
+  const legend=document.getElementById('truckLegend');
+  if(!wrap)return;
+  const mode=document.querySelector('input[name="delivery"]:checked').value;
+  const weight=parseFloat(document.getElementById('delWeight').value)||0;
+  const volume=parseFloat(document.getElementById('delVolume').value)||0;
+  const maxLen=parseFloat(document.getElementById('delMaxLen').value)||0;
+  if(mode!=='delivery'||(weight===0&&volume===0)){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const trucks=[{name:'Бус',maxW:1500,maxV:12,maxL:4300},{name:'Тент 5 т',maxW:5000,maxV:35,maxL:6200},{name:'Фура 20 т',maxW:20000,maxV:82,maxL:13600}];
+  let truck=trucks[trucks.length-1];
+  for(const t of trucks){if(weight<=t.maxW&&volume<=t.maxV&&maxLen<=t.maxL){truck=t;break;}}
+  const fillW=truck.maxW?weight/truck.maxW:0,fillV=truck.maxV?volume/truck.maxV:0;
+  const fill=Math.min(1,Math.max(fillW,fillV)),fillPct=Math.round(fill*100);
+  badge.textContent=truck.name+' · '+fillPct+'%';
   badge.classList.remove('warn','over');
-  if(fillPct > 90) badge.classList.add('over');
-  else if(fillPct > 60) badge.classList.add('warn');
-
-  const color = fillPct > 90 ? '#d32f2f' : (fillPct > 60 ? '#f9a825' : '#2e7d32');
-
-  const W = 720, H = 240;
-  const cabX = 20, cabY = 90, cabW = 105, cabH = 85;
-  const trX = 125, trY = 55, trW = 565, trH = 120;
-  const wheelY = trY + trH + 14;
-  const wheelR = 15;
-
-  const cols = 11, rows = 4;
-  const padX = 10, padY = 10;
-  const innerW = trW - padX * 2;
-  const innerH = trH - padY * 2;
-  const boxW = innerW / cols;
-  const boxH = innerH / rows;
-  const totalBoxes = cols * rows;
-  const fillBoxes = Math.round(totalBoxes * fill);
-
-  let boxesSvg = '';
-  for(let i = 0; i < totalBoxes; i++){
-    const row = Math.floor(i / cols);
-    const col = i % cols;
-    const x = trX + padX + col * boxW;
-    const y = trY + padY + row * boxH;
-    const filled = i < fillBoxes;
-    if(filled){
-      boxesSvg += `<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="${color}" opacity="0.88" rx="2"/>`;
-      boxesSvg += `<line x1="${(x+2).toFixed(1)}" y1="${(y+boxH/2).toFixed(1)}" x2="${(x+boxW-2).toFixed(1)}" y2="${(y+boxH/2).toFixed(1)}" stroke="#ffffff" stroke-width="0.8" opacity="0.55"/>`;
-    } else {
-      boxesSvg += `<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="none" stroke="#e0e0e0" stroke-width="0.8" stroke-dasharray="3,3" rx="2"/>`;
-    }
+  if(fillPct>90)badge.classList.add('over');else if(fillPct>60)badge.classList.add('warn');
+  const color=fillPct>90?'#d32f2f':(fillPct>60?'#f9a825':'#2e7d32');
+  const W=720,H=240;
+  const cabX=20,cabY=90,cabW=105,cabH=85;
+  const trX=125,trY=55,trW=565,trH=120;
+  const wheelY=trY+trH+14,wheelR=15;
+  const cols=11,rows=4,padX=10,padY=10;
+  const innerW=trW-padX*2,innerH=trH-padY*2;
+  const boxW=innerW/cols,boxH=innerH/rows;
+  const totalBoxes=cols*rows,fillBoxes=Math.round(totalBoxes*fill);
+  let boxesSvg='';
+  for(let i=0;i<totalBoxes;i++){
+    const row=Math.floor(i/cols),col=i%cols;
+    const x=trX+padX+col*boxW,y=trY+padY+row*boxH;
+    const filled=i<fillBoxes;
+    if(filled){boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="${color}" opacity="0.88" rx="2"/>`;boxesSvg+=`<line x1="${(x+2).toFixed(1)}" y1="${(y+boxH/2).toFixed(1)}" x2="${(x+boxW-2).toFixed(1)}" y2="${(y+boxH/2).toFixed(1)}" stroke="#ffffff" stroke-width="0.8" opacity="0.55"/>`;}
+    else boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="none" stroke="#e0e0e0" stroke-width="0.8" stroke-dasharray="3,3" rx="2"/>`;
   }
-
-  const wheelXs = [cabX + cabW/2, trX + 70, trX + trW - 130, trX + trW - 45];
-  let wheelsSvg = '';
-  for(const wx of wheelXs){
-    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="${wheelR}" fill="#2a2a2a"/>`;
-    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="${wheelR-5}" fill="#9aa0a6"/>`;
-    wheelsSvg += `<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;
-  }
-
-  const cabSvg = `
-    <path d="M ${cabX} ${cabY + cabH} L ${cabX} ${cabY + 22} Q ${cabX} ${cabY} ${cabX + 22} ${cabY} L ${cabX + cabW} ${cabY} L ${cabX + cabW} ${cabY + cabH} Z"
-      fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
-    <rect x="${cabX + 8}" y="${cabY + 12}" width="${cabW - 24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/>
-    <rect x="${cabX + cabW - 5}" y="${cabY + 8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>
-  `;
-  const trailerSvg = `<rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>`;
-  const groundY = wheelY + wheelR;
-  const groundSvg = `<line x1="8" y1="${groundY}" x2="${W - 8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
-
-  container.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="truck-viz-svg">
-      ${groundSvg}
-      ${cabSvg}
-      ${trailerSvg}
-      ${boxesSvg}
-      ${wheelsSvg}
-    </svg>
-  `;
-
-  legend.innerHTML = `
-    <span><b>🚛 Машина:</b> ${truck.name}</span>
-    <span><b>⚖️ Вес:</b> ${weight} кг / ${truck.maxW} кг (${Math.round(fillW*100)}%)</span>
-    <span><b>📦 Объём:</b> ${volume} м³ / ${truck.maxV} м³ (${Math.round(fillV*100)}%)</span>
-    ${maxLen ? `<span><b>📏 Макс. длина:</b> ${maxLen} мм</span>` : ''}
-  `;
+  const wheelXs=[cabX+cabW/2,trX+70,trX+trW-130,trX+trW-45];
+  let wheelsSvg='';
+  for(const wx of wheelXs){wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR}" fill="#2a2a2a"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR-5}" fill="#9aa0a6"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;}
+  const cabSvg=`<path d="M ${cabX} ${cabY+cabH} L ${cabX} ${cabY+22} Q ${cabX} ${cabY} ${cabX+22} ${cabY} L ${cabX+cabW} ${cabY} L ${cabX+cabW} ${cabY+cabH} Z" fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/><rect x="${cabX+8}" y="${cabY+12}" width="${cabW-24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/><rect x="${cabX+cabW-5}" y="${cabY+8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>`;
+  const trailerSvg=`<rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>`;
+  const groundY=wheelY+wheelR;
+  const groundSvg=`<line x1="8" y1="${groundY}" x2="${W-8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
+  container.innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="truck-viz-svg">${groundSvg}${cabSvg}${trailerSvg}${boxesSvg}${wheelsSvg}</svg>`;
+  legend.innerHTML=`<span><b>🚛 Машина:</b> ${truck.name}</span><span><b>⚖️ Вес:</b> ${weight} кг / ${truck.maxW} кг (${Math.round(fillW*100)}%)</span><span><b>📦 Объём:</b> ${volume} м³ / ${truck.maxV} м³ (${Math.round(fillV*100)}%)</span>${maxLen?`<span><b>📏 Макс. длина:</b> ${maxLen} мм</span>`:''}`;
 }
 
-/* ---------- ПРЕВЬЮ СЧЁТА ---------- */
+/* Превью счёта */
 function renderPreview(){
-  const deal = getDeal();
-  const buyer = getBuyer();
-  const invNo = 'СЧ-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-123';
-  const invDate = new Date().toLocaleDateString('ru-RU');
-  const deliveryText = deal.delivery === 'pickup' ? 'Самовывоз: ' + COMPANY.pickupAddress : 'Доставка до адреса покупателя';
-  const paymentFull = deal.payment >= 100;
-  const paymentClause = paymentFull
-    ? 'Оплата производится в размере 100 % предоплаты.'
-    : 'Оплата производится в размере ' + deal.payment + ' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
-  const sumWords = sumToWordsRU(invoiceTotals.total);
-  const buyerPosition = buyer.bPosition || '________________';
-  const buyerFio = buyer.bFio || '________________';
-  const buyerBasis = buyer.bBasis || '________________';
-
-  const unloadingClause = (deal.delivery === 'delivery')
-    ? '<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>'
-    : '';
-
-  const rowsHtml = ROWS.map((r, i) => {
-    const s = rowSum(r);
-    const v = s * 0.20;
-    const qtyStr = fmtQty2(rowTotalQty(r));
-    return '<tr>' +
-      '<td class="pos">' + (i+1) + '</td>' +
-      '<td>' + escapeHtml(r.label) + '</td>' +
-      '<td class="num">' + qtyStr + '</td>' +
-      '<td>' + escapeHtml(r.unit || 'шт.') + '</td>' +
-      '<td class="num">' + fmtInvoice(r.price || 0) + '</td>' +
-      '<td class="num">' + fmtInvoice(s) + '</td>' +
-      '<td class="vat">20 %</td>' +
-      '<td class="num">' + fmtInvoice(v) + '</td>' +
-      '<td class="num sum-vat">' + fmtInvoice(s+v) + '</td>' +
-    '</tr>';
+  const deal=getDeal(),buyer=getBuyer();
+  const invNo='СЧ-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-123';
+  const invDate=new Date().toLocaleDateString('ru-RU');
+  const deliveryText=deal.delivery==='pickup'?'Самовывоз: '+COMPANY.pickupAddress:'Доставка до адреса покупателя';
+  const paymentFull=deal.payment>=100;
+  const paymentClause=paymentFull?'Оплата производится в размере 100 % предоплаты.':'Оплата производится в размере '+deal.payment+' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
+  const sumWords=sumToWordsRU(invoiceTotals.total);
+  const buyerPosition=buyer.bPosition||'________________';
+  const buyerFio=buyer.bFio||'________________';
+  const buyerBasis=buyer.bBasis||'________________';
+  const unloadingClause=(deal.delivery==='delivery')?'<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>':'';
+  const rowsHtml=ROWS.map((r,i)=>{
+    const s=rowSum(r),v=s*0.20;
+    const qtyStr=fmtQty2(rowTotalQty(r));
+    return '<tr><td class="pos">'+(i+1)+'</td><td>'+escapeHtml(r.label)+'</td><td class="num">'+qtyStr+'</td><td>'+escapeHtml(r.unit||'шт.')+'</td><td class="num">'+fmtInvoice(r.price||0)+'</td><td class="num">'+fmtInvoice(s)+'</td><td class="vat">20 %</td><td class="num">'+fmtInvoice(v)+'</td><td class="num sum-vat">'+fmtInvoice(s+v)+'</td></tr>';
   }).join('');
-
-  const bName = buyer.bName || '______________________________________________';
-  const bUnp = buyer.bUnp || '________________';
-  const bAddr = buyer.bAddress || '_______________________________________________';
-  const bAcc = buyer.bAccount || '___________________________________________';
-  const bBank = buyer.bBank || '_____________________________________________';
-
-  document.getElementById('pvPage').innerHTML = `
+  const bName=buyer.bName||'______________________________________________';
+  const bUnp=buyer.bUnp||'________________';
+  const bAddr=buyer.bAddress||'_______________________________________________';
+  const bAcc=buyer.bAccount||'___________________________________________';
+  const bBank=buyer.bBank||'_____________________________________________';
+  document.getElementById('pvPage').innerHTML=`
     <div class="pv-panel">
       <div class="pv-logo-svg">${LOGO_SVG_COLOR}</div>
       <div class="pv-panel-company">${COMPANY.name}</div>
@@ -1696,23 +1040,9 @@ function renderPreview(){
       <div class="pv-side-bottom">
         <div class="pv-nav-block">
           <div class="pv-nav-title">Как забрать товар</div>
-          <div class="pv-nav-item">
-            <div class="pv-nav-qr">${makeNaviQR(OFFICE_COORDS)}</div>
-            <div class="pv-nav-meta">
-              <b>Шаг 1. Офис</b>
-              <div class="addr">Выписка ТТН / ТН</div>
-              <div class="sub">Колодищи, Минская 5<br>5 этаж, оф. 508</div>
-            </div>
-          </div>
+          <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(OFFICE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 1. Офис</b><div class="addr">Выписка ТТН / ТН</div><div class="sub">Колодищи, Минская 5<br>5 этаж, оф. 508</div></div></div>
           <hr class="pv-nav-sep">
-          <div class="pv-nav-item">
-            <div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div>
-            <div class="pv-nav-meta">
-              <b>Шаг 2. Склад</b>
-              <div class="addr">Армстронг</div>
-              <div class="sub">Отгрузка товара</div>
-            </div>
-          </div>
+          <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 2. Склад</b><div class="addr">Армстронг</div><div class="sub">Отгрузка товара</div></div></div>
         </div>
         <div class="pv-issue"><div class="t1">Срок действия счёта</div><div class="addr">14 календарных дней</div><div class="sub">с даты выписки</div></div>
       </div>
@@ -1736,4 +1066,144 @@ function renderPreview(){
       <div class="pv-note">Всего наименований: ${ROWS.length}, на сумму ${fmtInvoice(invoiceTotals.total)} BYN.</div>
       <div class="pv-contract">
         <div class="h">Счёт-договор поставки товара</div>
-        <p><b>${COMPANY.name}</b>, именуемое далее «Поставщик», в лице ${COMPANY.directorPosition.toLowerCase()} ${COMPANY.director}, действующего на основании Устава, с одной стороны, и <b>${buy
+        <p><b>${COMPANY.name}</b>, именуемое далее «Поставщик», в лице ${COMPANY.directorPosition.toLowerCase()} ${COMPANY.director}, действующего на основании Устава, с одной стороны, и <b>${buyer.bName || 'Покупатель'}</b>, именуемое далее «Покупатель», в лице ${buyerPosition} ${buyerFio}, действующего на основании ${buyerBasis}, с другой стороны, заключили настоящий договор о нижеследующем.</p>
+        <div class="h2">1. Предмет договора</div>
+        <p>1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.</p>
+        <p>1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.</p>
+        <div class="h2">2. Сумма договора и порядок расчётов</div>
+        <p>2.1. Общая сумма договора составляет <b>${sumWords}</b>, что соответствует <b>${fmtInvoice(invoiceTotals.total)} BYN</b> с учётом НДС 20 %. Сумма НДС 20 % составляет <b>${fmtInvoice(invoiceTotals.vat)} BYN</b>.</p>
+        <p>2.2. ${paymentClause}</p>
+        <div class="h2">3. Порядок поставки</div>
+        <p>3.1. Поставка осуществляется: <b>${deliveryText}</b>.</p>
+        <p>3.2. Срок поставки — <b>${deal.days} ${declOfNum(deal.days, ['день','дня','дней'])}</b> с момента оплаты.</p>
+        <p>3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.</p>
+        ${unloadingClause}
+        <div class="h2">4. Ответственность сторон</div>
+        <p>4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.</p>
+        <div class="h2">5. Срок действия и прочие условия</div>
+        <p>5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.</p>
+        <p>5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.</p>
+        <p>5.3. Оплата счёта означает согласие Покупателя с условиями поставки.</p>
+        <div class="sign">
+          <div class="col"><b>Поставщик</b><div class="ln"></div><div>${COMPANY.directorPosition} ${COMPANY.director}</div></div>
+          <div class="col"><b>Покупатель</b><div class="ln"></div><div>&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="pv-footer"><span>CUBICA.BY</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
+    </div>`;
+}
+
+/* PDF */
+async function downloadPdf(){
+  if(!ROWS.length){alert('Нет данных.');return;}
+  if(!window.jspdf||!window.jspdf.jsPDF){alert('jsPDF не загружен');return;}
+  if(!window.html2canvas){alert('html2canvas не загружен');return;}
+  const target=document.getElementById('pvPage');
+  if(!target){alert('Нет превью.');return;}
+  const canvas=await window.html2canvas(target,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:target.offsetWidth,height:target.offsetHeight,windowWidth:target.offsetWidth,windowHeight:target.offsetHeight});
+  const imgData=canvas.toDataURL('image/png');
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const PW=210,MARGIN=8;
+  const imgW=PW-MARGIN*2;
+  const imgH=imgW*(canvas.height/canvas.width);
+  doc.addImage(imgData,'PNG',MARGIN,MARGIN,imgW,imgH,undefined,'FAST');
+  const invNo='СЧ-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
+  doc.save('CUBICA_'+invNo+'.pdf');
+}
+
+/* Payload */
+function buildClientPayload(){
+  const deal=getDeal(),buyer=getBuyer();
+  const rowsForClient=ROWS.map(r=>({label:r.label,qty:rowTotalQty(r),unit:r.unit||'шт.',price:r.price||0}));
+  return {v:6,rooms:ROOMS,i5_url:location.href.split('?')[0],L_in:(KP_META&&KP_META.L_in)||0,W_in:(KP_META&&KP_META.W_in)||0,area:(KP_META&&KP_META.area)||0,color:(KP_META&&KP_META.color)||'',railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',polygon:(KP_META&&KP_META.polygon)||null,p:{railW:(KP_META&&KP_META.railW)||50,railH:(KP_META&&KP_META.railH)||30,gap:(KP_META&&KP_META.gap)||15,caps:(KP_META&&KP_META.caps)?1:0,angle:(KP_META&&KP_META.angle)?1:0},r:(KP_META&&KP_META.rotation)||0,rows:rowsForClient,price:invoiceTotals.total,subtotal:invoiceTotals.subtotal,vat:invoiceTotals.vat,currency:'BYN',deal:{delivery:deal.delivery,payment:deal.payment,days:deal.days,deliveryData:deal.deliveryData},buyer:buyer,company:COMPANY,manager:'Менеджер CUBICA',phone:COMPANY.phone,valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()};
+}
+function openShareModal(){
+  const payload=buildClientPayload();
+  const data=b64enc(JSON.stringify(payload));
+  const url=KP_URL+(KP_URL.includes('?')?'&':'?')+'kp='+data;
+  document.getElementById('shareLink').value=url;
+  document.getElementById('shareModal').classList.add('open');
+}
+function copyShareLink(){
+  const inp=document.getElementById('shareLink');
+  inp.select();inp.setSelectionRange(0,99999);
+  try{navigator.clipboard.writeText(inp.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
+}
+function showCopyMsg(){const m=document.getElementById('copyMsg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+
+/* Заявка логисту */
+function buildLogistText(){
+  const deal=getDeal(),buyer=getBuyer(),d=deal.deliveryData;
+  const lines=[];
+  lines.push('ЗАЯВКА НА ДОСТАВКУ CUBICA');
+  lines.push('='.repeat(40));lines.push('');
+  lines.push('Покупатель:      '+(buyer.bName||'—'));
+  lines.push('Адрес доставки:  '+(d.address||'—'));
+  lines.push('Контактный тел.: '+(d.phone||'—'));
+  lines.push('Дата доставки:   '+(d.date||'—'));
+  lines.push('Время доставки:  '+(d.time||'—'));
+  lines.push('');lines.push('ГАБАРИТЫ ГРУЗА:');
+  lines.push('  Вес:              '+(d.weight?d.weight+' кг':'—'));
+  lines.push('  Объём:            '+(d.volume?d.volume+' м³':'—'));
+  lines.push('  Макс. длина:      '+(d.maxLen?d.maxLen+' мм':'—'));
+  lines.push('');lines.push('СОСТАВ ЗАКАЗА:');
+  for(let i=0;i<ROWS.length;i++){const r=ROWS[i];const qtyStr=fmtQty2(rowTotalQty(r));lines.push('  '+(i+1)+'. '+r.label+' — '+qtyStr+' '+(r.unit||'шт.'));}
+  lines.push('');lines.push('ИТОГО: '+fmtInvoice(invoiceTotals.total)+' BYN с НДС');lines.push('');lines.push('— — —');lines.push('CUBICA · '+COMPANY.phone+' · '+COMPANY.email);
+  return lines.join('\n');
+}
+function openLogistModal(){
+  const mode=document.querySelector('input[name="delivery"]:checked').value;
+  if(mode!=='delivery'){alert('Сначала выберите «Доставка».');return;}
+  document.getElementById('logistText').value=buildLogistText();
+  document.getElementById('logistModal').classList.add('open');
+}
+function copyLogistText(){
+  const ta=document.getElementById('logistText');
+  ta.select();ta.setSelectionRange(0,99999);
+  try{navigator.clipboard.writeText(ta.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
+}
+
+/* Обработчики */
+function toggleDeliveryBlock(){
+  const mode=document.querySelector('input[name="delivery"]:checked').value;
+  document.getElementById('deliveryBlock').style.display=(mode==='delivery')?'block':'none';
+  renderPreview();renderTruckViz();
+}
+
+if(ROWS.length){
+  if(PREFILL_BUYER){const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];keys.forEach(k=>{const el=document.getElementById(k);if(el&&PREFILL_BUYER[k]!=null)el.value=String(PREFILL_BUYER[k]);});}
+  if(PREFILL_DEAL){
+    if(PREFILL_DEAL.delivery){const radio=document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');if(radio)radio.checked=true;}
+    if(PREFILL_DEAL.payment!=null){const slider=document.getElementById('prepaySlider');slider.value=String(PREFILL_DEAL.payment);document.getElementById('prepayVal').textContent=slider.value+' %';}
+    if(PREFILL_DEAL.days!=null){const s=document.getElementById('deliveryDaysSlider');s.value=String(PREFILL_DEAL.days);const d=parseInt(s.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);}
+    if(PREFILL_DEAL.deliveryData){const dd=PREFILL_DEAL.deliveryData;if(dd.address)document.getElementById('delAddress').value=dd.address;if(dd.phone)document.getElementById('delPhone').value=dd.phone;if(dd.time)document.getElementById('delTime').value=formatTimeInput(dd.time);if(dd.date)document.getElementById('delDate').value=dd.date;if(dd.weight)document.getElementById('delWeight').value=dd.weight;if(dd.volume)document.getElementById('delVolume').value=dd.volume;if(dd.maxLen)document.getElementById('delMaxLen').value=dd.maxLen;}
+  }
+  renderInvoiceTable();renderPreview();toggleDeliveryBlock();
+  loadNomenclature().catch(()=>{});loadContractors().catch(()=>{});
+  initBuyerPicker();
+  document.getElementById('bUnp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,9);renderPreview();});
+  document.getElementById('bAccount').addEventListener('input',e=>{let raw=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28);const blocks=raw.match(/.{1,4}/g)||[];e.target.value=blocks.join(' ');renderPreview();});
+  document.getElementById('bBic').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);renderPreview();});
+  ['bName','bAddress','bBank','bPosition','bFio','bBasis','bPhone'].forEach(id=>{document.getElementById(id).addEventListener('input',renderPreview);});
+  document.getElementById('prepaySlider').addEventListener('input',e=>{document.getElementById('prepayVal').textContent=e.target.value+' %';renderPreview();});
+  document.getElementById('deliveryDaysSlider').addEventListener('input',e=>{const d=parseInt(e.target.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);renderPreview();});
+  document.querySelectorAll('input[name="delivery"]').forEach(el=>el.addEventListener('input',toggleDeliveryBlock));
+  const delTimeEl=document.getElementById('delTime');
+  delTimeEl.addEventListener('input',function(){const caretAtEnd=this.selectionStart===this.value.length;this.value=formatTimeInput(this.value);if(caretAtEnd)this.setSelectionRange(this.value.length,this.value.length);renderPreview();renderTruckViz();});
+  ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>{renderPreview();renderTruckViz();});});
+  ['delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)attachZeroSelect(el);});
+  document.getElementById('prepayVal').textContent=document.getElementById('prepaySlider').value+' %';
+  document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
+  document.getElementById('btnPdf').addEventListener('click',downloadPdf);
+  document.getElementById('btnShare').addEventListener('click',openShareModal);
+  document.getElementById('btnCopy').addEventListener('click',copyShareLink);
+  document.getElementById('btnLogist').addEventListener('click',openLogistModal);
+  document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);
+  document.getElementById('shareModal').addEventListener('click',e=>{if(e.target===document.getElementById('shareModal'))e.target.classList.remove('open');});
+  document.getElementById('logistModal').addEventListener('click',e=>{if(e.target===document.getElementById('logistModal'))e.target.classList.remove('open');});
+  if(AUTO_PDF){setTimeout(()=>{try{downloadPdf();}catch(e){console.error('autopdf',e);}},900);}
+}
+</script>
+</body>
+</html>

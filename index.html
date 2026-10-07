@@ -7,6 +7,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+<script>
+  // Фолбэк: если jsdelivr заблокирован — тянем LZ-String с unpkg
+  if (typeof LZString === 'undefined') {
+    document.write('<script src="https://unpkg.com/lz-string@1.5.0/libs/lz-string.min.js"><\/script>');
+  }
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -404,7 +411,7 @@ table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
     <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя.
-       Мы автоматически сокращаем её для удобной отправки в мессенджерах.</p>
+       Мы автоматически сжимаем и сокращаем её для удобной отправки в мессенджерах.</p>
 
     <div class="copy-row">
       <input type="text" id="shareLink" readonly onclick="this.select()">
@@ -1266,39 +1273,88 @@ function buildClientPayload(){
   return {v:6,rooms:ROOMS,i5_url:location.href.split('?')[0],L_in:(KP_META&&KP_META.L_in)||0,W_in:(KP_META&&KP_META.W_in)||0,area:(KP_META&&KP_META.area)||0,color:(KP_META&&KP_META.color)||'',railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',polygon:(KP_META&&KP_META.polygon)||null,p:{railW:(KP_META&&KP_META.railW)||50,railH:(KP_META&&KP_META.railH)||30,gap:(KP_META&&KP_META.gap)||15,caps:(KP_META&&KP_META.caps)?1:0,angle:(KP_META&&KP_META.angle)?1:0},r:(KP_META&&KP_META.rotation)||0,rows:rowsForClient,price:invoiceTotals.total,subtotal:invoiceTotals.subtotal,vat:invoiceTotals.vat,currency:'BYN',invoiceNumber:getInvoiceNumber(),deal:{delivery:deal.delivery,payment:deal.payment,days:deal.days,deliveryData:deal.deliveryData},buyer:buyer,company:COMPANY,manager:'Менеджер CUBICA',phone:COMPANY.phone,valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()};
 }
 
-/* ─── Сокращение ссылки ────────────────────────────────── */
-async function shortenUrl(longUrl){
-  // Несколько независимых сервисов — если один лёг, пробуем следующий.
-  // Все три поддерживают CORS и не требуют API-ключа.
-  const services = [
-    { name:'is.gd',   url:'https://is.gd/create.php?format=json&url='+encodeURIComponent(longUrl),
-      parse:async r => (await r.json()).shorturl },
-    { name:'v.gd',    url:'https://v.gd/create.php?format=json&url='+encodeURIComponent(longUrl),
-      parse:async r => (await r.json()).shorturl },
-    { name:'clck.ru', url:'https://clck.ru/--?url='+encodeURIComponent(longUrl),
-      parse:async r => await r.text() }
-  ];
-  for(const svc of services){
+/* ─── Сжатие payload в URL (LZ-String + base64url) ─────────────── */
+function encodePayloadForUrl(payload){
+  const json = JSON.stringify(payload);
+  // Префикс 'L' = LZ-String сжатие, 'B' = обычный base64url
+  if(typeof LZString !== 'undefined'){
     try{
-      const ctrl = new AbortController();
-      const t = setTimeout(()=>ctrl.abort(), 6000);
-      const res = await fetch(svc.url, {signal: ctrl.signal});
-      clearTimeout(t);
-      if(!res.ok) continue;
-      let out = await svc.parse(res);
-      out = String(out || '').trim();
-      if(/^https?:\/\//.test(out)) return out;
-    }catch(e){ console.warn('shortener ' + svc.name + ':', e); }
+      const compressed = LZString.compressToBase64(json)
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      console.log('[i5] LZ сжатие: %d → %d символов', json.length, compressed.length);
+      return 'L' + compressed;
+    }catch(e){ console.warn('[i5] LZ-String сбой, fallback на base64:', e); }
+  } else {
+    console.warn('[i5] LZString не подключён — используется обычный base64url');
   }
+  return 'B' + b64enc(json);
+}
+
+/* ─── Сокращение ссылки (последовательный перебор с логами) ──── */
+async function shortenUrl(longUrl){
+  const services = [
+    {
+      name: 'is.gd',
+      run: async () => {
+        const r = await fetch('https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
+        const j = await r.json();
+        if (j && j.errorcode) throw new Error(j.errormessage || 'is.gd error');
+        return j.shorturl;
+      }
+    },
+    {
+      name: 'v.gd',
+      run: async () => {
+        const r = await fetch('https://v.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
+        const j = await r.json();
+        if (j && j.errorcode) throw new Error(j.errormessage || 'v.gd error');
+        return j.shorturl;
+      }
+    },
+    {
+      name: 'shrtco.de',
+      run: async () => {
+        const r = await fetch('https://api.shrtco.de/v2/shorten?url=' + encodeURIComponent(longUrl));
+        const j = await r.json();
+        if (!j || !j.ok) throw new Error(j && j.error ? j.error : 'shrtco error');
+        return j.result && j.result.full_short_link;
+      }
+    },
+    {
+      name: 'tinyurl (via jina proxy)',
+      run: async () => {
+        const r = await fetch('https://r.jina.ai/https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl));
+        const t = await r.text();
+        const m = t.match(/https?:\/\/tinyurl\.com\/\S+/);
+        if (!m) throw new Error('tinyurl parse error');
+        return m[0].trim();
+      }
+    }
+  ];
+
+  for (const svc of services) {
+    try {
+      console.log('[i5] → пробую', svc.name, '…');
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout 8s')), 8000));
+      const url = await Promise.race([svc.run(), timeout]);
+      if (url && /^https?:\/\//.test(url)) {
+        console.log('[i5] ✓', svc.name, '→', url);
+        return url;
+      }
+      console.warn('[i5] ✗', svc.name, '— пустой ответ');
+    } catch (e) {
+      console.warn('[i5] ✗', svc.name, '—', e.message || e);
+    }
+  }
+  console.error('[i5] Все сервисы отказали.');
   return null;
 }
 
-/* Кэш, чтобы не дёргать сервис при повторном открытии модалки */
 let _shareCache = { long:'', short:'' };
 
 async function openShareModal(){
   const payload = buildClientPayload();
-  const data    = b64enc(JSON.stringify(payload));
+  const data    = encodePayloadForUrl(payload);
   const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
 
   const inp        = document.getElementById('shareLink');
@@ -1310,28 +1366,35 @@ async function openShareModal(){
   updateMessengerLinks(longUrl);
   document.getElementById('shareModal').classList.add('open');
 
-  // Если уже сокращали эту же ссылку — берём из кэша
   if(_shareCache.long === longUrl && _shareCache.short){
     inp.value = _shareCache.short;
     updateMessengerLinks(_shareCache.short);
     statusEl.className = 'share-status show ok';
-    statusEl.textContent = '✓ Короткая ссылка (из кэша)';
+    statusEl.textContent = '✓ Короткая ссылка (из кэша): ' + _shareCache.short.length + ' симв.';
     return;
   }
 
   statusEl.className = 'share-status show loading';
-  statusEl.textContent = '⏳ Сокращаем ссылку…';
+  statusEl.textContent = '⏳ Исходная ссылка: ' + longUrl.length + ' симв. Сокращаем…';
 
   const short = await shortenUrl(longUrl);
-  if(short && short !== longUrl){
+  if (short && short !== longUrl) {
     _shareCache = { long: longUrl, short };
     inp.value = short;
     updateMessengerLinks(short);
     statusEl.className = 'share-status show ok';
-    statusEl.textContent = '✓ Короткая ссылка готова';
+    statusEl.textContent = '✓ Короткая ссылка готова: ' + short.length + ' симв. (было ' + longUrl.length + ')';
   } else {
     statusEl.className = 'share-status show warn';
-    statusEl.textContent = '⚠ Сервис недоступен — используйте длинную ссылку (раскройте ниже)';
+    const shortEnough = longUrl.length < 2000;
+    statusEl.innerHTML =
+      '⚠ <b>Сервисы сокращения недоступны</b>.<br>' +
+      '<span style="font-size:11.5px;line-height:1.55">' +
+      'Длина ссылки: <b>' + longUrl.length + ' символов</b>. ' +
+      (shortEnough
+        ? 'Это <b>безопасная длина</b> — Telegram, WhatsApp и Viber её не обрежут. Можно смело отправлять как есть.'
+        : 'Это <b>слишком длинная ссылка</b> — Viber может обрезать. Откройте <b>F12 → Console</b> и пришлите лог: там видно, какие сервисы пытались и почему отказали.') +
+      '</span>';
   }
 }
 

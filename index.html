@@ -32,10 +32,13 @@ body{font-family:'Inter','Segoe UI',Calibri,Arial,sans-serif;background:#f4f5f7;
 .inv-toolbar .inv-num-label{font-size:11px;font-weight:800;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
 .inv-toolbar input.inv-num{width:180px;padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff}
 .inv-toolbar input.inv-num:focus{outline:none;border-color:#e10004;box-shadow:0 0 0 3px rgba(225,0,4,.12)}
-.inv-toolbar .move-group{display:flex;gap:6px;margin-left:auto}
-.btn-move-selected{padding:8px 14px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid #ccc;background:#fff;color:#333;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.inv-toolbar .move-group{display:flex;gap:6px}
+.inv-toolbar .inv-num-group{display:flex;align-items:center;gap:8px;margin-left:auto}
+.btn-move-selected{padding:8px 14px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid #ccc;background:#fff;color:#333;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
 .btn-move-selected:hover:not(:disabled){border-color:#e10004;color:#e10004;background:#fff5f5}
 .btn-move-selected:disabled{opacity:.4;cursor:not-allowed}
+.btn-copy-row{border-color:#c8e6c9;color:#2e7d32}
+.btn-copy-row:hover:not(:disabled){border-color:#2e7d32;color:#2e7d32;background:#e8f5e9}
 .inv-toolbar .hint{font-size:11.5px;color:#999;flex-basis:100%}
 
 /* Секция 1: таблица позиций */
@@ -52,6 +55,8 @@ table.inv td.pos{text-align:center;color:#888;font-weight:600;width:26px;cursor:
 table.inv td.vat{text-align:center;color:#888;font-weight:600;font-size:10.5px}
 table.inv td.sum-vat{font-weight:700;color:#1a1a1a;background:#fff5f5;border-radius:4px}
 table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
+@keyframes rowFlash{0%{background:#fff8e1}40%{background:#ffe082}100%{background:transparent}}
+table.inv tr.flash td{animation:rowFlash .9s ease-out}
 
 .cell-input{width:100%;padding:4px 5px;border:1px solid transparent;border-radius:5px;font-size:11.5px;font-family:inherit;background:transparent;color:#1a1a1a;transition:border-color .15s,box-shadow .15s}
 .cell-input:hover{border-color:#ddd}
@@ -245,7 +250,7 @@ table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
 .picker-empty{padding:60px 20px;text-align:center;color:#999;font-size:14px;line-height:1.7}
 .picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
 .picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
-/* ——— Новые стили для сокращателя ссылки ——— */
+/* ——— Стили для сокращателя ссылки ——— */
 .share-status{font-size:12.5px;margin:8px 0 14px;padding:9px 12px;border-radius:8px;
   background:#f4f5f7;color:#666;display:none}
 .share-status.show{display:block}
@@ -271,6 +276,7 @@ table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
   .picker-inner{width:100vw;max-height:100vh;border-radius:0}
   .picker-search{flex-direction:column;align-items:stretch}
   .picker-tree{padding:8px 10px}
+  .inv-toolbar .inv-num-group{margin-left:0;flex-basis:100%;flex-wrap:wrap}
 }
 </style>
 </head>
@@ -292,14 +298,18 @@ table.inv td.row-actions{padding:2px 3px!important;width:30px;text-align:center}
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">1</span>Позиции счёта</h2>
 
+      <!-- Тулбар: стрелки + копировать слева, номер счёта справа -->
       <div class="inv-toolbar">
-        <span class="inv-num-label">Номер счёта:</span>
-        <input type="text" class="inv-num" id="invNumber" placeholder="СЧ-20261007-001">
         <div class="move-group">
-          <button type="button" class="btn-move-selected" id="btnMoveUp" disabled>▲ Вверх</button>
-          <button type="button" class="btn-move-selected" id="btnMoveDown" disabled>▼ Вниз</button>
+          <button type="button" class="btn-move-selected" id="btnMoveUp" disabled title="Переместить выделенную строку вверх">▲ Вверх</button>
+          <button type="button" class="btn-move-selected" id="btnMoveDown" disabled title="Переместить выделенную строку вниз">▼ Вниз</button>
+          <button type="button" class="btn-move-selected btn-copy-row" id="btnCopyRow" disabled title="Скопировать выделенную позицию в конец списка">📋 Копировать</button>
         </div>
-        <div class="hint">Кликните по строке — она выделится, затем двигайте кнопками ▲ / ▼</div>
+        <div class="inv-num-group">
+          <span class="inv-num-label">Номер счёта:</span>
+          <input type="text" class="inv-num" id="invNumber" placeholder="СЧ-20261007-001">
+        </div>
+        <div class="hint">Кликните по строке — она выделится, затем ▲ / ▼ двигают позицию, 📋 копирует выделенную позицию в конец списка</div>
       </div>
 
       <div class="inv-wrap">
@@ -533,14 +543,12 @@ const COMPANY = {
   hours:'Пн–Пт, 09:00–15:00'
 };
 
-/* Генерация номера счёта по умолчанию */
 function makeDefaultInvNumber(){
   const d = new Date();
   const ymd = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
   return 'СЧ-' + ymd + '-001';
 }
 
-/* Переменная: текущий выделенный индекс строки (для перемещения) */
 let selectedRowIdx = -1;
 
 function b64dec(s){
@@ -689,7 +697,7 @@ function renderInvoiceTable(){
       '<td class="pos">'+(i+1)+'</td>' +
       '<td><div class="name-cell">' +
         '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
-        '<button type="button" class="btn-picker" data-picker="'+i+'">📁</button>' +
+        '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
       '</div></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
       '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
@@ -774,10 +782,12 @@ function setSelectedRow(idx){
 function updateMoveButtons(){
   const btnUp = document.getElementById('btnMoveUp');
   const btnDown = document.getElementById('btnMoveDown');
+  const btnCopy = document.getElementById('btnCopyRow');
   if(!btnUp || !btnDown) return;
   const hasSel = selectedRowIdx >= 0 && selectedRowIdx < ROWS.length;
   btnUp.disabled = !hasSel || selectedRowIdx <= 0;
   btnDown.disabled = !hasSel || selectedRowIdx >= ROWS.length - 1;
+  if(btnCopy) btnCopy.disabled = !hasSel;
 }
 
 function moveSelected(dir){
@@ -798,6 +808,49 @@ function moveSelected(dir){
 
 document.getElementById('btnMoveUp').addEventListener('click', () => moveSelected('up'));
 document.getElementById('btnMoveDown').addEventListener('click', () => moveSelected('down'));
+
+/* ─── Копирование выделенной строки в конец списка ─── */
+document.getElementById('btnCopyRow').addEventListener('click', () => {
+  let srcIdx = selectedRowIdx;
+  // Приоритет: если курсор в поле строки — копируем именно эту строку
+  const ae = document.activeElement;
+  if(ae && ae.tagName === 'INPUT'){
+    const tr = ae.closest('tr');
+    if(tr && tr.hasAttribute('data-idx')){
+      srcIdx = parseInt(tr.getAttribute('data-idx'), 10);
+    }
+  }
+  if(srcIdx < 0 || srcIdx >= ROWS.length){
+    alert('Сначала выделите строку (кликните по ней) или установите курсор в поле строки.');
+    return;
+  }
+  const src = ROWS[srcIdx];
+  const copy = {
+    label: src.label,
+    qtyCalc: Number(src.qtyCalc)||0,
+    qtyReserve: Number(src.qtyReserve)||0,
+    unit: src.unit || 'шт.',
+    price: Number(src.price)||0
+  };
+  // Переносим связь со справочником, чтобы 📁 на новой строке открылась та же папка
+  if(src._nomId) copy._nomId = src._nomId;
+  if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
+  
+  ROWS.push(copy);
+  renderInvoiceTable();
+  renderPreview();
+  setSelectedRow(ROWS.length - 1);
+  
+  // Прокрутка и подсветка новой строки
+  requestAnimationFrame(() => {
+    const newTr = document.querySelector('tr[data-idx="' + (ROWS.length-1) + '"]');
+    if(newTr){
+      newTr.scrollIntoView({behavior:'smooth', block:'nearest'});
+      newTr.classList.add('flash');
+      setTimeout(() => newTr.classList.remove('flash'), 950);
+    }
+  });
+});
 
 function idxOf(inp){return parseInt(inp.closest('tr').getAttribute('data-idx'),10);}
 function commitNumericCell(inp){
@@ -885,6 +938,18 @@ function parseNomenclatureXML(xmlText){
   return {version:'2.0',source:'1C XML',generated:new Date().toISOString(),tree:roots};
 }
 function findNode(tree,id){for(const node of tree){if(node.id===id)return node;if(node.children){const f=findNode(node.children,id);if(f)return f;}}return null;}
+/* Возвращает массив id папок-родителей от корня до найденного узла (не включая сам узел) */
+function findNodePath(tree,targetId,ancestors){
+  ancestors=ancestors||[];
+  for(const node of tree){
+    if(node.id===targetId)return ancestors;
+    if(node.children&&node.children.length){
+      const r=findNodePath(node.children,targetId,ancestors.concat([node.id]));
+      if(r)return r;
+    }
+  }
+  return null;
+}
 function countAllItems(tree){let n=0;for(const node of tree){if(node.children&&node.children.length)n+=countAllItems(node.children);else n++;}return n;}
 function isFolderNode(node){return node.type==='folder'||(node.children&&node.children.length>0);}
 function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
@@ -892,6 +957,14 @@ function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(n
 
 async function openPicker(idx){
   pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
+  
+  // Если у строки сохранён путь в справочнике — раскрываем папки до этой позиции
+  const row = ROWS[idx];
+  if(row && Array.isArray(row._nomPath) && row._nomPath.length){
+    row._nomPath.forEach(id => pickerExpanded.add(id));
+    console.log('[i5] Раскрываю путь номенклатуры для строки', idx, ':', row._nomPath);
+  }
+  
   document.getElementById('pickerSearch').value='';
   document.getElementById('pickerModal').classList.add('open');
   const treeEl=document.getElementById('pickerTree');
@@ -949,7 +1022,15 @@ function applyPicker(){
   if(!pickerSelected.node)return;
   const idx=pickerTargetIdx;if(idx<0||idx>=ROWS.length){closePicker();return;}
   const node=pickerSelected.node;
-  ROWS[idx].label=node.name;if(node.unit)ROWS[idx].unit=node.unit;
+  ROWS[idx].label=node.name;
+  if(node.unit)ROWS[idx].unit=node.unit;
+  // Запоминаем связь с номенклатурой: id позиции + путь папок до неё
+  ROWS[idx]._nomId = node.id;
+  if(NOMENCLATURE && NOMENCLATURE.tree){
+    const path = findNodePath(NOMENCLATURE.tree, node.id, []);
+    ROWS[idx]._nomPath = path || [];
+    console.log('[i5] Запомнили путь номенклатуры для строки', idx, ':', ROWS[idx]._nomPath);
+  }
   const tr=document.querySelector('tr[data-idx="'+idx+'"]');
   if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
   updateRowTotals(idx);updateTotalsView();renderPreview();closePicker();

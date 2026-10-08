@@ -402,6 +402,8 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
       <button type="button" id="btnCopy">📋 Копировать</button>
     </div>
     <div class="share-status" id="shareStatus"></div>
+    <div id="shareLen" style="display:none"></div>
+    <div id="qrPreview" style="display:none"></div>
     <div class="share-messengers">
       <span>Отправить:</span>
       <a href="#" id="shareTg" target="_blank" rel="noopener" class="msgr tg">Telegram</a>
@@ -409,10 +411,6 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
       <a href="#" id="shareVb" target="_blank" rel="noopener" class="msgr vb">Viber</a>
       <a href="#" id="shareEm" class="msgr em">E-mail</a>
     </div>
-    <details style="margin-top:14px">
-      <summary style="cursor:pointer;font-size:12px;color:#888">Показать полную ссылку</summary>
-      <textarea id="originalWrap" readonly style="width:100%;margin-top:8px;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:11px;font-family:Consolas,monospace;resize:vertical;min-height:90px"></textarea>
-    </details>
     <div style="text-align:right;margin-top:16px">
       <button class="btn ghost" onclick="document.getElementById('shareModal').classList.remove('open')">Закрыть</button>
     </div>
@@ -483,6 +481,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 /* CUBICA · i5.24 */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
+const SHORT_URL = 'https://cubica-kp-15ab.6471811.workers.dev';
 const NOMENCLATURE_URL = 'https://6471811-source.github.io/Cubica-nomenclature/nomenclature.xml';
 const NOMENCLATURE_CACHE_KEY = 'cubica_nomenclature_v2';
 const CONTRACTORS_URL = 'https://6471811-source.github.io/Cubica-contractors/contractors.xml';
@@ -1313,87 +1312,48 @@ function buildClientPayload(){
   return {v:6,rooms:ROOMS,i5_url:location.href.split('?')[0],L_in:(KP_META&&KP_META.L_in)||0,W_in:(KP_META&&KP_META.W_in)||0,area:(KP_META&&KP_META.area)||0,color:(KP_META&&KP_META.color)||'',railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',polygon:(KP_META&&KP_META.polygon)||null,p:{railW:(KP_META&&KP_META.railW)||50,railH:(KP_META&&KP_META.railH)||30,gap:(KP_META&&KP_META.gap)||15,caps:(KP_META&&KP_META.caps)?1:0,angle:(KP_META&&KP_META.angle)?1:0},r:(KP_META&&KP_META.rotation)||0,rows:rowsForClient,price:invoiceTotals.total,subtotal:invoiceTotals.subtotal,vat:invoiceTotals.vat,currency:'BYN',invoiceNumber:getInvoiceNumber(),deal:{delivery:deal.delivery,payment:deal.payment,days:deal.days,deliveryData:deal.deliveryData},buyer:buyer,company:COMPANY,manager:'Менеджер CUBICA',phone:COMPANY.phone,valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()};
 }
 
-/* Кодирование payload — обычный base64url, без префиксов */
 function encodePayloadForUrl(payload){
   return b64enc(JSON.stringify(payload));
 }
 
-/* Сокращение ссылки — 7 параллельных попыток */
-async function shortenUrl(longUrl){
-  const enc = encodeURIComponent(longUrl);
-  const TIMEOUT = 12000;
-  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + ms + 'ms')), ms))]);
-  const validate = (raw, srcName) => {
-    const t = String(raw || '').trim();
-    if (!/^https?:\/\/\S+$/.test(t)) throw new Error(srcName + ': не URL');
-    if (t.length > 80) throw new Error(srcName + ': слишком длинный');
-    return t;
-  };
-  const attempts = [
-    withTimeout(fetch('https://tinyurl.com/api-create.php?url=' + enc).then(r => r.text()).then(t => validate(t, 'tinyurl-direct')), TIMEOUT),
-    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://tinyurl.com/api-create.php?url=' + enc)).then(r => r.text()).then(t => validate(t, 'tinyurl-allorigins')), TIMEOUT),
-    withTimeout(fetch('https://is.gd/create.php?format=simple&url=' + enc).then(r => r.text()).then(t => validate(t, 'is.gd-direct')), TIMEOUT),
-    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://is.gd/create.php?format=simple&url=' + enc)).then(r => r.text()).then(t => validate(t, 'is.gd-allorigins')), TIMEOUT),
-    withTimeout(fetch('https://v.gd/create.php?format=simple&url=' + enc).then(r => r.text()).then(t => validate(t, 'v.gd-direct')), TIMEOUT),
-    withTimeout(fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://clck.ru/--?url=' + enc)).then(r => r.text()).then(t => validate(t, 'clck-codetabs')), TIMEOUT),
-    withTimeout(fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://spoo.me/?url=' + enc)).then(r => r.text()).then(t => validate(t, 'spoo-allorigins')), TIMEOUT)
-  ];
-  try {
-    const url = await Promise.any(attempts);
-    console.log('[i5] ✓ Сокращено:', url);
-    return url;
-  } catch (aggErr) {
-    console.error('[i5] Все сервисы сокращения отказали.');
-    (aggErr.errors || []).forEach((e, i) => console.warn('  #' + (i+1), e && e.message));
-    return null;
-  }
-}
-
-let _shareCache = { long:'', short:'' };
-
+/* ─── НОВАЯ ФУНКЦИЯ: создаёт короткую ссылку через Cloudflare Worker ─── */
 async function openShareModal(){
   const payload = buildClientPayload();
   const data    = encodePayloadForUrl(payload);
   const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
 
-  const inp        = document.getElementById('shareLink');
-  const statusEl   = document.getElementById('shareStatus');
-  const originalEl = document.getElementById('originalWrap');
+  const inp      = document.getElementById('shareLink');
+  const statusEl = document.getElementById('shareStatus');
 
   inp.value = longUrl;
-  originalEl.value = longUrl;
   updateMessengerLinks(longUrl);
   document.getElementById('shareModal').classList.add('open');
 
-  if(_shareCache.long === longUrl && _shareCache.short){
-    inp.value = _shareCache.short;
-    updateMessengerLinks(_shareCache.short);
-    statusEl.className = 'share-status show ok';
-    statusEl.textContent = '✓ Короткая ссылка (из кэша): ' + _shareCache.short.length + ' симв.';
-    return;
-  }
-
   statusEl.className = 'share-status show loading';
-  statusEl.textContent = '⏳ Исходная ссылка: ' + longUrl.length + ' симв. Сокращаем…';
+  statusEl.textContent = '⏳ Создаём короткую ссылку…';
 
-  const short = await shortenUrl(longUrl);
-  if (short && short !== longUrl) {
-    _shareCache = { long: longUrl, short };
-    inp.value = short;
-    updateMessengerLinks(short);
+  try {
+    const res = await fetch(SHORT_URL + '/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload: data })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if(!j.id) throw new Error('Нет id в ответе');
+
+    const shortUrl = KP_URL + '?s=' + j.id;
+
+    inp.value = shortUrl;
+    updateMessengerLinks(shortUrl);
+
     statusEl.className = 'share-status show ok';
-    statusEl.textContent = '✓ Короткая ссылка готова: ' + short.length + ' симв. (было ' + longUrl.length + ')';
-  } else {
+    statusEl.textContent = '✓ Готово! Ссылка ' + shortUrl.length + ' символов. Копируйте и отправляйте клиенту.';
+  } catch(e) {
+    console.warn('[i5] shorten error:', e);
     statusEl.className = 'share-status show warn';
-    const shortEnough = longUrl.length < 2000;
-    statusEl.innerHTML =
-      '⚠ <b>Сервисы сокращения недоступны</b>.<br>' +
-      '<span style="font-size:11.5px;line-height:1.55">' +
-      'Длина ссылки: <b>' + longUrl.length + ' символов</b>. ' +
-      (shortEnough
-        ? 'Это <b>безопасная длина</b> — Telegram, WhatsApp и Viber её не обрежут. Можно смело отправлять как есть.'
-        : 'Это <b>слишком длинная ссылка</b> — Viber может обрезать. Откройте <b>F12 → Console</b> и пришлите лог.') +
-      '</span>';
+    statusEl.innerHTML = '⚠ Не удалось создать короткую ссылку (' + escapeHtml(e.message) + ').<br>' +
+      '<span style="font-size:11.5px">Всё равно можно отправить длинную ссылку — она рабочая.</span>';
   }
 }
 

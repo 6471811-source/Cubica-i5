@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script src="https://6471811-source.github.io/Cubica-journal/journal-core.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -386,10 +387,11 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
     </div>
 
     <div class="actions">
-      <button class="btn ghost" onclick="window.close()">Закрыть</button>
-      <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
-      <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
-    </div>
+  <button class="btn ghost" onclick="window.close()">Закрыть</button>
+  <button class="btn journal" id="btnSaveJournal">💾 Сохранить в журнал</button>
+  <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
+  <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
+</div>
   </div>
 </div>
 
@@ -607,8 +609,32 @@ function makeNaviQR(coords){return makeQrSvg('yandexnavi://build_route_on_map?la
 const urlParams=new URLSearchParams(location.search);
 const rawData=urlParams.get('data');
 const AUTO_PDF=urlParams.get('autopdf')==='1';
+const JID=urlParams.get('jid');
 let ROWS=[],ROOMS=[],KP_META=null,PREFILL_BUYER=null,PREFILL_DEAL=null;
 let INVOICE_NUMBER = '';
+let currentRecordId = null;
+
+if(JID && window.CubicaJournal){
+  const rec = window.CubicaJournal.get(JID);
+  if(rec){
+    currentRecordId = rec.id;
+    ROWS = (rec.rows||[]).map(r=>({
+      label: String(r.label||''),
+      qtyCalc: Number(r.qtyCalc)||0,
+      qtyReserve: Number(r.qtyReserve)||0,
+      unit: r.unit||'шт.',
+      price: Number(r.price)||0
+    }));
+    ROOMS = rec.rooms || [];
+    KP_META = rec.meta || null;
+    PREFILL_BUYER = rec.contractor || null;
+    PREFILL_DEAL = rec.deal || null;
+    INVOICE_NUMBER = rec.number || '';
+    console.log('[i5] Загружено из журнала:', rec.number);
+  } else {
+    console.warn('[i5] Запись не найдена в журнале:', JID);
+  }
+}
 
 if(rawData){
   try{
@@ -1414,6 +1440,27 @@ function toggleDeliveryBlock(){
 }
 
 if(ROWS.length){
+  if(!currentRecordId && window.CubicaJournal && !JID){
+    try{
+      const rec = window.CubicaJournal.create({ series:'invoice' });
+      rec.rows = ROWS.map(r=>({label:r.label, qtyCalc:r.qtyCalc, qtyReserve:r.qtyReserve, unit:r.unit, price:r.price}));
+      rec.rooms = ROOMS;
+      rec.meta = KP_META;
+      rec.number = window.CubicaJournal.nextNumber('invoice');
+      rec.history.push({
+        at: window.CubicaJournal.nowISO(),
+        by: window.CubicaJournal.manager(),
+        action: 'from calculator'
+      });
+      window.CubicaJournal.save(rec, { assignNumber:false });
+      currentRecordId = rec.id;
+      INVOICE_NUMBER = rec.number;
+      console.log('[i5] Создана запись в журнале:', rec.number);
+    }catch(e){
+      console.warn('[i5] Не удалось создать запись в журнале:', e);
+    }
+  }
+
   const invNumInput = document.getElementById('invNumber');
   invNumInput.value = INVOICE_NUMBER || makeDefaultInvNumber();
   INVOICE_NUMBER = invNumInput.value;

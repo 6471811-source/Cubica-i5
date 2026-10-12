@@ -1448,7 +1448,14 @@ if(ROWS.length || currentRecordId){
     try{
       const rec = window.CubicaJournal.create({ series:'invoice' });
       rec.rows = ROWS.map(r=>({label:r.label, qtyCalc:r.qtyCalc, qtyReserve:r.qtyReserve, unit:r.unit, price:r.price}));
-      rec.rooms = ROOMS;
+      /* Если ROOMS пуст — не трогаем то, что уже есть в записи.
+   Иначе затрём данные, которые записал калькулятор. */
+if(Array.isArray(ROOMS) && ROOMS.length > 0){
+  rec.rooms = ROOMS;
+}
+if(KP_META){
+  rec.meta = KP_META;
+}
       rec.meta = KP_META;
       rec.number = window.CubicaJournal.nextNumber('invoice');
       rec.history.push({

@@ -666,8 +666,11 @@ if(rawData){
   ROWS=order.map(k=>{const r=map.get(k);r.qtyCalc=Math.round(r.qtyCalc*100)/100;r.qtyReserve=Math.round(r.qtyReserve*100)/100;return r;});
 })();
 
-if(!ROWS.length){document.getElementById('noData').style.display='block';}
-else{document.getElementById('content').style.display='block';}
+if(!ROWS.length && !currentRecordId){
+  document.getElementById('noData').style.display='block';
+} else {
+  document.getElementById('content').style.display='block';
+}
 
 let invoiceTotals={subtotal:0,vat:0,total:0};
 function rowTotalQty(r){return (Number(r.qtyCalc)||0)+(Number(r.qtyReserve)||0);}
@@ -1439,7 +1442,8 @@ function toggleDeliveryBlock(){
   renderPreview();renderTruckViz();
 }
 
-if(ROWS.length){
+/* Инициализация i5 — если есть данные ИЗ КАЛЬКУЛЯТОРА или запись ИЗ ЖУРНАЛА */
+if(ROWS.length || currentRecordId){
   if(!currentRecordId && window.CubicaJournal && !JID){
     try{
       const rec = window.CubicaJournal.create({ series:'invoice' });
@@ -1461,9 +1465,15 @@ if(ROWS.length){
     }
   }
 
-  const invNumInput = document.getElementById('invNumber');
-  invNumInput.value = INVOICE_NUMBER || makeDefaultInvNumber();
-  INVOICE_NUMBER = invNumInput.value;
+const invNumInput = document.getElementById('invNumber');
+invNumInput.value = INVOICE_NUMBER || makeDefaultInvNumber();
+INVOICE_NUMBER = invNumInput.value;
+
+/* Если ROWS пуст (открыто из журнала пустым) — создаём одну пустую позицию,
+   чтобы таблица не была пустой */
+if(!ROWS.length){
+  ROWS.push({ label:'Новая позиция', qtyCalc:1, qtyReserve:0, unit:'шт.', price:0 });
+}
 
   if(PREFILL_BUYER){const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];keys.forEach(k=>{const el=document.getElementById(k);if(el&&PREFILL_BUYER[k]!=null)el.value=String(PREFILL_BUYER[k]);});}
   if(PREFILL_DEAL){

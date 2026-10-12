@@ -386,9 +386,9 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
       </div>
     </div>
 
-    <div class="actions">
+<div class="actions">
   <button class="btn ghost" onclick="window.close()">Закрыть</button>
-  <button class="btn journal" id="btnSaveJournal">💾 Сохранить в журнал</button>
+  <button class="btn" id="btnSaveJournal" style="background:#2e7d32;color:#fff;border-color:#2e7d32">💾 Сохранить в журнал</button>
   <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
   <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
 </div>
@@ -1500,6 +1500,51 @@ if(!ROWS.length){
   document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
   document.getElementById('btnPdf').addEventListener('click',downloadPdf);
   document.getElementById('btnShare').addEventListener('click',openShareModal);
+  /* === Сохранение в журнал === */
+function saveToJournal(silent){
+  if(!window.CubicaJournal){ if(!silent) alert('Ядро журнала недоступно'); return false; }
+  let rec = currentRecordId ? window.CubicaJournal.get(currentRecordId) : null;
+  if(!rec) rec = window.CubicaJournal.create({ series:'invoice' });
+  const buyer = getBuyer();
+  rec.contractor = {
+    name: buyer.bName||'', full: buyer.bName||'', unp: buyer.bUnp||'',
+    addr: buyer.bAddress||'', account: buyer.bAccount||'', bank: buyer.bBank||'',
+    bic: buyer.bBic||'', position: buyer.bPosition||'', fio: buyer.bFio||'',
+    basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
+  };
+  rec.deal = getDeal();
+  rec.rows = ROWS.map(r=>({
+    label: r.label,
+    qtyCalc: Number(r.qtyCalc)||0,
+    qtyReserve: Number(r.qtyReserve)||0,
+    unit: r.unit||'шт.',
+    price: Number(r.price)||0
+  }));
+  rec.rooms = ROOMS;
+  rec.meta = KP_META;
+  rec.number = getInvoiceNumber();
+  rec.totals = window.CubicaJournal.computeTotals(rec.rows);
+  if(rec.status === 'draft' && rec.rows.length) rec.status = 'invoiced';
+  const saved = window.CubicaJournal.save(rec, { assignNumber:false });
+  if(!saved){ if(!silent) alert('Не удалось сохранить в журнал'); return false; }
+  currentRecordId = saved.id;
+  if(!silent) alert('✓ Сохранено в журнал: ' + saved.number);
+  return true;
+}
+document.getElementById('btnSaveJournal').addEventListener('click', function(){
+  const btn = this;
+  const oldText = btn.textContent;
+  if(saveToJournal(false)){
+    btn.textContent = '✓ Сохранено';
+    btn.disabled = true;
+    setTimeout(()=>{ btn.textContent = oldText; btn.disabled = false; }, 2000);
+  }
+});
+
+/* Автосохранение при закрытии окна — если что-то меняли и не нажали кнопку */
+window.addEventListener('beforeunload', function(){
+  if(currentRecordId) saveToJournal(true);
+});
   document.getElementById('btnCopy').addEventListener('click',copyShareLink);
   document.getElementById('btnLogist').addEventListener('click',openLogistModal);
   document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);

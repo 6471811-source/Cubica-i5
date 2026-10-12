@@ -1475,7 +1475,29 @@ if(!ROWS.length){
   ROWS.push({ label:'Новая позиция', qtyCalc:1, qtyReserve:0, unit:'шт.', price:0 });
 }
 
-  if(PREFILL_BUYER){const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];keys.forEach(k=>{const el=document.getElementById(k);if(el&&PREFILL_BUYER[k]!=null)el.value=String(PREFILL_BUYER[k]);});}
+  /* Заполняем поля покупателя из записи журнала.
+   У журнала ключи: name, unp, addr, account, bank, bic, position, fio, basis, phone.
+   У i5 (старый payload от калькулятора): bName, bUnp, bAddress, ...
+   Пробуем оба варианта. */
+if(PREFILL_BUYER){
+  const b = PREFILL_BUYER;
+  const map = {
+    bName:     b.name     != null ? b.name     : b.bName,
+    bUnp:      b.unp      != null ? b.unp      : b.bUnp,
+    bAccount:  b.account  != null ? b.account  : b.bAccount,
+    bAddress:  b.addr     != null ? b.addr     : b.bAddress,
+    bBank:     b.bank     != null ? b.bank     : b.bBank,
+    bBic:      b.bic      != null ? b.bic      : b.bBic,
+    bPosition: b.position != null ? b.position : b.bPosition,
+    bFio:      b.fio      != null ? b.fio      : b.bFio,
+    bBasis:    b.basis    != null ? b.basis    : b.bBasis,
+    bPhone:    b.phone    != null ? b.phone    : b.bPhone
+  };
+  Object.keys(map).forEach(function(id){
+    const el = document.getElementById(id);
+    if(el && map[id] != null && map[id] !== '') el.value = String(map[id]);
+  });
+}
   if(PREFILL_DEAL){
     if(PREFILL_DEAL.delivery){const radio=document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');if(radio)radio.checked=true;}
     if(PREFILL_DEAL.payment!=null){const slider=document.getElementById('prepaySlider');slider.value=String(PREFILL_DEAL.payment);document.getElementById('prepayVal').textContent=slider.value+' %';}

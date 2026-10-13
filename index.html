@@ -1542,13 +1542,18 @@ function saveToJournal(silent){
     basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
   };
   rec.deal = getDeal();
-  rec.rows = ROWS.map(r=>({
+rec.rows = ROWS.map(function(r){
+  var row = {
     label: r.label,
     qtyCalc: Number(r.qtyCalc)||0,
     qtyReserve: Number(r.qtyReserve)||0,
     unit: r.unit||'шт.',
     price: Number(r.price)||0
-  }));
+  };
+  if(r.pieces) row.pieces = r.pieces;
+  if(r._fullLabel) row.labelFull = r._fullLabel;
+  return row;
+});
   rec.rooms = ROOMS;
   rec.meta = KP_META;
   rec.number = getInvoiceNumber();

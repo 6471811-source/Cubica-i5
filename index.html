@@ -181,6 +181,8 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .btn.green:hover{box-shadow:0 12px 32px rgba(46,125,50,.5)}
 .btn.journal{background:#2e7d32;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,.3)}
 .btn.journal:hover{box-shadow:0 12px 32px rgba(46,125,50,.5)}
+.btn.orange{background:#e65100;color:#fff;box-shadow:0 8px 24px rgba(230,81,0,.3)}
+.btn.orange:hover{box-shadow:0 12px 32px rgba(230,81,0,.5)}
 .modal{position:fixed;inset:0;background:rgba(15,15,25,.72);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.open{display:flex}
 .modal-inner{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);max-width:760px;width:100%;padding:32px;max-height:90vh;overflow:auto}
@@ -236,6 +238,9 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
 .picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
 .share-status{font-size:12.5px;margin:8px 0 14px;padding:9px 12px;border-radius:8px;background:#f4f5f7;color:#666;display:none}
+  .share-attach{margin:12px 0 8px;padding:12px 14px;background:#fef9f0;border:1px solid #f0d896;border-radius:8px}
+.share-attach-label{display:flex;align-items:center;gap:10px;font-size:13px;color:#5a4a2a;cursor:pointer;font-weight:600}
+.share-attach-label input{width:18px;height:18px;accent-color:#e10004;cursor:pointer;flex-shrink:0}
 .share-status.show{display:block}
 .share-status.loading{background:#fff8e1;color:#b26a00}
 .share-status.ok{background:#e8f5e9;color:#2e7d32;font-weight:600}
@@ -388,12 +393,13 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
       </div>
     </div>
 
-    <div class="actions">
-      <button class="btn ghost" onclick="window.close()">Закрыть</button>
-      <button class="btn journal" id="btnSaveJournal">💾 Сохранить в журнал</button>
-      <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
-      <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
-    </div>
+<div class="actions">
+  <button class="btn ghost" onclick="window.close()">Закрыть</button>
+  <button class="btn journal" id="btnSaveJournal">💾 Сохранить в журнал</button>
+  <button class="btn red" id="btnPdf">🖨 Скачать PDF счёта</button>
+  <button class="btn orange" id="btnSendPdf">📄 Отправить счёт PDF клиенту</button>
+  <button class="btn green" id="btnShare">🔗 Сформировать ссылку для клиента</button>
+</div>
   </div>
 </div>
 
@@ -401,6 +407,12 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
   <div class="modal-inner">
     <h3>🔗 Ссылка для клиента</h3>
     <p>Ссылка содержит все позиции, цены, условия сделки и данные покупателя.</p>
+    <div class="share-attach" id="shareAttachWrap">
+  <label class="share-attach-label">
+    <input type="checkbox" id="shareAttachPdf">
+    <span>Прикрепить счёт PDF — клиент получит и счёт, и КП</span>
+  </label>
+</div>
     <div class="copy-row">
       <input type="text" id="shareLink" readonly onclick="this.select()">
       <button type="button" id="btnCopy">📋 Копировать</button>
@@ -1383,13 +1395,34 @@ function encodePayloadForUrl(payload){
 }
 
 /* Ссылка для клиента через Cloudflare Worker */
-async function openShareModal(){
+/* Ссылка для клиента через Cloudflare Worker */
+async function openShareModal(opts){
+  opts = opts || {};
+  const attachPdf = opts.attachPdf === true;
+
   const payload = buildClientPayload();
   const data    = encodePayloadForUrl(payload);
   const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
 
   const inp      = document.getElementById('shareLink');
   const statusEl = document.getElementById('shareStatus');
+  const attachChk = document.getElementById('shareAttachPdf');
+  const attachWrap = document.getElementById('shareAttachWrap');
+
+  /* Галочка видна только у кнопки «Ссылка для клиента»,
+     для «Отправить счёт PDF» — скрыта (PDF уже скачан) */
+  if(attachWrap) attachWrap.style.display = attachPdf ? 'none' : '';
+
+  if(attachChk){
+    attachChk.checked = attachPdf;
+    /* Скачивание PDF при проставлении галочки */
+    attachChk.onchange = () => {
+      if(attachChk.checked) triggerPdfDownload();
+    };
+  }
+
+  /* Если открыто через «Отправить счёт PDF» — сразу качаем PDF */
+  if(attachPdf) triggerPdfDownload();
 
   inp.value = longUrl;
   updateMessengerLinks(longUrl);
@@ -1423,7 +1456,70 @@ async function openShareModal(){
   }
 }
 
-function updateMessengerLinks(url){
+/* Скачивает PDF счёта. Используется при отправке клиенту.
+   Создаёт свою копию превью в скрытом контейнере,
+   не трогает превью на странице. */
+async function triggerPdfDownload(){
+  if(!ROWS.length){
+    alert('Нет данных для счёта.');
+    return;
+  }
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('jsPDF не загружен.');
+    return;
+  }
+  if(!window.html2canvas){
+    alert('html2canvas не загружен.');
+    return;
+  }
+
+  /* Создаём скрытый контейнер с превью */
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;height:1074px;overflow:hidden;pointer-events:none;z-index:-1';
+  document.body.appendChild(host);
+
+  try {
+    /* Берём HTML превью с основного элемента */
+    const pvPage = document.getElementById('pvPage');
+    if(!pvPage){
+      throw new Error('Не найден элемент превью');
+    }
+    host.innerHTML = pvPage.outerHTML;
+
+    const target = host.firstElementChild;
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 120));
+
+    const canvas = await window.html2canvas(target, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      width: target.offsetWidth,
+      height: target.offsetHeight,
+      windowWidth: target.offsetWidth,
+      windowHeight: target.offsetHeight
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const PW = 210, MARGIN = 8;
+    const imgW = PW - MARGIN * 2;
+    const imgH = imgW * (canvas.height / canvas.width);
+    doc.addImage(imgData, 'PNG', MARGIN, MARGIN, imgW, imgH, undefined, 'FAST');
+
+    const invNo = getInvoiceNumber().replace(/[^\w\-]/g, '') || 'СЧ-без-номера';
+    doc.save('CUBICA_' + invNo + '.pdf');
+  } catch(e) {
+    console.error('[i5] triggerPdfDownload:', e);
+    alert('Ошибка создания PDF: ' + e.message);
+  } finally {
+    document.body.removeChild(host);
+  }
+}
+  
+  function updateMessengerLinks(url){
   const text = 'Коммерческое предложение CUBICA';
   const enc  = encodeURIComponent;
   document.getElementById('shareTg').href = 'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text);
@@ -1597,7 +1693,8 @@ if(ROWS.length || currentRecordId){
   document.getElementById('prepayVal').textContent=document.getElementById('prepaySlider').value+' %';
   document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
   document.getElementById('btnPdf').addEventListener('click',downloadPdf);
-  document.getElementById('btnShare').addEventListener('click',openShareModal);
+document.getElementById('btnShare').addEventListener('click', function(){ openShareModal(); });
+document.getElementById('btnSendPdf').addEventListener('click', function(){ openShareModal({ attachPdf: true }); });
   document.getElementById('btnCopy').addEventListener('click',copyShareLink);
   document.getElementById('btnLogist').addEventListener('click',openLogistModal);
   document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);

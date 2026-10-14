@@ -430,6 +430,23 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
     </div>
   </div>
 </div>
+  <!-- ===================== ОТПРАВИТЬ СЧЁТ PDF ===================== -->
+<div class="modal" id="pdfModal">
+  <div class="modal-inner">
+    <h3>📄 Отправить счёт клиенту</h3>
+    <p>Счёт PDF скачан. Выберите мессенджер, откроется чат — прикрепите PDF к сообщению.</p>
+    <div class="share-messengers" style="justify-content:center;margin-top:8px">
+      <span>Отправить:</span>
+      <a href="#" id="pdfShareTg" target="_blank" rel="noopener" class="msgr tg">Telegram</a>
+      <a href="#" id="pdfShareWa" target="_blank" rel="noopener" class="msgr wa">WhatsApp</a>
+      <a href="#" id="pdfShareVb" target="_blank" rel="noopener" class="msgr vb">Viber</a>
+      <a href="#" id="pdfShareEm" class="msgr em">E-mail</a>
+    </div>
+    <div style="text-align:right;margin-top:16px">
+      <button class="btn ghost" onclick="document.getElementById('pdfModal').classList.remove('open')">Закрыть</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="logistModal">
   <div class="modal-inner">
@@ -1396,10 +1413,32 @@ function encodePayloadForUrl(payload){
 
 /* Ссылка для клиента через Cloudflare Worker */
 /* Ссылка для клиента через Cloudflare Worker */
-async function openShareModal(opts){
-  opts = opts || {};
-  const attachPdf = opts.attachPdf === true;
+/* Кнопка «📄 Отправить счёт PDF клиенту»:
+   PDF скачивается, открывается модалка pdfModal с мессенджерами — БЕЗ ссылки. */
+function openPdfModal(){
+  /* Скачиваем PDF */
+  downloadPdf();
 
+  /* Ссылки мессенджеров — только текст, без URL */
+  const text = 'Счёт CUBICA ' + (getInvoiceNumber() || '');
+  const enc  = encodeURIComponent;
+
+  const tg = document.getElementById('pdfShareTg');
+  const wa = document.getElementById('pdfShareWa');
+  const vb = document.getElementById('pdfShareVb');
+  const em = document.getElementById('pdfShareEm');
+
+  if(tg) tg.href = 'https://t.me/share/url?url=&text=' + enc(text);
+  if(wa) wa.href = 'https://wa.me/?text=' + enc(text);
+  if(vb) vb.href = 'viber://forward?text=' + enc(text);
+  if(em) em.href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text);
+
+  /* Открываем модалку pdfModal */
+  document.getElementById('pdfModal').classList.add('open');
+}
+  
+  /* Ссылка для клиента. Всегда создаёт новую короткую ссылку через Worker. */
+async function openShareModal(){
   const payload = buildClientPayload();
   const data    = encodePayloadForUrl(payload);
   const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
@@ -1407,22 +1446,14 @@ async function openShareModal(opts){
   const inp      = document.getElementById('shareLink');
   const statusEl = document.getElementById('shareStatus');
   const attachChk = document.getElementById('shareAttachPdf');
-  const attachWrap = document.getElementById('shareAttachWrap');
 
-  /* Галочка видна только у кнопки «Ссылка для клиента»,
-     для «Отправить счёт PDF» — скрыта (PDF уже скачан) */
-  if(attachWrap) attachWrap.style.display = attachPdf ? 'none' : '';
-
+  /* Галочка «Прикрепить счёт PDF» — при проставлении качаем PDF */
   if(attachChk){
-    attachChk.checked = attachPdf;
-    /* Скачивание PDF при проставлении галочки */
+    attachChk.checked = false;
     attachChk.onchange = () => {
-      if(attachChk.checked) triggerPdfDownload();
+      if(attachChk.checked) downloadPdf();
     };
   }
-
-  /* Если открыто через «Отправить счёт PDF» — сразу качаем PDF */
-  if(attachPdf) triggerPdfDownload();
 
   inp.value = longUrl;
   updateMessengerLinks(longUrl);
@@ -1694,12 +1725,13 @@ if(ROWS.length || currentRecordId){
   document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
   document.getElementById('btnPdf').addEventListener('click',downloadPdf);
 document.getElementById('btnShare').addEventListener('click', function(){ openShareModal(); });
-document.getElementById('btnSendPdf').addEventListener('click', function(){ openShareModal({ attachPdf: true }); });
+document.getElementById('btnSendPdf').addEventListener('click',openPdfModal);
   document.getElementById('btnCopy').addEventListener('click',copyShareLink);
   document.getElementById('btnLogist').addEventListener('click',openLogistModal);
   document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);
   document.getElementById('shareModal').addEventListener('click',e=>{if(e.target===document.getElementById('shareModal'))e.target.classList.remove('open');});
   document.getElementById('logistModal').addEventListener('click',e=>{if(e.target===document.getElementById('logistModal'))e.target.classList.remove('open');});
+  document.getElementById('pdfModal').addEventListener('click',e=>{if(e.target===document.getElementById('pdfModal'))e.target.classList.remove('open');});
   if(AUTO_PDF){setTimeout(()=>{try{downloadPdf();}catch(e){console.error('autopdf',e);}},900);}
 }
 </script>

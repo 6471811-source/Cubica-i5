@@ -1472,10 +1472,29 @@ async function openShareModal(){
     const j = await res.json();
     if(!j.id) throw new Error('Нет id в ответе');
 
-    const shortUrl = KP_URL + '?s=' + j.id;
+const shortUrl = KP_URL + '?s=' + j.id;
 
-    inp.value = shortUrl;
-    updateMessengerLinks(shortUrl);
+/* ★ Сохраняем токен и ссылку в запись журнала,
+   чтобы при смене статуса на «Оплачено» можно было обновить ЭТУ ЖЕ ссылку */
+if(currentRecordId && window.CubicaJournal){
+  const rec = window.CubicaJournal.get(currentRecordId);
+  if(rec){
+    rec.client = rec.client || {};
+    rec.client.token = j.id;
+    rec.client.url = shortUrl;
+    rec.client.sentAt = window.CubicaJournal.nowISO();
+    rec.history = rec.history || [];
+    rec.history.push({
+      at: window.CubicaJournal.nowISO(),
+      by: window.CubicaJournal.manager(),
+      action: 'client link created'
+    });
+    window.CubicaJournal.save(rec, { assignNumber: false });
+  }
+}
+
+inp.value = shortUrl;
+updateMessengerLinks(shortUrl);
 
     statusEl.className = 'share-status show ok';
     statusEl.textContent = '✓ Готово! Ссылка ' + shortUrl.length + ' символов. Копируйте и отправляйте клиенту.';

@@ -703,6 +703,34 @@ if(rawData){
   }catch(e){console.warn('?data:',e);}
 }
 
+/* Если открыто из калькулятора (?data=) и есть ядро —
+   создаём запись в журнале СРАЗУ, чтобы позже была куда сохранить токен ссылки */
+if(rawData && !currentRecordId && window.CubicaJournal){
+  try{
+    const rec = window.CubicaJournal.create({ series:'invoice' });
+    rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
+    rec.rows = ROWS.map(function(r){
+      var row = { label:r.label, qtyCalc:Number(r.qtyCalc)||0, qtyReserve:Number(r.qtyReserve)||0, unit:r.unit||'шт.', price:Number(r.price)||0 };
+      if(r.pieces) row.pieces = r.pieces;
+      return row;
+    });
+    rec.rooms = ROOMS;
+    rec.meta = KP_META;
+    rec.history = rec.history || [];
+    rec.history.push({
+      at: window.CubicaJournal.nowISO(),
+      by: window.CubicaJournal.manager(),
+      action: 'from calculator'
+    });
+    window.CubicaJournal.save(rec, { assignNumber:false });
+    currentRecordId = rec.id;
+    INVOICE_NUMBER = rec.number;
+    console.log('[i5] Создана запись в журнале:', rec.number);
+  }catch(e){
+    console.warn('[i5] Не удалось создать запись в журнале:', e);
+  }
+}
+  
 /* ============================================================
    ВАЖНО: НЕ нормализуем рейки. Они приходят из k6.3 уже в виде
    одной строки в м.п. с раскроем в pieces. Только собираем
@@ -1439,9 +1467,7 @@ function openPdfModal(){
   
   /* Ссылка для клиента. Всегда создаёт новую короткую ссылку через Worker. */
 async function openShareModal(){
-  const payload = buildClientPayload();
-  const data    = encodePayloadForUrl(payload);
-  const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
+
 
   const inp      = document.getElementById('shareLink');
   const statusEl = document.getElementById('shareStatus');
@@ -1454,6 +1480,23 @@ async function openShareModal(){
       if(attachChk.checked) downloadPdf();
     };
   }
+  /* ★ Если у записи уже есть ссылка — показываем её, ничего не создаём */
+  if(currentRecordId && window.CubicaJournal){
+    const rec = window.CubicaJournal.get(currentRecordId);
+    if(rec && rec.client && rec.client.url){
+      document.getElementById('shareModal').classList.add('open');
+      inp.value = rec.client.url;
+      updateMessengerLinks(rec.client.url);
+      statusEl.className = 'share-status show ok';
+      statusEl.textContent = '✓ Ссылка уже создана. Копируйте и отправляйте клиенту.';
+      return;
+    }
+  }
+
+  /* Ссылки нет — создаём новую */
+  const payload = buildClientPayload();
+  const data    = encodePayloadForUrl(payload);
+  const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
 
   inp.value = longUrl;
   updateMessengerLinks(longUrl);

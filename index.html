@@ -712,6 +712,8 @@ if(rawData && !currentRecordId && window.CubicaJournal){
     rec.rows = ROWS.map(function(r){
       var row = { label:r.label, qtyCalc:Number(r.qtyCalc)||0, qtyReserve:Number(r.qtyReserve)||0, unit:r.unit||'шт.', price:Number(r.price)||0 };
       if(r.pieces) row.pieces = r.pieces;
+      /* ★ ПРАВКА: прокидываем полный лейбл */
+      if(r._fullLabel) row.labelFull = r._fullLabel;
       return row;
     });
     rec.rooms = ROOMS;
@@ -1429,10 +1431,59 @@ async function downloadPdf(){
 }
 
 /* Payload для kp */
+/* Payload для kp */
+/* ★ ПРАВКА: прокидываем pieces и labelFull в строки */
 function buildClientPayload(){
-  const deal=getDeal(),buyer=getBuyer();
-  const rowsForClient=ROWS.map(r=>({label:r.label,qty:rowTotalQty(r),unit:r.unit||'шт.',price:r.price||0}));
-  return {v:6,rooms:ROOMS,i5_url:location.href.split('?')[0],L_in:(KP_META&&KP_META.L_in)||0,W_in:(KP_META&&KP_META.W_in)||0,area:(KP_META&&KP_META.area)||0,color:(KP_META&&KP_META.color)||'',railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',polygon:(KP_META&&KP_META.polygon)||null,p:{railW:(KP_META&&KP_META.railW)||50,railH:(KP_META&&KP_META.railH)||30,gap:(KP_META&&KP_META.gap)||15,caps:(KP_META&&KP_META.caps)?1:0,angle:(KP_META&&KP_META.angle)?1:0},r:(KP_META&&KP_META.rotation)||0,rows:rowsForClient,price:invoiceTotals.total,subtotal:invoiceTotals.subtotal,vat:invoiceTotals.vat,currency:'BYN',invoiceNumber:getInvoiceNumber(),deal:{delivery:deal.delivery,payment:deal.payment,days:deal.days,deliveryData:deal.deliveryData},buyer:buyer,company:COMPANY,manager:'Менеджер CUBICA',phone:COMPANY.phone,valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()};
+  const deal = getDeal(), buyer = getBuyer();
+  const rowsForClient = ROWS.map(r => {
+    var row = {
+      label: r.label,
+      qty: rowTotalQty(r),
+      unit: r.unit || 'шт.',
+      price: r.price || 0
+    };
+    /* ★ ключевое: раскрой реек для клиента (открывается после оплаты) */
+    if(r.pieces) row.pieces = r.pieces;
+    /* ★ полный лейбл (для КП и внутренних нужд) */
+    if(r._fullLabel) row.labelFull = r._fullLabel;
+    return row;
+  });
+  return {
+    v:6,
+    rooms: ROOMS,
+    i5_url: location.href.split('?')[0],
+    L_in: (KP_META&&KP_META.L_in)||0,
+    W_in: (KP_META&&KP_META.W_in)||0,
+    area: (KP_META&&KP_META.area)||0,
+    color:(KP_META&&KP_META.color)||'',
+    railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',
+    polygon:(KP_META&&KP_META.polygon)||null,
+    p:{
+      railW:(KP_META&&KP_META.railW)||50,
+      railH:(KP_META&&KP_META.railH)||30,
+      gap:(KP_META&&KP_META.gap)||15,
+      caps:(KP_META&&KP_META.caps)?1:0,
+      angle:(KP_META&&KP_META.angle)?1:0
+    },
+    r:(KP_META&&KP_META.rotation)||0,
+    rows: rowsForClient,
+    price: invoiceTotals.total,
+    subtotal: invoiceTotals.subtotal,
+    vat: invoiceTotals.vat,
+    currency:'BYN',
+    invoiceNumber:getInvoiceNumber(),
+    deal:{
+      delivery:deal.delivery,
+      payment:deal.payment,
+      days:deal.days,
+      deliveryData:deal.deliveryData
+    },
+    buyer: buyer,
+    company: COMPANY,
+    manager:'Менеджер CUBICA',
+    phone: COMPANY.phone,
+    valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()
+  };
 }
 
 function encodePayloadForUrl(payload){

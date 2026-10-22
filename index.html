@@ -238,7 +238,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .picker-empty code{background:#f4f5f7;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;word-break:break-all}
 .picker-empty .big{font-size:40px;display:block;margin-bottom:10px}
 .share-status{font-size:12.5px;margin:8px 0 14px;padding:9px 12px;border-radius:8px;background:#f4f5f7;color:#666;display:none}
-  .share-attach{margin:12px 0 8px;padding:12px 14px;background:#fef9f0;border:1px solid #f0d896;border-radius:8px}
+.share-attach{margin:12px 0 8px;padding:12px 14px;background:#fef9f0;border:1px solid #f0d896;border-radius:8px}
 .share-attach-label{display:flex;align-items:center;gap:10px;font-size:13px;color:#5a4a2a;cursor:pointer;font-weight:600}
 .share-attach-label input{width:18px;height:18px;accent-color:#e10004;cursor:pointer;flex-shrink:0}
 .share-status.show{display:block}
@@ -509,7 +509,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
-/* CUBICA · i5.25 */
+/* CUBICA · i5.26 (short-links) */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 const SHORT_URL = 'https://cubica-kp-15ab.6471811.workers.dev';
@@ -638,1214 +638,1153 @@ function makeNaviQR(coords){return makeQrSvg('yandexnavi://build_route_on_map?la
 /* ============================================================
    Параметры URL и загрузка данных
    ============================================================ */
-const urlParams=new URLSearchParams(location.search);
-const rawData=urlParams.get('data');
-const AUTO_PDF=urlParams.get('autopdf')==='1';
-const JID=urlParams.get('jid');
-const IS_BLANK=urlParams.get('blank')==='1';
+const urlParams = new URLSearchParams(location.search);
+const shortId = urlParams.get('s');
+let rawData = urlParams.get('data');
+const AUTO_PDF = urlParams.get('autopdf')==='1';
+const JID = urlParams.get('jid');
+const IS_BLANK = urlParams.get('blank')==='1';
+
 let ROWS=[],ROOMS=[],KP_META=null,PREFILL_BUYER=null,PREFILL_DEAL=null;
 let INVOICE_NUMBER = '';
 let currentRecordId = null;
+let invoiceTotals={subtotal:0,vat:0,total:0};
 
-/* Загрузка из журнала по ?jid= */
-if(JID && window.CubicaJournal){
-  const rec = window.CubicaJournal.get(JID);
-  if(rec){
-    currentRecordId = rec.id;
-    /* Если blank=1 — ROWS оставляем пустыми (пустой счёт), но контрагента и условия подтягиваем */
-    if(!IS_BLANK){
-      ROWS = (rec.rows||[]).map(function(r){
+async function initData() {
+  /* 1. Загрузка с Worker по короткой ссылке */
+  if (shortId) {
+    try {
+      const res = await fetch(SHORT_URL + '/s/' + encodeURIComponent(shortId));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      rawData = await res.text();
+    } catch(e) {
+      console.error('Ошибка загрузки с Worker:', e);
+      if (!rawData) {
+        document.getElementById('noData').innerHTML = 'Ошибка загрузки данных: ' + e.message;
+        document.getElementById('noData').style.display = 'block';
+        return;
+      }
+    }
+  }
+
+  /* 2. Загрузка из журнала по ?jid= */
+  if(JID && window.CubicaJournal){
+    const rec = window.CubicaJournal.get(JID);
+    if(rec){
+      currentRecordId = rec.id;
+      if(!IS_BLANK){
+        ROWS = (rec.rows||[]).map(function(r){
+          var row = {
+            label: String(r.label||''),
+            qtyCalc: Number(r.qtyCalc)||0,
+            qtyReserve: Number(r.qtyReserve)||0,
+            unit: r.unit||'шт.',
+            price: Number(r.price)||0
+          };
+          if(r.pieces) row.pieces = r.pieces;
+          if(r.labelFull) row._fullLabel = r.labelFull;
+          return row;
+        });
+        ROOMS = rec.rooms || [];
+        KP_META = rec.meta || null;
+      }
+      PREFILL_BUYER = rec.contractor || null;
+      PREFILL_DEAL = rec.deal || null;
+      INVOICE_NUMBER = rec.number || '';
+      console.log('[i5] Загружено из журнала:', rec.number, IS_BLANK ? '(пустой)' : '');
+    } else {
+      console.warn('[i5] Запись не найдена в журнале:', JID);
+    }
+  }
+
+  /* 3. Загрузка из payload ?data= / ?s= */
+  if(rawData){
+    try{
+      const parsed=JSON.parse(b64dec(rawData));
+      if(Array.isArray(parsed.rows))ROWS=parsed.rows.map(function(r){
         var row = {
-          label: String(r.label||''),
-          qtyCalc: Number(r.qtyCalc)||0,
-          qtyReserve: Number(r.qtyReserve)||0,
-          unit: r.unit||'шт.',
-          price: Number(r.price)||0
+          label:String(r.label||''),
+          qtyCalc:Number(r.qty)||0,
+          qtyReserve:0,
+          unit:r.unit||'шт.',
+          price:Number(r.price)||0
         };
         if(r.pieces) row.pieces = r.pieces;
         if(r.labelFull) row._fullLabel = r.labelFull;
         return row;
       });
-      ROOMS = rec.rooms || [];
-      KP_META = rec.meta || null;
+      if(Array.isArray(parsed.rooms))ROOMS=parsed.rooms;
+      if(parsed.company&&typeof parsed.company==='object')Object.assign(COMPANY,parsed.company);
+      if(parsed.meta)KP_META=parsed.meta;
+      if(parsed.buyer&&typeof parsed.buyer==='object')PREFILL_BUYER=parsed.buyer;
+      if(parsed.deal&&typeof parsed.deal==='object')PREFILL_DEAL=parsed.deal;
+      if(parsed.invoiceNumber) INVOICE_NUMBER = String(parsed.invoiceNumber);
+    }catch(e){console.warn('?data:',e);}
+  }
+
+  /* 4. Создание записи в журнале */
+  if(rawData && !currentRecordId && window.CubicaJournal){
+    try{
+      const rec = window.CubicaJournal.create({ series:'invoice' });
+      rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
+      rec.rows = ROWS.map(function(r){
+        var row = { label:r.label, qtyCalc:Number(r.qtyCalc)||0, qtyReserve:Number(r.qtyReserve)||0, unit:r.unit||'шт.', price:Number(r.price)||0 };
+        if(r.pieces) row.pieces = r.pieces;
+        if(r._fullLabel) row.labelFull = r._fullLabel;
+        return row;
+      });
+      rec.rooms = ROOMS;
+      rec.meta = KP_META;
+      rec.history = rec.history || [];
+      rec.history.push({
+        at: window.CubicaJournal.nowISO(),
+        by: window.CubicaJournal.manager(),
+        action: 'from calculator'
+      });
+      window.CubicaJournal.save(rec, { assignNumber:false });
+      currentRecordId = rec.id;
+      INVOICE_NUMBER = rec.number;
+      console.log('[i5] Создана запись в журнале:', rec.number);
+    }catch(e){
+      console.warn('[i5] Не удалось создать запись в журнале:', e);
     }
-    PREFILL_BUYER = rec.contractor || null;
-    PREFILL_DEAL = rec.deal || null;
-    INVOICE_NUMBER = rec.number || '';
-    console.log('[i5] Загружено из журнала:', rec.number, IS_BLANK ? '(пустой)' : '');
+  }
+
+  /* 5. Мерж строк */
+  (function mergeIdenticalRows(){
+    const map=new Map(),order=[];
+    for(const r of ROWS){
+      const label=String(r.label||''),unit=r.unit||'шт.';
+      const qtyCalc=Number(r.qtyCalc)||0,qtyReserve=Number(r.qtyReserve)||0,price=Number(r.price)||0;
+      const key=label+'|'+unit;
+      if(map.has(key)){
+        map.get(key).qtyCalc+=qtyCalc;
+        map.get(key).qtyReserve+=qtyReserve;
+      } else {
+        const row={label,qtyCalc,qtyReserve,unit,price};
+        if(r.pieces) row.pieces = r.pieces;
+        if(r._fullLabel) row._fullLabel = r._fullLabel;
+        map.set(key,row);
+        order.push(key);
+      }
+    }
+    ROWS=order.map(k=>{
+      const r=map.get(k);
+      r.qtyCalc=Math.round(r.qtyCalc*100)/100;
+      r.qtyReserve=Math.round(r.qtyReserve*100)/100;
+      return r;
+    });
+  })();
+
+  /* 6. Запуск интерфейса */
+  if(!ROWS.length && !currentRecordId){
+    document.getElementById('noData').style.display='block';
   } else {
-    console.warn('[i5] Запись не найдена в журнале:', JID);
+    document.getElementById('content').style.display='block';
+    initUI(); // <- запуск UI
   }
 }
 
-/* Загрузка из payload ?data= (от калькулятора) */
-if(rawData){
-  try{
-    const parsed=JSON.parse(b64dec(rawData));
-    if(Array.isArray(parsed.rows))ROWS=parsed.rows.map(function(r){
+/* ============================================================
+   Инициализация интерфейса
+   ============================================================ */
+function initUI() {
+  // Все функции рендера и обработчики
+  function rowTotalQty(r){return (Number(r.qtyCalc)||0)+(Number(r.qtyReserve)||0);}
+  function rowSum(r){return rowTotalQty(r)*(Number(r.price)||0);}
+  function computeTotals(){let sub=0,vat=0,tot=0;for(const r of ROWS){const s=rowSum(r);const v=s*0.20;sub+=s;vat+=v;tot+=s+v;}invoiceTotals={subtotal:sub,vat,total:tot};}
+
+  function getInvoiceNumber(){
+    const inp = document.getElementById('invNumber');
+    const val = inp ? inp.value.trim() : INVOICE_NUMBER;
+    return val || makeDefaultInvNumber();
+  }
+
+  function renderInvoiceTable(){
+    const tbody=document.getElementById('invTbody');
+    tbody.innerHTML=ROWS.map((r,i)=>{
+      const s=rowSum(r),v=s*0.20,t=s+v;
+      const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve),totStr=fmtQty2(rowTotalQty(r));
+      return '<tr data-idx="'+i+'">' +
+        '<td class="pos">'+(i+1)+'</td>' +
+        '<td><div class="name-cell">' +
+          '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
+          '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
+        '</div></td>' +
+        '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
+        '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
+        '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>' +
+        '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
+        '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
+        '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>' +
+        '<td class="vat">20 %</td>' +
+        '<td class="num" data-vat="'+i+'">'+fmtInvoice(v)+'</td>' +
+        '<td class="num sum-vat" data-svat="'+i+'">'+fmtInvoice(t)+'</td>' +
+        '<td class="row-actions"><button type="button" class="btn-row-del" data-del="'+i+'" title="Удалить">✕</button></td>' +
+      '</tr>';
+    }).join('');
+
+    tbody.querySelectorAll('.cell-input').forEach(inp=>{
+      const field=inp.getAttribute('data-field');
+      if(field==='label'){
+        inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].label=inp.value;renderPreview();});
+        inp.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();openPicker(idxOf(inp));}});
+        inp.addEventListener('dblclick',()=>openPicker(idxOf(inp)));
+        return;
+      }
+      if(field==='unit'){
+        inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].unit=inp.value;updateRowTotals(idx);updateTotalsView();renderPreview();});
+        return;
+      }
+      inp.addEventListener('keydown',e=>{
+        if(e.key==='Backspace'||e.key==='Delete'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Tab'||e.key==='Enter'||e.key==='Home'||e.key==='End')return;
+        if(/^\d$/.test(e.key)){if(handleSmartInput(inp,e)){e.preventDefault();commitNumericCell(inp);}}
+        else if(e.key.length===1){e.preventDefault();}
+      });
+      inp.addEventListener('input',()=>{
+        commitNumericCell(inp);
+        const idx=idxOf(inp);
+        if(field==='price')inp.value=fmtPriceInput(ROWS[idx].price);
+        else if(field==='qtyCalc')inp.value=fmtQty2(ROWS[idx].qtyCalc);
+        else if(field==='qtyReserve')inp.value=fmtQty2(ROWS[idx].qtyReserve);
+      });
+      inp.addEventListener('blur',()=>{
+        const idx=idxOf(inp);
+        if(field==='price'){ROWS[idx].price=parsePriceInput(inp.value);inp.value=fmtPriceInput(ROWS[idx].price);}
+        else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyCalc);}
+        else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyReserve);}
+        updateRowTotals(idx);updateTotalsView();renderPreview();
+      });
+    });
+
+    tbody.querySelectorAll('.btn-picker').forEach(btn=>btn.addEventListener('click',()=>openPicker(parseInt(btn.getAttribute('data-picker'),10))));
+
+    tbody.querySelectorAll('.btn-row-del').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const idx=parseInt(btn.getAttribute('data-del'),10);
+        if(!confirm('Удалить позицию «'+(ROWS[idx].label||'')+'»?'))return;
+        ROWS.splice(idx,1);
+        if(selectedRowIdx >= ROWS.length) selectedRowIdx = ROWS.length - 1;
+        if(selectedRowIdx < 0 && ROWS.length > 0) selectedRowIdx = 0;
+        renderInvoiceTable();renderPreview();
+      });
+    });
+
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      tr.addEventListener('mousedown',(e)=>{
+        const idx = parseInt(tr.getAttribute('data-idx'), 10);
+        if(!isNaN(idx)) setSelectedRow(idx);
+      });
+    });
+
+    updateMoveButtons();
+    updateTotalsView();
+  }
+
+  function setSelectedRow(idx){
+    selectedRowIdx = idx;
+    const tbody=document.getElementById('invTbody');
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const i = parseInt(tr.getAttribute('data-idx'),10);
+      tr.classList.toggle('active', i === idx);
+    });
+    updateMoveButtons();
+  }
+
+  function updateMoveButtons(){
+    const btnUp = document.getElementById('btnMoveUp');
+    const btnDown = document.getElementById('btnMoveDown');
+    const btnCopy = document.getElementById('btnCopyRow');
+    if(!btnUp || !btnDown) return;
+    const hasSel = selectedRowIdx >= 0 && selectedRowIdx < ROWS.length;
+    btnUp.disabled = !hasSel || selectedRowIdx <= 0;
+    btnDown.disabled = !hasSel || selectedRowIdx >= ROWS.length - 1;
+    if(btnCopy) btnCopy.disabled = !hasSel;
+  }
+
+  function moveSelected(dir){
+    if(selectedRowIdx < 0 || selectedRowIdx >= ROWS.length) return;
+    if(dir === 'up' && selectedRowIdx > 0){
+      [ROWS[selectedRowIdx-1], ROWS[selectedRowIdx]] = [ROWS[selectedRowIdx], ROWS[selectedRowIdx-1]];
+      selectedRowIdx--;
+    } else if(dir === 'down' && selectedRowIdx < ROWS.length - 1){
+      [ROWS[selectedRowIdx], ROWS[selectedRowIdx+1]] = [ROWS[selectedRowIdx+1], ROWS[selectedRowIdx]];
+      selectedRowIdx++;
+    } else {
+      return;
+    }
+    renderInvoiceTable();
+    renderPreview();
+    setSelectedRow(selectedRowIdx);
+  }
+
+  document.getElementById('btnMoveUp').addEventListener('click', () => moveSelected('up'));
+  document.getElementById('btnMoveDown').addEventListener('click', () => moveSelected('down'));
+
+  document.getElementById('btnCopyRow').addEventListener('click', () => {
+    let srcIdx = selectedRowIdx;
+    const ae = document.activeElement;
+    if(ae && ae.tagName === 'INPUT'){
+      const tr = ae.closest('tr');
+      if(tr && tr.hasAttribute('data-idx')){
+        srcIdx = parseInt(tr.getAttribute('data-idx'), 10);
+      }
+    }
+    if(srcIdx < 0 || srcIdx >= ROWS.length){
+      alert('Сначала выделите строку (кликните по ней) или установите курсор в поле строки.');
+      return;
+    }
+    const src = ROWS[srcIdx];
+    const copy = {
+      label: src.label,
+      qtyCalc: Number(src.qtyCalc)||0,
+      qtyReserve: Number(src.qtyReserve)||0,
+      unit: src.unit || 'шт.',
+      price: Number(src.price)||0
+    };
+    if(src._nomId) copy._nomId = src._nomId;
+    if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
+    if(src.pieces) copy.pieces = src.pieces;
+    if(src._fullLabel) copy._fullLabel = src._fullLabel;
+
+    ROWS.push(copy);
+    renderInvoiceTable();
+    renderPreview();
+    setSelectedRow(ROWS.length - 1);
+
+    requestAnimationFrame(() => {
+      const newTr = document.querySelector('tr[data-idx="' + (ROWS.length-1) + '"]');
+      if(newTr){
+        newTr.scrollIntoView({behavior:'smooth', block:'nearest'});
+        newTr.classList.add('flash');
+        setTimeout(() => newTr.classList.remove('flash'), 950);
+      }
+    });
+  });
+
+  function idxOf(inp){return parseInt(inp.closest('tr').getAttribute('data-idx'),10);}
+  function commitNumericCell(inp){
+    const idx=idxOf(inp),field=inp.getAttribute('data-field');
+    if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
+    else if(field==='qtyCalc')ROWS[idx].qtyCalc=parseQtyInput(inp.value);
+    else if(field==='qtyReserve')ROWS[idx].qtyReserve=parseQtyInput(inp.value);
+    updateRowTotals(idx);updateTotalsView();renderPreview();
+  }
+  function updateRowTotals(idx){
+    const r=ROWS[idx],s=rowSum(r),v=s*0.20,t=s+v;
+    const tr=document.querySelector('tr[data-idx="'+idx+'"]');
+    if(!tr)return;
+    const totEl=tr.querySelector('[data-total="'+idx+'"]');
+    const sumEl=tr.querySelector('[data-sum="'+idx+'"]');
+    const vatEl=tr.querySelector('[data-vat="'+idx+'"]');
+    const svatEl=tr.querySelector('[data-svat="'+idx+'"]');
+    if(totEl)totEl.textContent=fmtQty2(rowTotalQty(r));
+    if(sumEl)sumEl.textContent=fmtInvoice(s);
+    if(vatEl)vatEl.textContent=fmtInvoice(v);
+    if(svatEl)svatEl.textContent=fmtInvoice(t);
+  }
+  function updateTotalsView(){
+    computeTotals();
+    document.getElementById('invTotals').innerHTML=
+      '<div class="lbl">Стоимость без НДС:</div><div class="val">'+fmtInvoice(invoiceTotals.subtotal)+' BYN</div>'+
+      '<div class="lbl">НДС 20 %:</div><div class="val">'+fmtInvoice(invoiceTotals.vat)+' BYN</div>'+
+      '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">'+fmtInvoice(invoiceTotals.total)+' BYN</div>';
+  }
+  document.getElementById('btnAddRow').addEventListener('click',()=>{
+    ROWS.push({label:'Новая позиция',qtyCalc:1,qtyReserve:0,unit:'шт.',price:0});
+    renderInvoiceTable();renderPreview();
+  });
+
+  document.getElementById('invNumber').addEventListener('input', () => {
+    INVOICE_NUMBER = document.getElementById('invNumber').value;
+    renderPreview();
+  });
+
+  /* Номенклатура */
+  let NOMENCLATURE=null,pickerTargetIdx=-1;
+  const pickerSelected={node:null},pickerExpanded=new Set();
+  let pickerFilter='';
+
+  async function loadNomenclature(force){
+    if(NOMENCLATURE&&!force)return NOMENCLATURE;
+    if(!force){try{const cached=localStorage.getItem(NOMENCLATURE_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.tree)&&parsed.tree.length){NOMENCLATURE=parsed;fetchAndCache().catch(()=>{});return NOMENCLATURE;}}}catch(e){}}
+    return await fetchAndCache();
+  }
+  async function fetchAndCache(){
+    try{
+      const res=await fetch(NOMENCLATURE_URL,{cache:'no-cache'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      let text=await res.text();
+      if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+      const data=/^\s*</.test(text)&&/<\s*Номенклатура/.test(text)?parseNomenclatureXML(text):JSON.parse(text);
+      if(!data||!Array.isArray(data.tree)||!data.tree.length)throw new Error('Пусто');
+      NOMENCLATURE=data;
+      try{localStorage.setItem(NOMENCLATURE_CACHE_KEY,JSON.stringify(data));}catch(e){}
+      return data;
+    }catch(e){console.warn('Справочник:',e);return NOMENCLATURE;}
+  }
+  function parseNomenclatureXML(xmlText){
+    const doc=new DOMParser().parseFromString(xmlText,'application/xml');
+    const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
+    const elements=doc.getElementsByTagName('Элемент'),map=new Map(),parentOf=new Map();
+    for(let i=0;i<elements.length;i++){
+      const el=elements[i],id=el.getAttribute('Код'),name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();
+      if(!id||!name)continue;
+      const isFolder=el.getAttribute('ЭтоГруппа')==='Да';
+      const node={id,name,type:isFolder?'folder':'item'};
+      if(!isFolder){
+        const unit=(el.getAttribute('Единица')||'').trim();if(unit)node.unit=unit;
+        const article=(el.getAttribute('Артикул')||'').trim();if(article)node.article=article;
+        const fullName=(el.getAttribute('ПолноеНаименование')||'').trim();if(fullName)node.fullName=fullName;
+        const weightRaw=String(el.getAttribute('ВесБрутто')||'').replace(',','.');const weight=parseFloat(weightRaw);if(isFinite(weight)&&weight>0)node.weight=weight;
+      }
+      if(isFolder)node.children=[];
+      map.set(id,node);parentOf.set(id,el.getAttribute('РодительКод')||null);
+    }
+    const roots=[];
+    parentOf.forEach((pCode,id)=>{const node=map.get(id);if(!node)return;if(!pCode){roots.push(node);return;}const p=map.get(pCode);if(p&&p.children)p.children.push(node);else roots.push(node);});
+    const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
+    (function sortTree(nodes){nodes.sort((a,b)=>a.type!==b.type?(a.type==='folder'?-1:1):collator.compare(a.name,b.name));for(const n of nodes)if(n.children)sortTree(n.children);})(roots);
+    return {version:'2.0',source:'1C XML',generated:new Date().toISOString(),tree:roots};
+  }
+  function findNode(tree,id){for(const node of tree){if(node.id===id)return node;if(node.children){const f=findNode(node.children,id);if(f)return f;}}return null;}
+  function findNodePath(tree,targetId,ancestors){
+    ancestors=ancestors||[];
+    for(const node of tree){
+      if(node.id===targetId)return ancestors;
+      if(node.children&&node.children.length){
+        const r=findNodePath(node.children,targetId,ancestors.concat([node.id]));
+        if(r)return r;
+      }
+    }
+    return null;
+  }
+  function countAllItems(tree){let n=0;for(const node of tree){if(node.children&&node.children.length)n+=countAllItems(node.children);else n++;}return n;}
+  function isFolderNode(node){return node.type==='folder'||(node.children&&node.children.length>0);}
+  function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
+  function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(node)){acc.add(node.id);if(node.children)collectAllFolderIds(node.children,acc);}}return acc;}
+
+  async function openPicker(idx){
+    pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
+    const row = ROWS[idx];
+    if(row && Array.isArray(row._nomPath) && row._nomPath.length){
+      row._nomPath.forEach(id => pickerExpanded.add(id));
+    }
+    document.getElementById('pickerSearch').value='';
+    document.getElementById('pickerModal').classList.add('open');
+    const treeEl=document.getElementById('pickerTree');
+    treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
+    await loadNomenclature();renderPickerTree();
+    setTimeout(()=>document.getElementById('pickerSearch').focus(),60);
+  }
+  function closePicker(){document.getElementById('pickerModal').classList.remove('open');pickerTargetIdx=-1;pickerSelected.node=null;}
+  function updatePickerSelInfo(){
+    const el=document.getElementById('pickerSelInfo');
+    if(pickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(pickerSelected.node.name)+'</span>'+(pickerSelected.node.unit?' · '+escapeHtml(pickerSelected.node.unit):'');}
+    else{el.classList.add('empty');el.textContent='Позиция не выбрана';}
+  }
+  function renderPickerTree(){
+    const container=document.getElementById('pickerTree');
+    const countEl=document.getElementById('pickerCount');
+    const applyBtn=document.getElementById('btnPickerApply');
+    applyBtn.disabled=!pickerSelected.node;
+    updatePickerSelInfo();
+    if(!NOMENCLATURE||!NOMENCLATURE.tree||!NOMENCLATURE.tree.length){
+      container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><code>'+escapeHtml(NOMENCLATURE_URL)+'</code></div>';
+      countEl.textContent='';return;
+    }
+    function renderNode(node){
+      if(pickerFilter&&!nodeMatches(node,pickerFilter))return '';
+      const isFolder=isFolderNode(node),isExpanded=pickerFilter?true:pickerExpanded.has(node.id);
+      const isSelected=pickerSelected.node&&pickerSelected.node.id===node.id;
+      let html='<div class="picker-node">';
+      html+='<div class="picker-row '+(isFolder?'folder':'item')+(isSelected?' selected':'')+(isExpanded?' expanded':'')+'" data-id="'+escapeHtml(node.id)+'" data-type="'+(isFolder?'folder':'item')+'">';
+      if(isFolder)html+='<span class="arrow">▶</span><span class="icon">📁</span>';
+      else html+='<span class="arrow invisible">▶</span><span class="icon">📄</span>';
+      html+='<span class="label">'+escapeHtml(node.name)+'</span>';
+      if(!isFolder&&node.unit)html+='<span class="unit-badge">'+escapeHtml(node.unit)+'</span>';
+      if(!isFolder&&node.article)html+='<span class="art-badge">'+escapeHtml(node.article)+'</span>';
+      html+='</div>';
+      if(node.children&&node.children.length){html+='<div class="picker-children'+(isExpanded?' open':'')+'">';for(const child of node.children)html+=renderNode(child);html+='</div>';}
+      html+='</div>';return html;
+    }
+    let html='';for(const node of NOMENCLATURE.tree)html+=renderNode(node);
+    container.innerHTML=html||'<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';
+    countEl.textContent=pickerFilter?'Найдено по фильтру':('Всего позиций: '+countAllItems(NOMENCLATURE.tree));
+    container.querySelectorAll('.picker-row').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const id=row.getAttribute('data-id'),type=row.getAttribute('data-type');
+        const node=findNode(NOMENCLATURE.tree,id);if(!node)return;
+        if(type==='folder'){if(pickerExpanded.has(id))pickerExpanded.delete(id);else pickerExpanded.add(id);renderPickerTree();}
+        else{pickerSelected.node=node;renderPickerTree();}
+      });
+      if(row.getAttribute('data-type')==='item'){
+        row.addEventListener('dblclick',()=>{pickerSelected.node=findNode(NOMENCLATURE.tree,row.getAttribute('data-id'));applyPicker();});
+      }
+    });
+  }
+  function applyPicker(){
+    if(!pickerSelected.node)return;
+    const idx=pickerTargetIdx;if(idx<0||idx>=ROWS.length){closePicker();return;}
+    const node=pickerSelected.node;
+    ROWS[idx].label=node.name;
+    if(node.unit)ROWS[idx].unit=node.unit;
+    ROWS[idx]._nomId = node.id;
+    if(NOMENCLATURE && NOMENCLATURE.tree){
+      const path = findNodePath(NOMENCLATURE.tree, node.id, []);
+      ROWS[idx]._nomPath = path || [];
+    }
+    const tr=document.querySelector('tr[data-idx="'+idx+'"]');
+    if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
+    updateRowTotals(idx);updateTotalsView();renderPreview();closePicker();
+  }
+  document.getElementById('pickerSearch').addEventListener('input',e=>{pickerFilter=e.target.value;renderPickerTree();});
+  document.getElementById('pickerSearch').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();const firstItem=document.querySelector('#pickerTree .picker-row.item');if(firstItem){pickerSelected.node=findNode(NOMENCLATURE.tree,firstItem.getAttribute('data-id'));renderPickerTree();applyPicker();}}
+  });
+  document.getElementById('btnPickerApply').addEventListener('click',applyPicker);
+  document.getElementById('btnPickerCancel').addEventListener('click',closePicker);
+  document.getElementById('pickerModal').addEventListener('click',e=>{if(e.target===document.getElementById('pickerModal'))closePicker();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pickerModal').classList.contains('open'))closePicker();});
+  document.getElementById('btnCollapseAll').addEventListener('click',()=>{pickerExpanded.clear();renderPickerTree();});
+  document.getElementById('btnExpandAll').addEventListener('click',()=>{if(!NOMENCLATURE||!NOMENCLATURE.tree)return;collectAllFolderIds(NOMENCLATURE.tree,pickerExpanded);renderPickerTree();});
+
+  /* Контрагенты */
+  let CONTRACTORS=null;
+  const buyerPickerSelected={node:null};
+  let buyerPickerFilter='';
+
+  async function loadContractors(force){
+    if(CONTRACTORS&&!force)return CONTRACTORS;
+    if(!force){try{const cached=localStorage.getItem(CONTRACTORS_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.list)&&parsed.list.length){CONTRACTORS=parsed;fetchAndCacheContractors().catch(()=>{});return CONTRACTORS;}}}catch(e){}}
+    return await fetchAndCacheContractors();
+  }
+  async function fetchAndCacheContractors(){
+    try{
+      const res=await fetch(CONTRACTORS_URL,{cache:'no-cache'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      let text=await res.text();if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+      const data=/^\s*</.test(text)?parseContractorsXML(text):JSON.parse(text);
+      if(!data||!Array.isArray(data.list)||!data.list.length)throw new Error('Пусто');
+      CONTRACTORS=data;try{localStorage.setItem(CONTRACTORS_CACHE_KEY,JSON.stringify(data));}catch(e){}
+      return data;
+    }catch(e){console.warn('Контрагенты:',e);return CONTRACTORS;}
+  }
+  function parseContractorsXML(xmlText){
+    const doc=new DOMParser().parseFromString(xmlText,'application/xml');
+    const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
+    const elements=doc.getElementsByTagName('Элемент'),list=[];
+    for(let i=0;i<elements.length;i++){
+      const el=elements[i];
+      const isFolder=el.getAttribute('ЭтоГруппа')==='Да';if(isFolder)continue;
+      const name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();if(!name)continue;
+      const unp=(el.getAttribute('УНП')||'').trim();
+      const addr=(el.getAttribute('ЮридическийАдрес')||'').trim();
+      const full=(el.getAttribute('ПолноеНаименование')||'').trim();
+      list.push({name,full,unp,addr});
+    }
+    const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
+    list.sort((a,b)=>collator.compare(a.name,b.name));
+    return {version:'1.0',source:'1C XML',generated:new Date().toISOString(),list};
+  }
+  function contractorMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(String(node.full||'').toLowerCase().includes(f))return true;if(String(node.unp||'').toLowerCase().includes(f))return true;return false;}
+
+  async function openBuyerPicker(){
+    buyerPickerSelected.node=null;buyerPickerFilter='';
+    document.getElementById('buyerPickerSearch').value='';
+    document.getElementById('buyerPickerModal').classList.add('open');
+    const treeEl=document.getElementById('buyerPickerTree');
+    treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
+    await loadContractors();renderBuyerPicker();
+    setTimeout(()=>document.getElementById('buyerPickerSearch').focus(),60);
+  }
+  function closeBuyerPicker(){document.getElementById('buyerPickerModal').classList.remove('open');buyerPickerSelected.node=null;}
+  function updateBuyerPickerSelInfo(){
+    const el=document.getElementById('buyerPickerSelInfo');
+    if(buyerPickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(buyerPickerSelected.node.name)+'</span>'+(buyerPickerSelected.node.unp?' · УНП '+escapeHtml(buyerPickerSelected.node.unp):'');}
+    else{el.classList.add('empty');el.textContent='Контрагент не выбран';}
+  }
+  function renderBuyerPicker(){
+    const container=document.getElementById('buyerPickerTree');
+    const countEl=document.getElementById('buyerPickerCount');
+    const applyBtn=document.getElementById('btnBuyerPickerApply');
+    applyBtn.disabled=!buyerPickerSelected.node;
+    updateBuyerPickerSelInfo();
+    if(!CONTRACTORS||!CONTRACTORS.list||!CONTRACTORS.list.length){
+      container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.</div>';
+      countEl.textContent='';return;
+    }
+    const filtered=buyerPickerFilter?CONTRACTORS.list.filter(c=>contractorMatches(c,buyerPickerFilter)):CONTRACTORS.list;
+    if(!filtered.length){container.innerHTML='<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';countEl.textContent='';return;}
+    container.innerHTML=filtered.map(c=>{
+      const isSelected=buyerPickerSelected.node&&buyerPickerSelected.node.unp===c.unp&&buyerPickerSelected.node.name===c.name;
+      let html='<div class="picker-row item'+(isSelected?' selected':'')+'" data-unp="'+escapeHtml(c.unp)+'" data-name="'+escapeHtml(c.name)+'">';
+      html+='<span class="arrow invisible">▶</span><span class="icon">🏢</span>';
+      html+='<span class="label">'+escapeHtml(c.name)+'</span>';
+      if(c.unp)html+='<span class="unit-badge">УНП '+escapeHtml(c.unp)+'</span>';
+      html+='</div>';return html;
+    }).join('');
+    countEl.textContent=buyerPickerFilter?('Найдено: '+filtered.length+' из '+CONTRACTORS.list.length):('Всего контрагентов: '+CONTRACTORS.list.length);
+    container.querySelectorAll('.picker-row.item').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
+        buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
+        renderBuyerPicker();
+      });
+      row.addEventListener('dblclick',()=>{
+        const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
+        buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
+        applyBuyerPicker();
+      });
+    });
+  }
+  function applyBuyerPicker(){
+    if(!buyerPickerSelected.node)return;
+    const c=buyerPickerSelected.node;
+    const nameToFill=c.full||c.name;
+    const elName=document.getElementById('bName'),elUnp=document.getElementById('bUnp'),elAddr=document.getElementById('bAddress');
+    if(elName)elName.value=nameToFill;
+    if(elUnp&&c.unp)elUnp.value=c.unp;
+    if(elAddr&&c.addr)elAddr.value=c.addr;
+    renderPreview();closeBuyerPicker();
+  }
+  function initBuyerPicker(){
+    const btn=document.getElementById('btnBuyerPicker');if(btn)btn.addEventListener('click',openBuyerPicker);
+    const search=document.getElementById('buyerPickerSearch');
+    if(search){
+      search.addEventListener('input',e=>{buyerPickerFilter=e.target.value;renderBuyerPicker();});
+      search.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){e.preventDefault();const first=document.querySelector('#buyerPickerTree .picker-row.item');if(first){const unp=first.getAttribute('data-unp'),name=first.getAttribute('data-name');buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;renderBuyerPicker();applyBuyerPicker();}}
+      });
+    }
+    const applyBtn=document.getElementById('btnBuyerPickerApply');if(applyBtn)applyBtn.addEventListener('click',applyBuyerPicker);
+    const cancelBtn=document.getElementById('btnBuyerPickerCancel');if(cancelBtn)cancelBtn.addEventListener('click',closeBuyerPicker);
+    const modal=document.getElementById('buyerPickerModal');
+    if(modal)modal.addEventListener('click',e=>{if(e.target===modal)closeBuyerPicker();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal&&modal.classList.contains('open'))closeBuyerPicker();});
+  }
+
+  /* Данные сделки и покупателя */
+  function getDeal(){
+    const deliveryMode=document.querySelector('input[name="delivery"]:checked').value;
+    return {
+      delivery:deliveryMode,
+      payment:parseInt(document.getElementById('prepaySlider').value,10),
+      days:parseInt(document.getElementById('deliveryDaysSlider').value,10),
+      deliveryData:{
+        address:document.getElementById('delAddress').value.trim(),
+        phone:document.getElementById('delPhone').value.trim(),
+        time:document.getElementById('delTime').value.trim(),
+        date:document.getElementById('delDate').value,
+        weight:parseFloat(document.getElementById('delWeight').value)||0,
+        volume:parseFloat(document.getElementById('delVolume').value)||0,
+        maxLen:parseFloat(document.getElementById('delMaxLen').value)||0
+      }
+    };
+  }
+  function getBuyer(){
+    const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
+    const o={};keys.forEach(k=>o[k]=document.getElementById(k).value.trim());return o;
+  }
+
+  /* Визуализация загрузки */
+  function renderTruckViz(){
+    const wrap=document.getElementById('truckVizWrap');
+    const container=document.getElementById('truckViz');
+    const badge=document.getElementById('truckBadge');
+    const legend=document.getElementById('truckLegend');
+    if(!wrap)return;
+    const mode=document.querySelector('input[name="delivery"]:checked').value;
+    const weight=parseFloat(document.getElementById('delWeight').value)||0;
+    const volume=parseFloat(document.getElementById('delVolume').value)||0;
+    const maxLen=parseFloat(document.getElementById('delMaxLen').value)||0;
+    if(mode!=='delivery'||(weight===0&&volume===0)){wrap.style.display='none';return;}
+    wrap.style.display='block';
+    const trucks=[{name:'Бус',maxW:1500,maxV:12,maxL:4300},{name:'Тент 5 т',maxW:5000,maxV:35,maxL:6200},{name:'Фура 20 т',maxW:20000,maxV:82,maxL:13600}];
+    let truck=trucks[trucks.length-1];
+    for(const t of trucks){if(weight<=t.maxW&&volume<=t.maxV&&maxLen<=t.maxL){truck=t;break;}}
+    const fillW=truck.maxW?weight/truck.maxW:0,fillV=truck.maxV?volume/truck.maxV:0;
+    const fill=Math.min(1,Math.max(fillW,fillV)),fillPct=Math.round(fill*100);
+    badge.textContent=truck.name+' · '+fillPct+'%';
+    badge.classList.remove('warn','over');
+    if(fillPct>90)badge.classList.add('over');else if(fillPct>60)badge.classList.add('warn');
+    const color=fillPct>90?'#d32f2f':(fillPct>60?'#f9a825':'#2e7d32');
+    const W=720,H=240;
+    const cabX=20,cabY=90,cabW=105,cabH=85;
+    const trX=125,trY=55,trW=565,trH=120;
+    const wheelY=trY+trH+14,wheelR=15;
+    const cols=11,rows=4,padX=10,padY=10;
+    const innerW=trW-padX*2,innerH=trH-padY*2;
+    const boxW=innerW/cols,boxH=innerH/rows;
+    const totalBoxes=cols*rows,fillBoxes=Math.round(totalBoxes*fill);
+    let boxesSvg='';
+    for(let i=0;i<totalBoxes;i++){
+      const row=Math.floor(i/cols),col=i%cols;
+      const x=trX+padX+col*boxW,y=trY+padY+row*boxH;
+      const filled=i<fillBoxes;
+      if(filled){boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="${color}" opacity="0.88" rx="2"/>`;boxesSvg+=`<line x1="${(x+2).toFixed(1)}" y1="${(y+boxH/2).toFixed(1)}" x2="${(x+boxW-2).toFixed(1)}" y2="${(y+boxH/2).toFixed(1)}" stroke="#ffffff" stroke-width="0.8" opacity="0.55"/>`;}
+      else boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="none" stroke="#e0e0e0" stroke-width="0.8" stroke-dasharray="3,3" rx="2"/>`;
+    }
+    const wheelXs=[cabX+cabW/2,trX+70,trX+trW-130,trX+trW-45];
+    let wheelsSvg='';
+    for(const wx of wheelXs){wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR}" fill="#2a2a2a"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR-5}" fill="#9aa0a6"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;}
+    const cabSvg=`<path d="M ${cabX} ${cabY+cabH} L ${cabX} ${cabY+22} Q ${cabX} ${cabY} ${cabX+22} ${cabY} L ${cabX+cabW} ${cabY} L ${cabX+cabW} ${cabY+cabH} Z" fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/><rect x="${cabX+8}" y="${cabY+12}" width="${cabW-24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/><rect x="${cabX+cabW-5}" y="${cabY+8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>`;
+    const trailerSvg=`<rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>`;
+    const groundY=wheelY+wheelR;
+    const groundSvg=`<line x1="8" y1="${groundY}" x2="${W-8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
+    container.innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="truck-viz-svg">${groundSvg}${cabSvg}${trailerSvg}${boxesSvg}${wheelsSvg}</svg>`;
+    legend.innerHTML=`<span><b>🚛 Машина:</b> ${truck.name}</span><span><b>⚖️ Вес:</b> ${weight} кг / ${truck.maxW} кг (${Math.round(fillW*100)}%)</span><span><b>📦 Объём:</b> ${volume} м³ / ${truck.maxV} м³ (${Math.round(fillV*100)}%)</span>${maxLen?`<span><b>📏 Макс. длина:</b> ${maxLen} мм</span>`:''}`;
+  }
+
+  /* Превью счёта */
+  function renderPreview(){
+    const deal=getDeal(),buyer=getBuyer();
+    const invNo=getInvoiceNumber();
+    const invDate=new Date().toLocaleDateString('ru-RU');
+    const deliveryText=deal.delivery==='pickup'?'Самовывоз: '+COMPANY.pickupAddress:'Доставка до адреса покупателя';
+    const paymentFull=deal.payment>=100;
+    const paymentClause=paymentFull?'Оплата производится в размере 100 % предоплаты.':'Оплата производится в размере '+deal.payment+' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
+    const sumWords=sumToWordsRU(invoiceTotals.total);
+    const buyerPosition=buyer.bPosition||'________________';
+    const buyerFio=buyer.bFio||'________________';
+    const buyerBasis=buyer.bBasis||'________________';
+    const unloadingClause=(deal.delivery==='delivery')?'<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>':'';
+    const rowsHtml=ROWS.map((r,i)=>{
+      const s=rowSum(r),v=s*0.20;
+      const qtyStr=fmtQty2(rowTotalQty(r));
+      return '<tr><td class="pos">'+(i+1)+'</td><td>'+escapeHtml(r.label)+'</td><td class="num">'+qtyStr+'</td><td>'+escapeHtml(r.unit||'шт.')+'</td><td class="num">'+fmtInvoice(r.price||0)+'</td><td class="num">'+fmtInvoice(s)+'</td><td class="vat">20 %</td><td class="num">'+fmtInvoice(v)+'</td><td class="num sum-vat">'+fmtInvoice(s+v)+'</td></tr>';
+    }).join('');
+    const bName=buyer.bName||'______________________________________________';
+    const bUnp=buyer.bUnp||'________________';
+    const bAddr=buyer.bAddress||'_______________________________________________';
+    const bAcc=buyer.bAccount||'___________________________________________';
+    const bBank=buyer.bBank||'_____________________________________________';
+    document.getElementById('pvPage').innerHTML=`
+      <div class="pv-panel">
+        <div class="pv-logo-svg">${LOGO_SVG_COLOR}</div>
+        <div class="pv-panel-company">${COMPANY.name}</div>
+        <div class="pv-panel-req"><div>УНП: ${COMPANY.unp}</div><div>${COMPANY.address}</div></div>
+        <hr class="pv-sep">
+        <div class="pv-panel-req"><div>Р/с: ${COMPANY.account}</div><div>Банк: ${COMPANY.bank}</div><div>БИК: ${COMPANY.bic}</div></div>
+        <div class="pv-req-qr"><div class="box">${makeRequisitesQR()}</div><div class="meta"><b>Реквизиты в Word</b>Отсканируйте QR — бухгалтерия получит наши реквизиты в Word.<div class="sub">Для бухгалтера покупателя</div></div></div>
+        <div class="pv-side-contacts">
+          <div class="pv-side-title">Контакты</div>
+          <div class="pv-side-row"><span class="pv-side-ic">Т</span><span class="pv-side-val">${COMPANY.phone}<small>Телефон</small></span></div>
+          <div class="pv-side-row"><span class="pv-side-ic">@</span><span class="pv-side-val">${COMPANY.email}<small>E-mail</small></span></div>
+          <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site}<small>Сайт</small></span></div>
+          <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site2}<small>Сайт партнёра</small></span></div>
+        </div>
+        <div class="pv-hours"><span class="ic">⏱</span><span class="val">${COMPANY.hours}<small>Режим работы</small></span></div>
+        <div class="pv-side-bottom">
+          <div class="pv-nav-block">
+            <div class="pv-nav-title">Как забрать товар</div>
+            <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(OFFICE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 1. Офис</b><div class="addr">Выписка ТТН / ТН</div><div class="sub">Колодищи, Минская 5<br>5 этаж, оф. 508</div></div></div>
+            <hr class="pv-nav-sep">
+            <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 2. Склад</b><div class="addr">Армстронг</div><div class="sub">Отгрузка товара</div></div></div>
+          </div>
+          <div class="pv-issue"><div class="t1">Срок действия счёта</div><div class="addr">14 календарных дней</div><div class="sub">с даты выписки</div></div>
+        </div>
+        <div class="pv-panel-thanks"><div class="t1">Спасибо за заказ!</div><div class="t2">${COMPANY.tagline}</div></div>
+      </div>
+      <div class="pv-main">
+        <div class="pv-title">Счёт-договор</div>
+        <div class="pv-meta">№ ${invNo}<br>от ${invDate}</div>
+        <hr class="pv-hr">
+        <div class="pv-cust-label">ПОКУПАТЕЛЬ:</div>
+        <div class="pv-cust-line"><b>Наименование:</b> ${bName}<br><b>УНП:</b> ${bUnp}<br><b>Юридический адрес:</b> ${bAddr}<br><b>Р/с:</b> ${bAcc}<br><b>Банк:</b> ${bBank}</div>
+        <table class="pv-table"><thead><tr>
+          <th style="width:5%">№</th><th style="width:28%">Наименование</th><th style="width:9%">Кол-во</th><th style="width:5%">Ед.</th>
+          <th style="width:12%">Цена без НДС</th><th style="width:12%">Ст-ть без НДС</th><th style="width:6%">НДС</th><th style="width:11%">НДС сумма</th><th style="width:12%">Сумма с НДС</th>
+        </tr></thead><tbody>${rowsHtml}</tbody></table>
+        <div class="pv-totals">
+          <div class="row"><span class="lbl">Стоимость без НДС:</span><span class="val">${fmtInvoice(invoiceTotals.subtotal)} BYN</span></div>
+          <div class="row"><span class="lbl">НДС 20 %:</span><span class="val">${fmtInvoice(invoiceTotals.vat)} BYN</span></div>
+          <div class="grand"><span>ИТОГО с НДС:</span><span>${fmtInvoice(invoiceTotals.total)} BYN</span></div>
+        </div>
+        <div class="pv-note">Всего наименований: ${ROWS.length}, на сумму ${fmtInvoice(invoiceTotals.total)} BYN.</div>
+        <div class="pv-contract">
+          <div class="h">Счёт-договор поставки товара</div>
+          <p><b>${COMPANY.name}</b>, именуемое далее «Поставщик», в лице ${COMPANY.directorPosition.toLowerCase()} ${COMPANY.director}, действующего на основании Устава, с одной стороны, и <b>${buyer.bName || 'Покупатель'}</b>, именуемое далее «Покупатель», в лице ${buyerPosition} ${buyerFio}, действующего на основании ${buyerBasis}, с другой стороны, заключили настоящий договор о нижеследующем.</p>
+          <div class="h2">1. Предмет договора</div>
+          <p>1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.</p>
+          <p>1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.</p>
+          <div class="h2">2. Сумма договора и порядок расчётов</div>
+          <p>2.1. Общая сумма договора составляет <b>${sumWords}</b>, что соответствует <b>${fmtInvoice(invoiceTotals.total)} BYN</b> с учётом НДС 20 %. Сумма НДС 20 % составляет <b>${fmtInvoice(invoiceTotals.vat)} BYN</b>.</p>
+          <p>2.2. ${paymentClause}</p>
+          <div class="h2">3. Порядок поставки</div>
+          <p>3.1. Поставка осуществляется: <b>${deliveryText}</b>.</p>
+          <p>3.2. Срок поставки — <b>${deal.days} ${declOfNum(deal.days, ['день','дня','дней'])}</b> с момента оплаты.</p>
+          <p>3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.</p>
+          ${unloadingClause}
+          <div class="h2">4. Ответственность сторон</div>
+          <p>4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.</p>
+          <div class="h2">5. Срок действия и прочие условия</div>
+          <p>5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.</p>
+          <p>5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.</p>
+          <p>5.3. Оплата счёта означает согласие Покупателя с условиями поставки.</p>
+          <div class="sign">
+            <div class="col"><b>Поставщик</b><div class="ln"></div><div>${COMPANY.directorPosition} ${COMPANY.director}</div></div>
+            <div class="col"><b>Покупатель</b><div class="ln"></div><div>&nbsp;</div></div>
+          </div>
+        </div>
+        <div class="pv-footer"><span>CUBICA.BY</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
+      </div>`;
+  }
+
+  /* PDF */
+  async function downloadPdf(){
+    if(!ROWS.length){alert('Нет данных.');return;}
+    if(!window.jspdf||!window.jspdf.jsPDF){alert('jsPDF не загружен');return;}
+    if(!window.html2canvas){alert('html2canvas не загружен');return;}
+    const target=document.getElementById('pvPage');
+    if(!target){alert('Нет превью.');return;}
+    const canvas=await window.html2canvas(target,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:target.offsetWidth,height:target.offsetHeight,windowWidth:target.offsetWidth,windowHeight:target.offsetHeight});
+    const imgData=canvas.toDataURL('image/png');
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210,MARGIN=8;
+    const imgW=PW-MARGIN*2;
+    const imgH=imgW*(canvas.height/canvas.width);
+    doc.addImage(imgData,'PNG',MARGIN,MARGIN,imgW,imgH,undefined,'FAST');
+    const invNo=getInvoiceNumber().replace(/[^\w\-]/g,'');
+    doc.save('CUBICA_' + invNo + '.pdf');
+  }
+
+  function buildClientPayload(){
+    const deal = getDeal(), buyer = getBuyer();
+    const rowsForClient = ROWS.map(r => {
       var row = {
-        label:String(r.label||''),
-        qtyCalc:Number(r.qty)||0,
-        qtyReserve:0,
-        unit:r.unit||'шт.',
-        price:Number(r.price)||0
+        label: r.label,
+        qty: rowTotalQty(r),
+        unit: r.unit || 'шт.',
+        price: r.price || 0
       };
       if(r.pieces) row.pieces = r.pieces;
-      if(r.labelFull) row._fullLabel = r.labelFull;
-      return row;
-    });
-    if(Array.isArray(parsed.rooms))ROOMS=parsed.rooms;
-    if(parsed.company&&typeof parsed.company==='object')Object.assign(COMPANY,parsed.company);
-    if(parsed.meta)KP_META=parsed.meta;
-    if(parsed.buyer&&typeof parsed.buyer==='object')PREFILL_BUYER=parsed.buyer;
-    if(parsed.deal&&typeof parsed.deal==='object')PREFILL_DEAL=parsed.deal;
-    if(parsed.invoiceNumber) INVOICE_NUMBER = String(parsed.invoiceNumber);
-  }catch(e){console.warn('?data:',e);}
-}
-
-/* Если открыто из калькулятора (?data=) и есть ядро —
-   создаём запись в журнале СРАЗУ, чтобы позже была куда сохранить токен ссылки */
-if(rawData && !currentRecordId && window.CubicaJournal){
-  try{
-    const rec = window.CubicaJournal.create({ series:'invoice' });
-    rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
-    rec.rows = ROWS.map(function(r){
-      var row = { label:r.label, qtyCalc:Number(r.qtyCalc)||0, qtyReserve:Number(r.qtyReserve)||0, unit:r.unit||'шт.', price:Number(r.price)||0 };
-      if(r.pieces) row.pieces = r.pieces;
-      /* ★ ПРАВКА: прокидываем полный лейбл */
       if(r._fullLabel) row.labelFull = r._fullLabel;
       return row;
     });
-    rec.rooms = ROOMS;
-    rec.meta = KP_META;
-    rec.history = rec.history || [];
-    rec.history.push({
-      at: window.CubicaJournal.nowISO(),
-      by: window.CubicaJournal.manager(),
-      action: 'from calculator'
-    });
-    window.CubicaJournal.save(rec, { assignNumber:false });
-    currentRecordId = rec.id;
-    INVOICE_NUMBER = rec.number;
-    console.log('[i5] Создана запись в журнале:', rec.number);
-  }catch(e){
-    console.warn('[i5] Не удалось создать запись в журнале:', e);
-  }
-}
-  
-/* ============================================================
-   ВАЖНО: НЕ нормализуем рейки. Они приходят из k6.3 уже в виде
-   одной строки в м.п. с раскроем в pieces. Только собираем
-   одинаковые позиции (не рейки) между собой.
-   ============================================================ */
-(function mergeIdenticalRows(){
-  const map=new Map(),order=[];
-  for(const r of ROWS){
-    const label=String(r.label||''),unit=r.unit||'шт.';
-    const qtyCalc=Number(r.qtyCalc)||0,qtyReserve=Number(r.qtyReserve)||0,price=Number(r.price)||0;
-    const key=label+'|'+unit;
-    if(map.has(key)){
-      map.get(key).qtyCalc+=qtyCalc;
-      map.get(key).qtyReserve+=qtyReserve;
-    } else {
-      const row={label,qtyCalc,qtyReserve,unit,price};
-      if(r.pieces) row.pieces = r.pieces;
-      if(r._fullLabel) row._fullLabel = r._fullLabel;
-      map.set(key,row);
-      order.push(key);
-    }
-  }
-  ROWS=order.map(k=>{
-    const r=map.get(k);
-    r.qtyCalc=Math.round(r.qtyCalc*100)/100;
-    r.qtyReserve=Math.round(r.qtyReserve*100)/100;
-    return r;
-  });
-})();
-
-if(!ROWS.length && !currentRecordId){
-  document.getElementById('noData').style.display='block';
-} else {
-  document.getElementById('content').style.display='block';
-}
-
-let invoiceTotals={subtotal:0,vat:0,total:0};
-function rowTotalQty(r){return (Number(r.qtyCalc)||0)+(Number(r.qtyReserve)||0);}
-function rowSum(r){return rowTotalQty(r)*(Number(r.price)||0);}
-function computeTotals(){let sub=0,vat=0,tot=0;for(const r of ROWS){const s=rowSum(r);const v=s*0.20;sub+=s;vat+=v;tot+=s+v;}invoiceTotals={subtotal:sub,vat,total:tot};}
-
-function getInvoiceNumber(){
-  const inp = document.getElementById('invNumber');
-  const val = inp ? inp.value.trim() : INVOICE_NUMBER;
-  return val || makeDefaultInvNumber();
-}
-
-function renderInvoiceTable(){
-  const tbody=document.getElementById('invTbody');
-  tbody.innerHTML=ROWS.map((r,i)=>{
-    const s=rowSum(r),v=s*0.20,t=s+v;
-    const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve),totStr=fmtQty2(rowTotalQty(r));
-    return '<tr data-idx="'+i+'">' +
-      '<td class="pos">'+(i+1)+'</td>' +
-      '<td><div class="name-cell">' +
-        '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
-        '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
-      '</div></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
-      '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>' +
-      '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
-      '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
-      '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>' +
-      '<td class="vat">20 %</td>' +
-      '<td class="num" data-vat="'+i+'">'+fmtInvoice(v)+'</td>' +
-      '<td class="num sum-vat" data-svat="'+i+'">'+fmtInvoice(t)+'</td>' +
-      '<td class="row-actions"><button type="button" class="btn-row-del" data-del="'+i+'" title="Удалить">✕</button></td>' +
-    '</tr>';
-  }).join('');
-
-  tbody.querySelectorAll('.cell-input').forEach(inp=>{
-    const field=inp.getAttribute('data-field');
-    if(field==='label'){
-      inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].label=inp.value;renderPreview();});
-      inp.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();openPicker(idxOf(inp));}});
-      inp.addEventListener('dblclick',()=>openPicker(idxOf(inp)));
-      return;
-    }
-    if(field==='unit'){
-      inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].unit=inp.value;updateRowTotals(idx);updateTotalsView();renderPreview();});
-      return;
-    }
-    inp.addEventListener('keydown',e=>{
-      if(e.key==='Backspace'||e.key==='Delete'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Tab'||e.key==='Enter'||e.key==='Home'||e.key==='End')return;
-      if(/^\d$/.test(e.key)){if(handleSmartInput(inp,e)){e.preventDefault();commitNumericCell(inp);}}
-      else if(e.key.length===1){e.preventDefault();}
-    });
-    inp.addEventListener('input',()=>{
-      commitNumericCell(inp);
-      const idx=idxOf(inp);
-      if(field==='price')inp.value=fmtPriceInput(ROWS[idx].price);
-      else if(field==='qtyCalc')inp.value=fmtQty2(ROWS[idx].qtyCalc);
-      else if(field==='qtyReserve')inp.value=fmtQty2(ROWS[idx].qtyReserve);
-    });
-    inp.addEventListener('blur',()=>{
-      const idx=idxOf(inp);
-      if(field==='price'){ROWS[idx].price=parsePriceInput(inp.value);inp.value=fmtPriceInput(ROWS[idx].price);}
-      else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyCalc);}
-      else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyReserve);}
-      updateRowTotals(idx);updateTotalsView();renderPreview();
-    });
-  });
-
-  tbody.querySelectorAll('.btn-picker').forEach(btn=>btn.addEventListener('click',()=>openPicker(parseInt(btn.getAttribute('data-picker'),10))));
-
-  tbody.querySelectorAll('.btn-row-del').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const idx=parseInt(btn.getAttribute('data-del'),10);
-      if(!confirm('Удалить позицию «'+(ROWS[idx].label||'')+'»?'))return;
-      ROWS.splice(idx,1);
-      if(selectedRowIdx >= ROWS.length) selectedRowIdx = ROWS.length - 1;
-      if(selectedRowIdx < 0 && ROWS.length > 0) selectedRowIdx = 0;
-      renderInvoiceTable();renderPreview();
-    });
-  });
-
-  tbody.querySelectorAll('tr').forEach(tr=>{
-    tr.addEventListener('mousedown',(e)=>{
-      const idx = parseInt(tr.getAttribute('data-idx'), 10);
-      if(!isNaN(idx)) setSelectedRow(idx);
-    });
-  });
-
-  updateMoveButtons();
-  updateTotalsView();
-}
-
-function setSelectedRow(idx){
-  selectedRowIdx = idx;
-  const tbody=document.getElementById('invTbody');
-  tbody.querySelectorAll('tr').forEach(tr=>{
-    const i = parseInt(tr.getAttribute('data-idx'),10);
-    tr.classList.toggle('active', i === idx);
-  });
-  updateMoveButtons();
-}
-
-function updateMoveButtons(){
-  const btnUp = document.getElementById('btnMoveUp');
-  const btnDown = document.getElementById('btnMoveDown');
-  const btnCopy = document.getElementById('btnCopyRow');
-  if(!btnUp || !btnDown) return;
-  const hasSel = selectedRowIdx >= 0 && selectedRowIdx < ROWS.length;
-  btnUp.disabled = !hasSel || selectedRowIdx <= 0;
-  btnDown.disabled = !hasSel || selectedRowIdx >= ROWS.length - 1;
-  if(btnCopy) btnCopy.disabled = !hasSel;
-}
-
-function moveSelected(dir){
-  if(selectedRowIdx < 0 || selectedRowIdx >= ROWS.length) return;
-  if(dir === 'up' && selectedRowIdx > 0){
-    [ROWS[selectedRowIdx-1], ROWS[selectedRowIdx]] = [ROWS[selectedRowIdx], ROWS[selectedRowIdx-1]];
-    selectedRowIdx--;
-  } else if(dir === 'down' && selectedRowIdx < ROWS.length - 1){
-    [ROWS[selectedRowIdx], ROWS[selectedRowIdx+1]] = [ROWS[selectedRowIdx+1], ROWS[selectedRowIdx]];
-    selectedRowIdx++;
-  } else {
-    return;
-  }
-  renderInvoiceTable();
-  renderPreview();
-  setSelectedRow(selectedRowIdx);
-}
-
-document.getElementById('btnMoveUp').addEventListener('click', () => moveSelected('up'));
-document.getElementById('btnMoveDown').addEventListener('click', () => moveSelected('down'));
-
-document.getElementById('btnCopyRow').addEventListener('click', () => {
-  let srcIdx = selectedRowIdx;
-  const ae = document.activeElement;
-  if(ae && ae.tagName === 'INPUT'){
-    const tr = ae.closest('tr');
-    if(tr && tr.hasAttribute('data-idx')){
-      srcIdx = parseInt(tr.getAttribute('data-idx'), 10);
-    }
-  }
-  if(srcIdx < 0 || srcIdx >= ROWS.length){
-    alert('Сначала выделите строку (кликните по ней) или установите курсор в поле строки.');
-    return;
-  }
-  const src = ROWS[srcIdx];
-  const copy = {
-    label: src.label,
-    qtyCalc: Number(src.qtyCalc)||0,
-    qtyReserve: Number(src.qtyReserve)||0,
-    unit: src.unit || 'шт.',
-    price: Number(src.price)||0
-  };
-  if(src._nomId) copy._nomId = src._nomId;
-  if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
-  if(src.pieces) copy.pieces = src.pieces;
-  if(src._fullLabel) copy._fullLabel = src._fullLabel;
-
-  ROWS.push(copy);
-  renderInvoiceTable();
-  renderPreview();
-  setSelectedRow(ROWS.length - 1);
-
-  requestAnimationFrame(() => {
-    const newTr = document.querySelector('tr[data-idx="' + (ROWS.length-1) + '"]');
-    if(newTr){
-      newTr.scrollIntoView({behavior:'smooth', block:'nearest'});
-      newTr.classList.add('flash');
-      setTimeout(() => newTr.classList.remove('flash'), 950);
-    }
-  });
-});
-
-function idxOf(inp){return parseInt(inp.closest('tr').getAttribute('data-idx'),10);}
-function commitNumericCell(inp){
-  const idx=idxOf(inp),field=inp.getAttribute('data-field');
-  if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
-  else if(field==='qtyCalc')ROWS[idx].qtyCalc=parseQtyInput(inp.value);
-  else if(field==='qtyReserve')ROWS[idx].qtyReserve=parseQtyInput(inp.value);
-  updateRowTotals(idx);updateTotalsView();renderPreview();
-}
-function updateRowTotals(idx){
-  const r=ROWS[idx],s=rowSum(r),v=s*0.20,t=s+v;
-  const tr=document.querySelector('tr[data-idx="'+idx+'"]');
-  if(!tr)return;
-  const totEl=tr.querySelector('[data-total="'+idx+'"]');
-  const sumEl=tr.querySelector('[data-sum="'+idx+'"]');
-  const vatEl=tr.querySelector('[data-vat="'+idx+'"]');
-  const svatEl=tr.querySelector('[data-svat="'+idx+'"]');
-  if(totEl)totEl.textContent=fmtQty2(rowTotalQty(r));
-  if(sumEl)sumEl.textContent=fmtInvoice(s);
-  if(vatEl)vatEl.textContent=fmtInvoice(v);
-  if(svatEl)svatEl.textContent=fmtInvoice(t);
-}
-function updateTotalsView(){
-  computeTotals();
-  document.getElementById('invTotals').innerHTML=
-    '<div class="lbl">Стоимость без НДС:</div><div class="val">'+fmtInvoice(invoiceTotals.subtotal)+' BYN</div>'+
-    '<div class="lbl">НДС 20 %:</div><div class="val">'+fmtInvoice(invoiceTotals.vat)+' BYN</div>'+
-    '<div class="lbl grand">ИТОГО с НДС:</div><div class="val grand">'+fmtInvoice(invoiceTotals.total)+' BYN</div>';
-}
-document.getElementById('btnAddRow').addEventListener('click',()=>{
-  ROWS.push({label:'Новая позиция',qtyCalc:1,qtyReserve:0,unit:'шт.',price:0});
-  renderInvoiceTable();renderPreview();
-});
-
-document.getElementById('invNumber').addEventListener('input', () => {
-  INVOICE_NUMBER = document.getElementById('invNumber').value;
-  renderPreview();
-});
-
-/* Номенклатура */
-let NOMENCLATURE=null,pickerTargetIdx=-1;
-const pickerSelected={node:null},pickerExpanded=new Set();
-let pickerFilter='';
-
-async function loadNomenclature(force){
-  if(NOMENCLATURE&&!force)return NOMENCLATURE;
-  if(!force){try{const cached=localStorage.getItem(NOMENCLATURE_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.tree)&&parsed.tree.length){NOMENCLATURE=parsed;fetchAndCache().catch(()=>{});return NOMENCLATURE;}}}catch(e){}}
-  return await fetchAndCache();
-}
-async function fetchAndCache(){
-  try{
-    const res=await fetch(NOMENCLATURE_URL,{cache:'no-cache'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    let text=await res.text();
-    if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
-    const data=/^\s*</.test(text)&&/<\s*Номенклатура/.test(text)?parseNomenclatureXML(text):JSON.parse(text);
-    if(!data||!Array.isArray(data.tree)||!data.tree.length)throw new Error('Пусто');
-    NOMENCLATURE=data;
-    try{localStorage.setItem(NOMENCLATURE_CACHE_KEY,JSON.stringify(data));}catch(e){}
-    return data;
-  }catch(e){console.warn('Справочник:',e);return NOMENCLATURE;}
-}
-function parseNomenclatureXML(xmlText){
-  const doc=new DOMParser().parseFromString(xmlText,'application/xml');
-  const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
-  const elements=doc.getElementsByTagName('Элемент'),map=new Map(),parentOf=new Map();
-  for(let i=0;i<elements.length;i++){
-    const el=elements[i],id=el.getAttribute('Код'),name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();
-    if(!id||!name)continue;
-    const isFolder=el.getAttribute('ЭтоГруппа')==='Да';
-    const node={id,name,type:isFolder?'folder':'item'};
-    if(!isFolder){
-      const unit=(el.getAttribute('Единица')||'').trim();if(unit)node.unit=unit;
-      const article=(el.getAttribute('Артикул')||'').trim();if(article)node.article=article;
-      const fullName=(el.getAttribute('ПолноеНаименование')||'').trim();if(fullName)node.fullName=fullName;
-      const weightRaw=String(el.getAttribute('ВесБрутто')||'').replace(',','.');const weight=parseFloat(weightRaw);if(isFinite(weight)&&weight>0)node.weight=weight;
-    }
-    if(isFolder)node.children=[];
-    map.set(id,node);parentOf.set(id,el.getAttribute('РодительКод')||null);
-  }
-  const roots=[];
-  parentOf.forEach((pCode,id)=>{const node=map.get(id);if(!node)return;if(!pCode){roots.push(node);return;}const p=map.get(pCode);if(p&&p.children)p.children.push(node);else roots.push(node);});
-  const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
-  (function sortTree(nodes){nodes.sort((a,b)=>a.type!==b.type?(a.type==='folder'?-1:1):collator.compare(a.name,b.name));for(const n of nodes)if(n.children)sortTree(n.children);})(roots);
-  return {version:'2.0',source:'1C XML',generated:new Date().toISOString(),tree:roots};
-}
-function findNode(tree,id){for(const node of tree){if(node.id===id)return node;if(node.children){const f=findNode(node.children,id);if(f)return f;}}return null;}
-function findNodePath(tree,targetId,ancestors){
-  ancestors=ancestors||[];
-  for(const node of tree){
-    if(node.id===targetId)return ancestors;
-    if(node.children&&node.children.length){
-      const r=findNodePath(node.children,targetId,ancestors.concat([node.id]));
-      if(r)return r;
-    }
-  }
-  return null;
-}
-function countAllItems(tree){let n=0;for(const node of tree){if(node.children&&node.children.length)n+=countAllItems(node.children);else n++;}return n;}
-function isFolderNode(node){return node.type==='folder'||(node.children&&node.children.length>0);}
-function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
-function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(node)){acc.add(node.id);if(node.children)collectAllFolderIds(node.children,acc);}}return acc;}
-
-async function openPicker(idx){
-  pickerTargetIdx=idx;pickerSelected.node=null;pickerFilter='';pickerExpanded.clear();
-  const row = ROWS[idx];
-  if(row && Array.isArray(row._nomPath) && row._nomPath.length){
-    row._nomPath.forEach(id => pickerExpanded.add(id));
-  }
-  document.getElementById('pickerSearch').value='';
-  document.getElementById('pickerModal').classList.add('open');
-  const treeEl=document.getElementById('pickerTree');
-  treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
-  await loadNomenclature();renderPickerTree();
-  setTimeout(()=>document.getElementById('pickerSearch').focus(),60);
-}
-function closePicker(){document.getElementById('pickerModal').classList.remove('open');pickerTargetIdx=-1;pickerSelected.node=null;}
-function updatePickerSelInfo(){
-  const el=document.getElementById('pickerSelInfo');
-  if(pickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(pickerSelected.node.name)+'</span>'+(pickerSelected.node.unit?' · '+escapeHtml(pickerSelected.node.unit):'');}
-  else{el.classList.add('empty');el.textContent='Позиция не выбрана';}
-}
-function renderPickerTree(){
-  const container=document.getElementById('pickerTree');
-  const countEl=document.getElementById('pickerCount');
-  const applyBtn=document.getElementById('btnPickerApply');
-  applyBtn.disabled=!pickerSelected.node;
-  updatePickerSelInfo();
-  if(!NOMENCLATURE||!NOMENCLATURE.tree||!NOMENCLATURE.tree.length){
-    container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.<br><code>'+escapeHtml(NOMENCLATURE_URL)+'</code></div>';
-    countEl.textContent='';return;
-  }
-  function renderNode(node){
-    if(pickerFilter&&!nodeMatches(node,pickerFilter))return '';
-    const isFolder=isFolderNode(node),isExpanded=pickerFilter?true:pickerExpanded.has(node.id);
-    const isSelected=pickerSelected.node&&pickerSelected.node.id===node.id;
-    let html='<div class="picker-node">';
-    html+='<div class="picker-row '+(isFolder?'folder':'item')+(isSelected?' selected':'')+(isExpanded?' expanded':'')+'" data-id="'+escapeHtml(node.id)+'" data-type="'+(isFolder?'folder':'item')+'">';
-    if(isFolder)html+='<span class="arrow">▶</span><span class="icon">📁</span>';
-    else html+='<span class="arrow invisible">▶</span><span class="icon">📄</span>';
-    html+='<span class="label">'+escapeHtml(node.name)+'</span>';
-    if(!isFolder&&node.unit)html+='<span class="unit-badge">'+escapeHtml(node.unit)+'</span>';
-    if(!isFolder&&node.article)html+='<span class="art-badge">'+escapeHtml(node.article)+'</span>';
-    html+='</div>';
-    if(node.children&&node.children.length){html+='<div class="picker-children'+(isExpanded?' open':'')+'">';for(const child of node.children)html+=renderNode(child);html+='</div>';}
-    html+='</div>';return html;
-  }
-  let html='';for(const node of NOMENCLATURE.tree)html+=renderNode(node);
-  container.innerHTML=html||'<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';
-  countEl.textContent=pickerFilter?'Найдено по фильтру':('Всего позиций: '+countAllItems(NOMENCLATURE.tree));
-  container.querySelectorAll('.picker-row').forEach(row=>{
-    row.addEventListener('click',()=>{
-      const id=row.getAttribute('data-id'),type=row.getAttribute('data-type');
-      const node=findNode(NOMENCLATURE.tree,id);if(!node)return;
-      if(type==='folder'){if(pickerExpanded.has(id))pickerExpanded.delete(id);else pickerExpanded.add(id);renderPickerTree();}
-      else{pickerSelected.node=node;renderPickerTree();}
-    });
-    if(row.getAttribute('data-type')==='item'){
-      row.addEventListener('dblclick',()=>{pickerSelected.node=findNode(NOMENCLATURE.tree,row.getAttribute('data-id'));applyPicker();});
-    }
-  });
-}
-function applyPicker(){
-  if(!pickerSelected.node)return;
-  const idx=pickerTargetIdx;if(idx<0||idx>=ROWS.length){closePicker();return;}
-  const node=pickerSelected.node;
-  ROWS[idx].label=node.name;
-  if(node.unit)ROWS[idx].unit=node.unit;
-  ROWS[idx]._nomId = node.id;
-  if(NOMENCLATURE && NOMENCLATURE.tree){
-    const path = findNodePath(NOMENCLATURE.tree, node.id, []);
-    ROWS[idx]._nomPath = path || [];
-  }
-  const tr=document.querySelector('tr[data-idx="'+idx+'"]');
-  if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
-  updateRowTotals(idx);updateTotalsView();renderPreview();closePicker();
-}
-document.getElementById('pickerSearch').addEventListener('input',e=>{pickerFilter=e.target.value;renderPickerTree();});
-document.getElementById('pickerSearch').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();const firstItem=document.querySelector('#pickerTree .picker-row.item');if(firstItem){pickerSelected.node=findNode(NOMENCLATURE.tree,firstItem.getAttribute('data-id'));renderPickerTree();applyPicker();}}
-});
-document.getElementById('btnPickerApply').addEventListener('click',applyPicker);
-document.getElementById('btnPickerCancel').addEventListener('click',closePicker);
-document.getElementById('pickerModal').addEventListener('click',e=>{if(e.target===document.getElementById('pickerModal'))closePicker();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pickerModal').classList.contains('open'))closePicker();});
-document.getElementById('btnCollapseAll').addEventListener('click',()=>{pickerExpanded.clear();renderPickerTree();});
-document.getElementById('btnExpandAll').addEventListener('click',()=>{if(!NOMENCLATURE||!NOMENCLATURE.tree)return;collectAllFolderIds(NOMENCLATURE.tree,pickerExpanded);renderPickerTree();});
-
-/* Контрагенты */
-let CONTRACTORS=null;
-const buyerPickerSelected={node:null};
-let buyerPickerFilter='';
-
-async function loadContractors(force){
-  if(CONTRACTORS&&!force)return CONTRACTORS;
-  if(!force){try{const cached=localStorage.getItem(CONTRACTORS_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.list)&&parsed.list.length){CONTRACTORS=parsed;fetchAndCacheContractors().catch(()=>{});return CONTRACTORS;}}}catch(e){}}
-  return await fetchAndCacheContractors();
-}
-async function fetchAndCacheContractors(){
-  try{
-    const res=await fetch(CONTRACTORS_URL,{cache:'no-cache'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    let text=await res.text();if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
-    const data=/^\s*</.test(text)?parseContractorsXML(text):JSON.parse(text);
-    if(!data||!Array.isArray(data.list)||!data.list.length)throw new Error('Пусто');
-    CONTRACTORS=data;try{localStorage.setItem(CONTRACTORS_CACHE_KEY,JSON.stringify(data));}catch(e){}
-    return data;
-  }catch(e){console.warn('Контрагенты:',e);return CONTRACTORS;}
-}
-function parseContractorsXML(xmlText){
-  const doc=new DOMParser().parseFromString(xmlText,'application/xml');
-  const err=doc.querySelector('parsererror');if(err)throw new Error('XML: '+err.textContent);
-  const elements=doc.getElementsByTagName('Элемент'),list=[];
-  for(let i=0;i<elements.length;i++){
-    const el=elements[i];
-    const isFolder=el.getAttribute('ЭтоГруппа')==='Да';if(isFolder)continue;
-    const name=(el.getAttribute('Наименование')||'').replace(/\s+/g,' ').trim();if(!name)continue;
-    const unp=(el.getAttribute('УНП')||'').trim();
-    const addr=(el.getAttribute('ЮридическийАдрес')||'').trim();
-    const full=(el.getAttribute('ПолноеНаименование')||'').trim();
-    list.push({name,full,unp,addr});
-  }
-  const collator=new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
-  list.sort((a,b)=>collator.compare(a.name,b.name));
-  return {version:'1.0',source:'1C XML',generated:new Date().toISOString(),list};
-}
-function contractorMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(String(node.full||'').toLowerCase().includes(f))return true;if(String(node.unp||'').toLowerCase().includes(f))return true;return false;}
-
-async function openBuyerPicker(){
-  buyerPickerSelected.node=null;buyerPickerFilter='';
-  document.getElementById('buyerPickerSearch').value='';
-  document.getElementById('buyerPickerModal').classList.add('open');
-  const treeEl=document.getElementById('buyerPickerTree');
-  treeEl.innerHTML='<div class="picker-empty"><span class="big">⏳</span>Загрузка...</div>';
-  await loadContractors();renderBuyerPicker();
-  setTimeout(()=>document.getElementById('buyerPickerSearch').focus(),60);
-}
-function closeBuyerPicker(){document.getElementById('buyerPickerModal').classList.remove('open');buyerPickerSelected.node=null;}
-function updateBuyerPickerSelInfo(){
-  const el=document.getElementById('buyerPickerSelInfo');
-  if(buyerPickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(buyerPickerSelected.node.name)+'</span>'+(buyerPickerSelected.node.unp?' · УНП '+escapeHtml(buyerPickerSelected.node.unp):'');}
-  else{el.classList.add('empty');el.textContent='Контрагент не выбран';}
-}
-function renderBuyerPicker(){
-  const container=document.getElementById('buyerPickerTree');
-  const countEl=document.getElementById('buyerPickerCount');
-  const applyBtn=document.getElementById('btnBuyerPickerApply');
-  applyBtn.disabled=!buyerPickerSelected.node;
-  updateBuyerPickerSelInfo();
-  if(!CONTRACTORS||!CONTRACTORS.list||!CONTRACTORS.list.length){
-    container.innerHTML='<div class="picker-empty"><span class="big">📭</span>Справочник недоступен.</div>';
-    countEl.textContent='';return;
-  }
-  const filtered=buyerPickerFilter?CONTRACTORS.list.filter(c=>contractorMatches(c,buyerPickerFilter)):CONTRACTORS.list;
-  if(!filtered.length){container.innerHTML='<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';countEl.textContent='';return;}
-  container.innerHTML=filtered.map(c=>{
-    const isSelected=buyerPickerSelected.node&&buyerPickerSelected.node.unp===c.unp&&buyerPickerSelected.node.name===c.name;
-    let html='<div class="picker-row item'+(isSelected?' selected':'')+'" data-unp="'+escapeHtml(c.unp)+'" data-name="'+escapeHtml(c.name)+'">';
-    html+='<span class="arrow invisible">▶</span><span class="icon">🏢</span>';
-    html+='<span class="label">'+escapeHtml(c.name)+'</span>';
-    if(c.unp)html+='<span class="unit-badge">УНП '+escapeHtml(c.unp)+'</span>';
-    html+='</div>';return html;
-  }).join('');
-  countEl.textContent=buyerPickerFilter?('Найдено: '+filtered.length+' из '+CONTRACTORS.list.length):('Всего контрагентов: '+CONTRACTORS.list.length);
-  container.querySelectorAll('.picker-row.item').forEach(row=>{
-    row.addEventListener('click',()=>{
-      const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
-      buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
-      renderBuyerPicker();
-    });
-    row.addEventListener('dblclick',()=>{
-      const unp=row.getAttribute('data-unp'),name=row.getAttribute('data-name');
-      buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;
-      applyBuyerPicker();
-    });
-  });
-}
-function applyBuyerPicker(){
-  if(!buyerPickerSelected.node)return;
-  const c=buyerPickerSelected.node;
-  const nameToFill=c.full||c.name;
-  const elName=document.getElementById('bName'),elUnp=document.getElementById('bUnp'),elAddr=document.getElementById('bAddress');
-  if(elName)elName.value=nameToFill;
-  if(elUnp&&c.unp)elUnp.value=c.unp;
-  if(elAddr&&c.addr)elAddr.value=c.addr;
-  renderPreview();closeBuyerPicker();
-}
-function initBuyerPicker(){
-  const btn=document.getElementById('btnBuyerPicker');if(btn)btn.addEventListener('click',openBuyerPicker);
-  const search=document.getElementById('buyerPickerSearch');
-  if(search){
-    search.addEventListener('input',e=>{buyerPickerFilter=e.target.value;renderBuyerPicker();});
-    search.addEventListener('keydown',e=>{
-      if(e.key==='Enter'){e.preventDefault();const first=document.querySelector('#buyerPickerTree .picker-row.item');if(first){const unp=first.getAttribute('data-unp'),name=first.getAttribute('data-name');buyerPickerSelected.node=CONTRACTORS.list.find(c=>c.unp===unp&&c.name===name)||null;renderBuyerPicker();applyBuyerPicker();}}
-    });
-  }
-  const applyBtn=document.getElementById('btnBuyerPickerApply');if(applyBtn)applyBtn.addEventListener('click',applyBuyerPicker);
-  const cancelBtn=document.getElementById('btnBuyerPickerCancel');if(cancelBtn)cancelBtn.addEventListener('click',closeBuyerPicker);
-  const modal=document.getElementById('buyerPickerModal');
-  if(modal)modal.addEventListener('click',e=>{if(e.target===modal)closeBuyerPicker();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal&&modal.classList.contains('open'))closeBuyerPicker();});
-}
-
-/* Данные сделки и покупателя */
-function getDeal(){
-  const deliveryMode=document.querySelector('input[name="delivery"]:checked').value;
-  return {
-    delivery:deliveryMode,
-    payment:parseInt(document.getElementById('prepaySlider').value,10),
-    days:parseInt(document.getElementById('deliveryDaysSlider').value,10),
-    deliveryData:{
-      address:document.getElementById('delAddress').value.trim(),
-      phone:document.getElementById('delPhone').value.trim(),
-      time:document.getElementById('delTime').value.trim(),
-      date:document.getElementById('delDate').value,
-      weight:parseFloat(document.getElementById('delWeight').value)||0,
-      volume:parseFloat(document.getElementById('delVolume').value)||0,
-      maxLen:parseFloat(document.getElementById('delMaxLen').value)||0
-    }
-  };
-}
-function getBuyer(){
-  const keys=['bName','bUnp','bAccount','bAddress','bBank','bBic','bPosition','bFio','bBasis','bPhone'];
-  const o={};keys.forEach(k=>o[k]=document.getElementById(k).value.trim());return o;
-}
-  
-/* Визуализация загрузки */
-function renderTruckViz(){
-  const wrap=document.getElementById('truckVizWrap');
-  const container=document.getElementById('truckViz');
-  const badge=document.getElementById('truckBadge');
-  const legend=document.getElementById('truckLegend');
-  if(!wrap)return;
-  const mode=document.querySelector('input[name="delivery"]:checked').value;
-  const weight=parseFloat(document.getElementById('delWeight').value)||0;
-  const volume=parseFloat(document.getElementById('delVolume').value)||0;
-  const maxLen=parseFloat(document.getElementById('delMaxLen').value)||0;
-  if(mode!=='delivery'||(weight===0&&volume===0)){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  const trucks=[{name:'Бус',maxW:1500,maxV:12,maxL:4300},{name:'Тент 5 т',maxW:5000,maxV:35,maxL:6200},{name:'Фура 20 т',maxW:20000,maxV:82,maxL:13600}];
-  let truck=trucks[trucks.length-1];
-  for(const t of trucks){if(weight<=t.maxW&&volume<=t.maxV&&maxLen<=t.maxL){truck=t;break;}}
-  const fillW=truck.maxW?weight/truck.maxW:0,fillV=truck.maxV?volume/truck.maxV:0;
-  const fill=Math.min(1,Math.max(fillW,fillV)),fillPct=Math.round(fill*100);
-  badge.textContent=truck.name+' · '+fillPct+'%';
-  badge.classList.remove('warn','over');
-  if(fillPct>90)badge.classList.add('over');else if(fillPct>60)badge.classList.add('warn');
-  const color=fillPct>90?'#d32f2f':(fillPct>60?'#f9a825':'#2e7d32');
-  const W=720,H=240;
-  const cabX=20,cabY=90,cabW=105,cabH=85;
-  const trX=125,trY=55,trW=565,trH=120;
-  const wheelY=trY+trH+14,wheelR=15;
-  const cols=11,rows=4,padX=10,padY=10;
-  const innerW=trW-padX*2,innerH=trH-padY*2;
-  const boxW=innerW/cols,boxH=innerH/rows;
-  const totalBoxes=cols*rows,fillBoxes=Math.round(totalBoxes*fill);
-  let boxesSvg='';
-  for(let i=0;i<totalBoxes;i++){
-    const row=Math.floor(i/cols),col=i%cols;
-    const x=trX+padX+col*boxW,y=trY+padY+row*boxH;
-    const filled=i<fillBoxes;
-    if(filled){boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="${color}" opacity="0.88" rx="2"/>`;boxesSvg+=`<line x1="${(x+2).toFixed(1)}" y1="${(y+boxH/2).toFixed(1)}" x2="${(x+boxW-2).toFixed(1)}" y2="${(y+boxH/2).toFixed(1)}" stroke="#ffffff" stroke-width="0.8" opacity="0.55"/>`;}
-    else boxesSvg+=`<rect x="${(x+1.5).toFixed(1)}" y="${(y+1.5).toFixed(1)}" width="${(boxW-3).toFixed(1)}" height="${(boxH-3).toFixed(1)}" fill="none" stroke="#e0e0e0" stroke-width="0.8" stroke-dasharray="3,3" rx="2"/>`;
-  }
-  const wheelXs=[cabX+cabW/2,trX+70,trX+trW-130,trX+trW-45];
-  let wheelsSvg='';
-  for(const wx of wheelXs){wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR}" fill="#2a2a2a"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="${wheelR-5}" fill="#9aa0a6"/>`;wheelsSvg+=`<circle cx="${wx}" cy="${wheelY}" r="3" fill="#4a4a4a"/>`;}
-  const cabSvg=`<path d="M ${cabX} ${cabY+cabH} L ${cabX} ${cabY+22} Q ${cabX} ${cabY} ${cabX+22} ${cabY} L ${cabX+cabW} ${cabY} L ${cabX+cabW} ${cabY+cabH} Z" fill="#f0f0f0" stroke="#333" stroke-width="2" stroke-linejoin="round"/><rect x="${cabX+8}" y="${cabY+12}" width="${cabW-24}" height="38" fill="#a5c9e8" stroke="#333" stroke-width="1.5" rx="3"/><rect x="${cabX+cabW-5}" y="${cabY+8}" width="10" height="60" fill="#e6e6e6" stroke="#333" stroke-width="1.2"/>`;
-  const trailerSvg=`<rect x="${trX}" y="${trY}" width="${trW}" height="${trH}" fill="#ffffff" stroke="#333" stroke-width="2" rx="4"/>`;
-  const groundY=wheelY+wheelR;
-  const groundSvg=`<line x1="8" y1="${groundY}" x2="${W-8}" y2="${groundY}" stroke="#cfcfcf" stroke-width="1.5"/>`;
-  container.innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="truck-viz-svg">${groundSvg}${cabSvg}${trailerSvg}${boxesSvg}${wheelsSvg}</svg>`;
-  legend.innerHTML=`<span><b>🚛 Машина:</b> ${truck.name}</span><span><b>⚖️ Вес:</b> ${weight} кг / ${truck.maxW} кг (${Math.round(fillW*100)}%)</span><span><b>📦 Объём:</b> ${volume} м³ / ${truck.maxV} м³ (${Math.round(fillV*100)}%)</span>${maxLen?`<span><b>📏 Макс. длина:</b> ${maxLen} мм</span>`:''}`;
-}
-
-/* Превью счёта */
-function renderPreview(){
-  const deal=getDeal(),buyer=getBuyer();
-  const invNo=getInvoiceNumber();
-  const invDate=new Date().toLocaleDateString('ru-RU');
-  const deliveryText=deal.delivery==='pickup'?'Самовывоз: '+COMPANY.pickupAddress:'Доставка до адреса покупателя';
-  const paymentFull=deal.payment>=100;
-  const paymentClause=paymentFull?'Оплата производится в размере 100 % предоплаты.':'Оплата производится в размере '+deal.payment+' % предоплаты. Остаток суммы по данному счёту-договору подлежит оплате после подтверждения Поставщиком готовности товара к отгрузке. На момент отгрузки товар должен быть оплачен Покупателем полностью.';
-  const sumWords=sumToWordsRU(invoiceTotals.total);
-  const buyerPosition=buyer.bPosition||'________________';
-  const buyerFio=buyer.bFio||'________________';
-  const buyerBasis=buyer.bBasis||'________________';
-  const unloadingClause=(deal.delivery==='delivery')?'<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>':'';
-  const rowsHtml=ROWS.map((r,i)=>{
-    const s=rowSum(r),v=s*0.20;
-    const qtyStr=fmtQty2(rowTotalQty(r));
-    return '<tr><td class="pos">'+(i+1)+'</td><td>'+escapeHtml(r.label)+'</td><td class="num">'+qtyStr+'</td><td>'+escapeHtml(r.unit||'шт.')+'</td><td class="num">'+fmtInvoice(r.price||0)+'</td><td class="num">'+fmtInvoice(s)+'</td><td class="vat">20 %</td><td class="num">'+fmtInvoice(v)+'</td><td class="num sum-vat">'+fmtInvoice(s+v)+'</td></tr>';
-  }).join('');
-  const bName=buyer.bName||'______________________________________________';
-  const bUnp=buyer.bUnp||'________________';
-  const bAddr=buyer.bAddress||'_______________________________________________';
-  const bAcc=buyer.bAccount||'___________________________________________';
-  const bBank=buyer.bBank||'_____________________________________________';
-  document.getElementById('pvPage').innerHTML=`
-    <div class="pv-panel">
-      <div class="pv-logo-svg">${LOGO_SVG_COLOR}</div>
-      <div class="pv-panel-company">${COMPANY.name}</div>
-      <div class="pv-panel-req"><div>УНП: ${COMPANY.unp}</div><div>${COMPANY.address}</div></div>
-      <hr class="pv-sep">
-      <div class="pv-panel-req"><div>Р/с: ${COMPANY.account}</div><div>Банк: ${COMPANY.bank}</div><div>БИК: ${COMPANY.bic}</div></div>
-      <div class="pv-req-qr"><div class="box">${makeRequisitesQR()}</div><div class="meta"><b>Реквизиты в Word</b>Отсканируйте QR — бухгалтерия получит наши реквизиты в Word.<div class="sub">Для бухгалтера покупателя</div></div></div>
-      <div class="pv-side-contacts">
-        <div class="pv-side-title">Контакты</div>
-        <div class="pv-side-row"><span class="pv-side-ic">Т</span><span class="pv-side-val">${COMPANY.phone}<small>Телефон</small></span></div>
-        <div class="pv-side-row"><span class="pv-side-ic">@</span><span class="pv-side-val">${COMPANY.email}<small>E-mail</small></span></div>
-        <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site}<small>Сайт</small></span></div>
-        <div class="pv-side-row"><span class="pv-side-ic">◉</span><span class="pv-side-val">${COMPANY.site2}<small>Сайт партнёра</small></span></div>
-      </div>
-      <div class="pv-hours"><span class="ic">⏱</span><span class="val">${COMPANY.hours}<small>Режим работы</small></span></div>
-      <div class="pv-side-bottom">
-        <div class="pv-nav-block">
-          <div class="pv-nav-title">Как забрать товар</div>
-          <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(OFFICE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 1. Офис</b><div class="addr">Выписка ТТН / ТН</div><div class="sub">Колодищи, Минская 5<br>5 этаж, оф. 508</div></div></div>
-          <hr class="pv-nav-sep">
-          <div class="pv-nav-item"><div class="pv-nav-qr">${makeNaviQR(WAREHOUSE_COORDS)}</div><div class="pv-nav-meta"><b>Шаг 2. Склад</b><div class="addr">Армстронг</div><div class="sub">Отгрузка товара</div></div></div>
-        </div>
-        <div class="pv-issue"><div class="t1">Срок действия счёта</div><div class="addr">14 календарных дней</div><div class="sub">с даты выписки</div></div>
-      </div>
-      <div class="pv-panel-thanks"><div class="t1">Спасибо за заказ!</div><div class="t2">${COMPANY.tagline}</div></div>
-    </div>
-    <div class="pv-main">
-      <div class="pv-title">Счёт-договор</div>
-      <div class="pv-meta">№ ${invNo}<br>от ${invDate}</div>
-      <hr class="pv-hr">
-      <div class="pv-cust-label">ПОКУПАТЕЛЬ:</div>
-      <div class="pv-cust-line"><b>Наименование:</b> ${bName}<br><b>УНП:</b> ${bUnp}<br><b>Юридический адрес:</b> ${bAddr}<br><b>Р/с:</b> ${bAcc}<br><b>Банк:</b> ${bBank}</div>
-      <table class="pv-table"><thead><tr>
-        <th style="width:5%">№</th><th style="width:28%">Наименование</th><th style="width:9%">Кол-во</th><th style="width:5%">Ед.</th>
-        <th style="width:12%">Цена без НДС</th><th style="width:12%">Ст-ть без НДС</th><th style="width:6%">НДС</th><th style="width:11%">НДС сумма</th><th style="width:12%">Сумма с НДС</th>
-      </tr></thead><tbody>${rowsHtml}</tbody></table>
-      <div class="pv-totals">
-        <div class="row"><span class="lbl">Стоимость без НДС:</span><span class="val">${fmtInvoice(invoiceTotals.subtotal)} BYN</span></div>
-        <div class="row"><span class="lbl">НДС 20 %:</span><span class="val">${fmtInvoice(invoiceTotals.vat)} BYN</span></div>
-        <div class="grand"><span>ИТОГО с НДС:</span><span>${fmtInvoice(invoiceTotals.total)} BYN</span></div>
-      </div>
-      <div class="pv-note">Всего наименований: ${ROWS.length}, на сумму ${fmtInvoice(invoiceTotals.total)} BYN.</div>
-      <div class="pv-contract">
-        <div class="h">Счёт-договор поставки товара</div>
-        <p><b>${COMPANY.name}</b>, именуемое далее «Поставщик», в лице ${COMPANY.directorPosition.toLowerCase()} ${COMPANY.director}, действующего на основании Устава, с одной стороны, и <b>${buyer.bName || 'Покупатель'}</b>, именуемое далее «Покупатель», в лице ${buyerPosition} ${buyerFio}, действующего на основании ${buyerBasis}, с другой стороны, заключили настоящий договор о нижеследующем.</p>
-        <div class="h2">1. Предмет договора</div>
-        <p>1.1. Поставщик обязуется передать в собственность Покупателя, а Покупатель — принять и оплатить товар согласно спецификации, указанной в настоящем счёте-договоре.</p>
-        <p>1.2. Качество товара соответствует требованиям нормативно-технической документации, действующей в Республике Беларусь.</p>
-        <div class="h2">2. Сумма договора и порядок расчётов</div>
-        <p>2.1. Общая сумма договора составляет <b>${sumWords}</b>, что соответствует <b>${fmtInvoice(invoiceTotals.total)} BYN</b> с учётом НДС 20 %. Сумма НДС 20 % составляет <b>${fmtInvoice(invoiceTotals.vat)} BYN</b>.</p>
-        <p>2.2. ${paymentClause}</p>
-        <div class="h2">3. Порядок поставки</div>
-        <p>3.1. Поставка осуществляется: <b>${deliveryText}</b>.</p>
-        <p>3.2. Срок поставки — <b>${deal.days} ${declOfNum(deal.days, ['день','дня','дней'])}</b> с момента оплаты.</p>
-        <p>3.3. Право собственности переходит к Покупателю в момент передачи товара и подписания ТТН/ТН.</p>
-        ${unloadingClause}
-        <div class="h2">4. Ответственность сторон</div>
-        <p>4.1. За неисполнение обязательств стороны несут ответственность в соответствии с законодательством Республики Беларусь.</p>
-        <div class="h2">5. Срок действия и прочие условия</div>
-        <p>5.1. Договор вступает в силу с момента подписания и действует до полного исполнения сторонами обязательств.</p>
-        <p>5.2. Счёт действителен к оплате 14 календарных дней с даты выписки.</p>
-        <p>5.3. Оплата счёта означает согласие Покупателя с условиями поставки.</p>
-        <div class="sign">
-          <div class="col"><b>Поставщик</b><div class="ln"></div><div>${COMPANY.directorPosition} ${COMPANY.director}</div></div>
-          <div class="col"><b>Покупатель</b><div class="ln"></div><div>&nbsp;</div></div>
-        </div>
-      </div>
-      <div class="pv-footer"><span>CUBICA.BY</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
-    </div>`;
-}
-
-/* PDF */
-async function downloadPdf(){
-  if(!ROWS.length){alert('Нет данных.');return;}
-  if(!window.jspdf||!window.jspdf.jsPDF){alert('jsPDF не загружен');return;}
-  if(!window.html2canvas){alert('html2canvas не загружен');return;}
-  const target=document.getElementById('pvPage');
-  if(!target){alert('Нет превью.');return;}
-  const canvas=await window.html2canvas(target,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:target.offsetWidth,height:target.offsetHeight,windowWidth:target.offsetWidth,windowHeight:target.offsetHeight});
-  const imgData=canvas.toDataURL('image/png');
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const PW=210,MARGIN=8;
-  const imgW=PW-MARGIN*2;
-  const imgH=imgW*(canvas.height/canvas.width);
-  doc.addImage(imgData,'PNG',MARGIN,MARGIN,imgW,imgH,undefined,'FAST');
-  const invNo=getInvoiceNumber().replace(/[^\w\-]/g,'');
-  doc.save('CUBICA_' + invNo + '.pdf');
-}
-
-/* Payload для kp */
-/* Payload для kp */
-/* ★ ПРАВКА: прокидываем pieces и labelFull в строки */
-function buildClientPayload(){
-  const deal = getDeal(), buyer = getBuyer();
-  const rowsForClient = ROWS.map(r => {
-    var row = {
-      label: r.label,
-      qty: rowTotalQty(r),
-      unit: r.unit || 'шт.',
-      price: r.price || 0
-    };
-    /* ★ ключевое: раскрой реек для клиента (открывается после оплаты) */
-    if(r.pieces) row.pieces = r.pieces;
-    /* ★ полный лейбл (для КП и внутренних нужд) */
-    if(r._fullLabel) row.labelFull = r._fullLabel;
-    return row;
-  });
-  return {
-    v:6,
-    rooms: ROOMS,
-    i5_url: location.href.split('?')[0],
-    L_in: (KP_META&&KP_META.L_in)||0,
-    W_in: (KP_META&&KP_META.W_in)||0,
-    area: (KP_META&&KP_META.area)||0,
-    color:(KP_META&&KP_META.color)||'',
-    railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',
-    polygon:(KP_META&&KP_META.polygon)||null,
-    p:{
-      railW:(KP_META&&KP_META.railW)||50,
-      railH:(KP_META&&KP_META.railH)||30,
-      gap:(KP_META&&KP_META.gap)||15,
-      caps:(KP_META&&KP_META.caps)?1:0,
-      angle:(KP_META&&KP_META.angle)?1:0
-    },
-    r:(KP_META&&KP_META.rotation)||0,
-    rows: rowsForClient,
-    price: invoiceTotals.total,
-    subtotal: invoiceTotals.subtotal,
-    vat: invoiceTotals.vat,
-    currency:'BYN',
-    invoiceNumber:getInvoiceNumber(),
-    deal:{
-      delivery:deal.delivery,
-      payment:deal.payment,
-      days:deal.days,
-      deliveryData:deal.deliveryData
-    },
-    buyer: buyer,
-    company: COMPANY,
-    manager:'Менеджер CUBICA',
-    phone: COMPANY.phone,
-    valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()
-  };
-}
-
-function encodePayloadForUrl(payload){
-  return b64enc(JSON.stringify(payload));
-}
-
-/* Ссылка для клиента через Cloudflare Worker */
-/* Ссылка для клиента через Cloudflare Worker */
-/* Кнопка «📄 Отправить счёт PDF клиенту»:
-   PDF скачивается, открывается модалка pdfModal с мессенджерами — БЕЗ ссылки. */
-function openPdfModal(){
-  /* Скачиваем PDF */
-  downloadPdf();
-
-  /* Ссылки мессенджеров — только текст, без URL */
-  const text = 'Счёт CUBICA ' + (getInvoiceNumber() || '');
-  const enc  = encodeURIComponent;
-
-  const tg = document.getElementById('pdfShareTg');
-  const wa = document.getElementById('pdfShareWa');
-  const vb = document.getElementById('pdfShareVb');
-  const em = document.getElementById('pdfShareEm');
-
-  if(tg) tg.href = 'https://t.me/share/url?url=&text=' + enc(text);
-  if(wa) wa.href = 'https://wa.me/?text=' + enc(text);
-  if(vb) vb.href = 'viber://forward?text=' + enc(text);
-  if(em) em.href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text);
-
-  /* Открываем модалку pdfModal */
-  document.getElementById('pdfModal').classList.add('open');
-}
-  
-  /* Ссылка для клиента. Всегда создаёт новую короткую ссылку через Worker. */
-async function openShareModal(){
-
-
-  const inp      = document.getElementById('shareLink');
-  const statusEl = document.getElementById('shareStatus');
-  const attachChk = document.getElementById('shareAttachPdf');
-
-  /* Галочка «Прикрепить счёт PDF» — при проставлении качаем PDF */
-  if(attachChk){
-    attachChk.checked = false;
-    attachChk.onchange = () => {
-      if(attachChk.checked) downloadPdf();
+    return {
+      v:6,
+      rooms: ROOMS,
+      i5_url: location.href.split('?')[0],
+      L_in: (KP_META&&KP_META.L_in)||0,
+      W_in: (KP_META&&KP_META.W_in)||0,
+      area: (KP_META&&KP_META.area)||0,
+      color:(KP_META&&KP_META.color)||'',
+      railSpec:(KP_META&&KP_META.railW&&KP_META.railH)?(KP_META.railW+'×'+KP_META.railH):'',
+      polygon:(KP_META&&KP_META.polygon)||null,
+      p:{
+        railW:(KP_META&&KP_META.railW)||50,
+        railH:(KP_META&&KP_META.railH)||30,
+        gap:(KP_META&&KP_META.gap)||15,
+        caps:(KP_META&&KP_META.caps)?1:0,
+        angle:(KP_META&&KP_META.angle)?1:0
+      },
+      r:(KP_META&&KP_META.rotation)||0,
+      rows: rowsForClient,
+      price: invoiceTotals.total,
+      subtotal: invoiceTotals.subtotal,
+      vat: invoiceTotals.vat,
+      currency:'BYN',
+      invoiceNumber:getInvoiceNumber(),
+      deal:{
+        delivery:deal.delivery,
+        payment:deal.payment,
+        days:deal.days,
+        deliveryData:deal.deliveryData
+      },
+      buyer: buyer,
+      company: COMPANY,
+      manager:'Менеджер CUBICA',
+      phone: COMPANY.phone,
+      valid:(()=>{const d=new Date();d.setDate(d.getDate()+10);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();})()
     };
   }
-  /* ★ Если у записи уже есть ссылка — показываем её, ничего не создаём */
-  if(currentRecordId && window.CubicaJournal){
-    const rec = window.CubicaJournal.get(currentRecordId);
-    if(rec && rec.client && rec.client.url){
-      document.getElementById('shareModal').classList.add('open');
-      inp.value = rec.client.url;
-      updateMessengerLinks(rec.client.url);
+
+  function encodePayloadForUrl(payload){
+    return b64enc(JSON.stringify(payload));
+  }
+
+  function openPdfModal(){
+    downloadPdf();
+    const text = 'Счёт CUBICA ' + (getInvoiceNumber() || '');
+    const enc  = encodeURIComponent;
+    const tg = document.getElementById('pdfShareTg');
+    const wa = document.getElementById('pdfShareWa');
+    const vb = document.getElementById('pdfShareVb');
+    const em = document.getElementById('pdfShareEm');
+    if(tg) tg.href = 'https://t.me/share/url?url=&text=' + enc(text);
+    if(wa) wa.href = 'https://wa.me/?text=' + enc(text);
+    if(vb) vb.href = 'viber://forward?text=' + enc(text);
+    if(em) em.href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text);
+    document.getElementById('pdfModal').classList.add('open');
+  }
+
+  async function openShareModal(){
+    const inp      = document.getElementById('shareLink');
+    const statusEl = document.getElementById('shareStatus');
+    const attachChk = document.getElementById('shareAttachPdf');
+
+    if(attachChk){
+      attachChk.checked = false;
+      attachChk.onchange = () => {
+        if(attachChk.checked) downloadPdf();
+      };
+    }
+    if(currentRecordId && window.CubicaJournal){
+      const rec = window.CubicaJournal.get(currentRecordId);
+      if(rec && rec.client && rec.client.url){
+        document.getElementById('shareModal').classList.add('open');
+        inp.value = rec.client.url;
+        updateMessengerLinks(rec.client.url);
+        statusEl.className = 'share-status show ok';
+        statusEl.textContent = '✓ Ссылка уже создана. Копируйте и отправляйте клиенту.';
+        return;
+      }
+    }
+
+    const payload = buildClientPayload();
+    const data    = encodePayloadForUrl(payload);
+    
+    // Убрали fallback на длинную ссылку
+    inp.value = '';
+    updateMessengerLinks('');
+    document.getElementById('shareModal').classList.add('open');
+
+    statusEl.className = 'share-status show loading';
+    statusEl.textContent = '⏳ Создаём короткую ссылку…';
+
+    try {
+      const res = await fetch(SHORT_URL + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: data, recordId: currentRecordId })
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const j = await res.json();
+      if(!j.id) throw new Error('Нет id в ответе');
+
+      const shortUrl = KP_URL + '?s=' + j.id;
+
+      if(currentRecordId && window.CubicaJournal){
+        const rec = window.CubicaJournal.get(currentRecordId);
+        if(rec){
+          rec.client = rec.client || {};
+          rec.client.token = j.id;
+          rec.client.url = shortUrl;
+          rec.client.sentAt = window.CubicaJournal.nowISO();
+          rec.history = rec.history || [];
+          rec.history.push({
+            at: window.CubicaJournal.nowISO(),
+            by: window.CubicaJournal.manager(),
+            action: 'client link created'
+          });
+          window.CubicaJournal.save(rec, { assignNumber: false });
+        }
+      }
+
+      inp.value = shortUrl;
+      updateMessengerLinks(shortUrl);
       statusEl.className = 'share-status show ok';
-      statusEl.textContent = '✓ Ссылка уже создана. Копируйте и отправляйте клиенту.';
+      statusEl.textContent = '✓ Готово! Ссылка ' + shortUrl.length + ' символов. Копируйте и отправляйте клиенту.';
+    } catch(e) {
+      console.warn('[i5] shorten error:', e);
+      statusEl.className = 'share-status show warn';
+      statusEl.innerHTML = '⚠ Не удалось создать короткую ссылку (' + escapeHtml(e.message) + ').<br>' +
+        '<span style="font-size:11.5px">Попробуйте позже.</span>';
+    }
+  }
+
+  function updateMessengerLinks(url){
+    const text = 'Коммерческое предложение CUBICA';
+    const enc  = encodeURIComponent;
+    if(!url){
+      document.getElementById('shareTg').href = '#';
+      document.getElementById('shareWa').href = '#';
+      document.getElementById('shareVb').href = '#';
+      document.getElementById('shareEm').href = '#';
       return;
     }
+    document.getElementById('shareTg').href = 'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text);
+    document.getElementById('shareWa').href = 'https://wa.me/?text=' + enc(text + '\n' + url);
+    document.getElementById('shareVb').href = 'viber://forward?text=' + enc(text + '\n' + url);
+    document.getElementById('shareEm').href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text + '\n\n' + url);
   }
 
-  /* Ссылки нет — создаём новую */
-  const payload = buildClientPayload();
-  const data    = encodePayloadForUrl(payload);
-  const longUrl = KP_URL + (KP_URL.includes('?') ? '&' : '?') + 'kp=' + data;
-
-  inp.value = longUrl;
-  updateMessengerLinks(longUrl);
-  document.getElementById('shareModal').classList.add('open');
-
-  statusEl.className = 'share-status show loading';
-  statusEl.textContent = '⏳ Создаём короткую ссылку…';
-
-  try {
-    const res = await fetch(SHORT_URL + '/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload: data, recordId: currentRecordId })
-    });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const j = await res.json();
-    if(!j.id) throw new Error('Нет id в ответе');
-
-const shortUrl = KP_URL + '?s=' + j.id;
-
-/* ★ Сохраняем токен и ссылку в запись журнала,
-   чтобы при смене статуса на «Оплачено» можно было обновить ЭТУ ЖЕ ссылку */
-if(currentRecordId && window.CubicaJournal){
-  const rec = window.CubicaJournal.get(currentRecordId);
-  if(rec){
-    rec.client = rec.client || {};
-    rec.client.token = j.id;
-    rec.client.url = shortUrl;
-    rec.client.sentAt = window.CubicaJournal.nowISO();
-    rec.history = rec.history || [];
-    rec.history.push({
-      at: window.CubicaJournal.nowISO(),
-      by: window.CubicaJournal.manager(),
-      action: 'client link created'
-    });
-    window.CubicaJournal.save(rec, { assignNumber: false });
+  function copyShareLink(){
+    const inp=document.getElementById('shareLink');
+    if(!inp.value) { showCopyMsg(); return; } // или alert
+    inp.select();inp.setSelectionRange(0,99999);
+    try{navigator.clipboard.writeText(inp.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
   }
-}
+  function showCopyMsg(){const m=document.getElementById('copyMsg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
 
-inp.value = shortUrl;
-updateMessengerLinks(shortUrl);
-
-    statusEl.className = 'share-status show ok';
-    statusEl.textContent = '✓ Готово! Ссылка ' + shortUrl.length + ' символов. Копируйте и отправляйте клиенту.';
-  } catch(e) {
-    console.warn('[i5] shorten error:', e);
-    statusEl.className = 'share-status show warn';
-    statusEl.innerHTML = '⚠ Не удалось создать короткую ссылку (' + escapeHtml(e.message) + ').<br>' +
-      '<span style="font-size:11.5px">Всё равно можно отправить длинную ссылку — она рабочая.</span>';
+  /* Заявка логисту */
+  function buildLogistText(){
+    const deal=getDeal(),buyer=getBuyer(),d=deal.deliveryData;
+    const lines=[];
+    lines.push('ЗАЯВКА НА ДОСТАВКУ CUBICA');
+    lines.push('='.repeat(40));lines.push('');
+    lines.push('Счёт №:          '+getInvoiceNumber());
+    lines.push('Покупатель:      '+(buyer.bName||'—'));
+    lines.push('Адрес доставки:  '+(d.address||'—'));
+    lines.push('Контактный тел.: '+(d.phone||'—'));
+    lines.push('Дата доставки:   '+(d.date||'—'));
+    lines.push('Время доставки:  '+(d.time||'—'));
+    lines.push('');lines.push('ГАБАРИТЫ ГРУЗА:');
+    lines.push('  Вес:              '+(d.weight?d.weight+' кг':'—'));
+    lines.push('  Объём:            '+(d.volume?d.volume+' м³':'—'));
+    lines.push('  Макс. длина:      '+(d.maxLen?d.maxLen+' мм':'—'));
+    lines.push('');lines.push('СОСТАВ ЗАКАЗА:');
+    for(let i=0;i<ROWS.length;i++){const r=ROWS[i];const qtyStr=fmtQty2(rowTotalQty(r));lines.push('  '+(i+1)+'. '+r.label+' — '+qtyStr+' '+(r.unit||'шт.'));}
+    lines.push('');lines.push('ИТОГО: '+fmtInvoice(invoiceTotals.total)+' BYN с НДС');lines.push('');lines.push('— — —');lines.push('CUBICA · '+COMPANY.phone+' · '+COMPANY.email);
+    return lines.join('\n');
   }
-}
-
-/* Скачивает PDF счёта. Используется при отправке клиенту.
-   Создаёт свою копию превью в скрытом контейнере,
-   не трогает превью на странице. */
-async function triggerPdfDownload(){
-  if(!ROWS.length){
-    alert('Нет данных для счёта.');
-    return;
+  function openLogistModal(){
+    const mode=document.querySelector('input[name="delivery"]:checked').value;
+    if(mode!=='delivery'){alert('Сначала выберите «Доставка».');return;}
+    document.getElementById('logistText').value=buildLogistText();
+    document.getElementById('logistModal').classList.add('open');
   }
-  if(!window.jspdf || !window.jspdf.jsPDF){
-    alert('jsPDF не загружен.');
-    return;
-  }
-  if(!window.html2canvas){
-    alert('html2canvas не загружен.');
-    return;
+  function copyLogistText(){
+    const ta=document.getElementById('logistText');
+    ta.select();ta.setSelectionRange(0,99999);
+    try{navigator.clipboard.writeText(ta.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
   }
 
-  /* Создаём скрытый контейнер с превью */
-  const host = document.createElement('div');
-  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;height:1074px;overflow:hidden;pointer-events:none;z-index:-1';
-  document.body.appendChild(host);
-
-  try {
-    /* Берём HTML превью с основного элемента */
-    const pvPage = document.getElementById('pvPage');
-    if(!pvPage){
-      throw new Error('Не найден элемент превью');
-    }
-    host.innerHTML = pvPage.outerHTML;
-
-    const target = host.firstElementChild;
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 120));
-
-    const canvas = await window.html2canvas(target, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      width: target.offsetWidth,
-      height: target.offsetHeight,
-      windowWidth: target.offsetWidth,
-      windowHeight: target.offsetHeight
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const PW = 210, MARGIN = 8;
-    const imgW = PW - MARGIN * 2;
-    const imgH = imgW * (canvas.height / canvas.width);
-    doc.addImage(imgData, 'PNG', MARGIN, MARGIN, imgW, imgH, undefined, 'FAST');
-
-    const invNo = getInvoiceNumber().replace(/[^\w\-]/g, '') || 'СЧ-без-номера';
-    doc.save('CUBICA_' + invNo + '.pdf');
-  } catch(e) {
-    console.error('[i5] triggerPdfDownload:', e);
-    alert('Ошибка создания PDF: ' + e.message);
-  } finally {
-    document.body.removeChild(host);
+  /* Обработчики */
+  function toggleDeliveryBlock(){
+    const mode=document.querySelector('input[name="delivery"]:checked').value;
+    document.getElementById('deliveryBlock').style.display=(mode==='delivery')?'block':'none';
+    renderPreview();renderTruckViz();
   }
-}
-  
-  function updateMessengerLinks(url){
-  const text = 'Коммерческое предложение CUBICA';
-  const enc  = encodeURIComponent;
-  document.getElementById('shareTg').href = 'https://t.me/share/url?url=' + enc(url) + '&text=' + enc(text);
-  document.getElementById('shareWa').href = 'https://wa.me/?text=' + enc(text + '\n' + url);
-  document.getElementById('shareVb').href = 'viber://forward?text=' + enc(text + '\n' + url);
-  document.getElementById('shareEm').href = 'mailto:?subject=' + enc(text) + '&body=' + enc(text + '\n\n' + url);
-}
 
-function copyShareLink(){
-  const inp=document.getElementById('shareLink');
-  inp.select();inp.setSelectionRange(0,99999);
-  try{navigator.clipboard.writeText(inp.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
-}
-function showCopyMsg(){const m=document.getElementById('copyMsg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+  /* Сохранение в журнал */
+  function saveToJournal(silent){
+    if(!window.CubicaJournal){ if(!silent) alert('Ядро журнала недоступно'); return false; }
+    let rec = currentRecordId ? window.CubicaJournal.get(currentRecordId) : null;
+    if(!rec) rec = window.CubicaJournal.create({ series:'invoice' });
 
-/* Заявка логисту */
-function buildLogistText(){
-  const deal=getDeal(),buyer=getBuyer(),d=deal.deliveryData;
-  const lines=[];
-  lines.push('ЗАЯВКА НА ДОСТАВКУ CUBICA');
-  lines.push('='.repeat(40));lines.push('');
-  lines.push('Счёт №:          '+getInvoiceNumber());
-  lines.push('Покупатель:      '+(buyer.bName||'—'));
-  lines.push('Адрес доставки:  '+(d.address||'—'));
-  lines.push('Контактный тел.: '+(d.phone||'—'));
-  lines.push('Дата доставки:   '+(d.date||'—'));
-  lines.push('Время доставки:  '+(d.time||'—'));
-  lines.push('');lines.push('ГАБАРИТЫ ГРУЗА:');
-  lines.push('  Вес:              '+(d.weight?d.weight+' кг':'—'));
-  lines.push('  Объём:            '+(d.volume?d.volume+' м³':'—'));
-  lines.push('  Макс. длина:      '+(d.maxLen?d.maxLen+' мм':'—'));
-  lines.push('');lines.push('СОСТАВ ЗАКАЗА:');
-  for(let i=0;i<ROWS.length;i++){const r=ROWS[i];const qtyStr=fmtQty2(rowTotalQty(r));lines.push('  '+(i+1)+'. '+r.label+' — '+qtyStr+' '+(r.unit||'шт.'));}
-  lines.push('');lines.push('ИТОГО: '+fmtInvoice(invoiceTotals.total)+' BYN с НДС');lines.push('');lines.push('— — —');lines.push('CUBICA · '+COMPANY.phone+' · '+COMPANY.email);
-  return lines.join('\n');
-}
-function openLogistModal(){
-  const mode=document.querySelector('input[name="delivery"]:checked').value;
-  if(mode!=='delivery'){alert('Сначала выберите «Доставка».');return;}
-  document.getElementById('logistText').value=buildLogistText();
-  document.getElementById('logistModal').classList.add('open');
-}
-function copyLogistText(){
-  const ta=document.getElementById('logistText');
-  ta.select();ta.setSelectionRange(0,99999);
-  try{navigator.clipboard.writeText(ta.value).then(showCopyMsg).catch(()=>{document.execCommand('copy');showCopyMsg();});}catch(e){document.execCommand('copy');showCopyMsg();}
-}
-
-/* Обработчики */
-function toggleDeliveryBlock(){
-  const mode=document.querySelector('input[name="delivery"]:checked').value;
-  document.getElementById('deliveryBlock').style.display=(mode==='delivery')?'block':'none';
-  renderPreview();renderTruckViz();
-}
-
-/* ============================================================
-   Сохранение в журнал
-   ============================================================ */
-function saveToJournal(silent){
-  if(!window.CubicaJournal){ if(!silent) alert('Ядро журнала недоступно'); return false; }
-  let rec = currentRecordId ? window.CubicaJournal.get(currentRecordId) : null;
-  if(!rec) rec = window.CubicaJournal.create({ series:'invoice' });
-
-  const buyer = getBuyer();
-  rec.contractor = {
-    name: buyer.bName||'', full: buyer.bName||'', unp: buyer.bUnp||'',
-    addr: buyer.bAddress||'', account: buyer.bAccount||'', bank: buyer.bBank||'',
-    bic: buyer.bBic||'', position: buyer.bPosition||'', fio: buyer.bFio||'',
-    basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
-  };
-  rec.deal = getDeal();
-
-  rec.rows = ROWS.map(function(r){
-    var row = {
-      label: r.label,
-      qtyCalc: Number(r.qtyCalc)||0,
-      qtyReserve: Number(r.qtyReserve)||0,
-      unit: r.unit||'шт.',
-      price: Number(r.price)||0
+    const buyer = getBuyer();
+    rec.contractor = {
+      name: buyer.bName||'', full: buyer.bName||'', unp: buyer.bUnp||'',
+      addr: buyer.bAddress||'', account: buyer.bAccount||'', bank: buyer.bBank||'',
+      bic: buyer.bBic||'', position: buyer.bPosition||'', fio: buyer.bFio||'',
+      basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
     };
-    if(r.pieces) row.pieces = r.pieces;
-    if(r._fullLabel) row.labelFull = r._fullLabel;
-    return row;
+    rec.deal = getDeal();
+
+    rec.rows = ROWS.map(function(r){
+      var row = {
+        label: r.label,
+        qtyCalc: Number(r.qtyCalc)||0,
+        qtyReserve: Number(r.qtyReserve)||0,
+        unit: r.unit||'шт.',
+        price: Number(r.price)||0
+      };
+      if(r.pieces) row.pieces = r.pieces;
+      if(r._fullLabel) row.labelFull = r._fullLabel;
+      return row;
+    });
+
+    if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
+    if(KP_META) rec.meta = KP_META;
+
+    rec.number = getInvoiceNumber();
+    rec.totals = window.CubicaJournal.computeTotals(rec.rows);
+    if(rec.status === 'draft' && rec.rows.length) rec.status = 'invoiced';
+
+    const saved = window.CubicaJournal.save(rec, { assignNumber:false });
+    if(!saved){ if(!silent) alert('Не удалось сохранить в журнал'); return false; }
+    currentRecordId = saved.id;
+    if(!silent) alert('✓ Сохранено в журнал: ' + saved.number);
+    return true;
+  }
+
+  document.getElementById('btnSaveJournal').addEventListener('click', function(){
+    const btn = this;
+    const oldText = btn.textContent;
+    if(saveToJournal(false)){
+      btn.textContent = '✓ Сохранено';
+      btn.disabled = true;
+      setTimeout(()=>{ btn.textContent = oldText; btn.disabled = false; }, 2000);
+    }
   });
 
-  /* rooms и meta сохраняем, если они есть (не перезаписываем пустым) */
-  if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
-  if(KP_META) rec.meta = KP_META;
+  window.addEventListener('beforeunload', function(){
+    if(currentRecordId) saveToJournal(true);
+  });
 
-  rec.number = getInvoiceNumber();
-  rec.totals = window.CubicaJournal.computeTotals(rec.rows);
-  if(rec.status === 'draft' && rec.rows.length) rec.status = 'invoiced';
+  /* Инициализация i5 (внутри initUI) */
+  if(ROWS.length || currentRecordId){
+    const invNumInput = document.getElementById('invNumber');
+    invNumInput.value = INVOICE_NUMBER || makeDefaultInvNumber();
+    INVOICE_NUMBER = invNumInput.value;
 
-  const saved = window.CubicaJournal.save(rec, { assignNumber:false });
-  if(!saved){ if(!silent) alert('Не удалось сохранить в журнал'); return false; }
-  currentRecordId = saved.id;
-  if(!silent) alert('✓ Сохранено в журнал: ' + saved.number);
-  return true;
+    if(!ROWS.length){
+      ROWS.push({ label:'Новая позиция', qtyCalc:1, qtyReserve:0, unit:'шт.', price:0 });
+    }
+
+    if(PREFILL_BUYER){
+      const b = PREFILL_BUYER;
+      const map = {
+        bName:     b.name     != null ? b.name     : b.bName,
+        bUnp:      b.unp      != null ? b.unp      : b.bUnp,
+        bAccount:  b.account  != null ? b.account  : b.bAccount,
+        bAddress:  b.addr     != null ? b.addr     : b.bAddress,
+        bBank:     b.bank     != null ? b.bank     : b.bBank,
+        bBic:      b.bic      != null ? b.bic      : b.bBic,
+        bPosition: b.position != null ? b.position : b.bPosition,
+        bFio:      b.fio      != null ? b.fio      : b.bFio,
+        bBasis:    b.basis    != null ? b.basis    : b.bBasis,
+        bPhone:    b.phone    != null ? b.phone    : b.bPhone
+      };
+      Object.keys(map).forEach(function(id){
+        const el = document.getElementById(id);
+        if(el && map[id] != null && map[id] !== '') el.value = String(map[id]);
+      });
+    }
+    if(PREFILL_DEAL){
+      if(PREFILL_DEAL.delivery){const radio=document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');if(radio)radio.checked=true;}
+      if(PREFILL_DEAL.payment!=null){const slider=document.getElementById('prepaySlider');slider.value=String(PREFILL_DEAL.payment);document.getElementById('prepayVal').textContent=slider.value+' %';}
+      if(PREFILL_DEAL.days!=null){const s=document.getElementById('deliveryDaysSlider');s.value=String(PREFILL_DEAL.days);const d=parseInt(s.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);}
+      if(PREFILL_DEAL.deliveryData){const dd=PREFILL_DEAL.deliveryData;if(dd.address)document.getElementById('delAddress').value=dd.address;if(dd.phone)document.getElementById('delPhone').value=dd.phone;if(dd.time)document.getElementById('delTime').value=formatTimeInput(dd.time);if(dd.date)document.getElementById('delDate').value=dd.date;if(dd.weight)document.getElementById('delWeight').value=dd.weight;if(dd.volume)document.getElementById('delVolume').value=dd.volume;if(dd.maxLen)document.getElementById('delMaxLen').value=dd.maxLen;}
+    }
+
+    renderInvoiceTable();renderPreview();toggleDeliveryBlock();
+    loadNomenclature().catch(()=>{});loadContractors().catch(()=>{});
+    initBuyerPicker();
+    document.getElementById('bUnp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,9);renderPreview();});
+    document.getElementById('bAccount').addEventListener('input',e=>{let raw=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28);const blocks=raw.match(/.{1,4}/g)||[];e.target.value=blocks.join(' ');renderPreview();});
+    document.getElementById('bBic').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);renderPreview();});
+    ['bName','bAddress','bBank','bPosition','bFio','bBasis','bPhone'].forEach(id=>{document.getElementById(id).addEventListener('input',renderPreview);});
+    document.getElementById('prepaySlider').addEventListener('input',e=>{document.getElementById('prepayVal').textContent=e.target.value+' %';renderPreview();});
+    document.getElementById('deliveryDaysSlider').addEventListener('input',e=>{const d=parseInt(e.target.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);renderPreview();});
+    document.querySelectorAll('input[name="delivery"]').forEach(el=>el.addEventListener('input',toggleDeliveryBlock));
+    const delTimeEl=document.getElementById('delTime');
+    delTimeEl.addEventListener('input',function(){const caretAtEnd=this.selectionStart===this.value.length;this.value=formatTimeInput(this.value);if(caretAtEnd)this.setSelectionRange(this.value.length,this.value.length);renderPreview();renderTruckViz();});
+    ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>{renderPreview();renderTruckViz();});});
+    ['delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('blur',()=>{attachZeroSelect(el);});});
+    document.getElementById('prepayVal').textContent=document.getElementById('prepaySlider').value+' %';
+    document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
+    document.getElementById('btnPdf').addEventListener('click',downloadPdf);
+    document.getElementById('btnShare').addEventListener('click', function(){ openShareModal(); });
+    document.getElementById('btnSendPdf').addEventListener('click',openPdfModal);
+    document.getElementById('btnCopy').addEventListener('click',copyShareLink);
+    document.getElementById('btnLogist').addEventListener('click',openLogistModal);
+    document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);
+    document.getElementById('shareModal').addEventListener('click',e=>{if(e.target===document.getElementById('shareModal'))e.target.classList.remove('open');});
+    document.getElementById('logistModal').addEventListener('click',e=>{if(e.target===document.getElementById('logistModal'))e.target.classList.remove('open');});
+    document.getElementById('pdfModal').addEventListener('click',e=>{if(e.target===document.getElementById('pdfModal'))e.target.classList.remove('open');});
+    if(AUTO_PDF){setTimeout(()=>{try{downloadPdf();}catch(e){console.error('autopdf',e);}},900);}
+  }
 }
 
-document.getElementById('btnSaveJournal').addEventListener('click', function(){
-  const btn = this;
-  const oldText = btn.textContent;
-  if(saveToJournal(false)){
-    btn.textContent = '✓ Сохранено';
-    btn.disabled = true;
-    setTimeout(()=>{ btn.textContent = oldText; btn.disabled = false; }, 2000);
-  }
-});
-
-/* Автосохранение при закрытии окна */
-window.addEventListener('beforeunload', function(){
-  if(currentRecordId) saveToJournal(true);
-});
-
-/* ============================================================
-   Инициализация i5
-   ============================================================ */
-if(ROWS.length || currentRecordId){
-  const invNumInput = document.getElementById('invNumber');
-  invNumInput.value = INVOICE_NUMBER || makeDefaultInvNumber();
-  INVOICE_NUMBER = invNumInput.value;
-
-  /* Если ROWS пуст (открыто из журнала через «＋ Новый счёт» с blank=1) —
-     добавляем одну пустую позицию, чтобы таблица была заполнена */
-  if(!ROWS.length){
-    ROWS.push({ label:'Новая позиция', qtyCalc:1, qtyReserve:0, unit:'шт.', price:0 });
-  }
-
-  /* Заполняем поля покупателя из записи журнала */
-  if(PREFILL_BUYER){
-    const b = PREFILL_BUYER;
-    const map = {
-      bName:     b.name     != null ? b.name     : b.bName,
-      bUnp:      b.unp      != null ? b.unp      : b.bUnp,
-      bAccount:  b.account  != null ? b.account  : b.bAccount,
-      bAddress:  b.addr     != null ? b.addr     : b.bAddress,
-      bBank:     b.bank     != null ? b.bank     : b.bBank,
-      bBic:      b.bic      != null ? b.bic      : b.bBic,
-      bPosition: b.position != null ? b.position : b.bPosition,
-      bFio:      b.fio      != null ? b.fio      : b.bFio,
-      bBasis:    b.basis    != null ? b.basis    : b.bBasis,
-      bPhone:    b.phone    != null ? b.phone    : b.bPhone
-    };
-    Object.keys(map).forEach(function(id){
-      const el = document.getElementById(id);
-      if(el && map[id] != null && map[id] !== '') el.value = String(map[id]);
-    });
-  }
-  if(PREFILL_DEAL){
-    if(PREFILL_DEAL.delivery){const radio=document.querySelector('input[name="delivery"][value="'+PREFILL_DEAL.delivery+'"]');if(radio)radio.checked=true;}
-    if(PREFILL_DEAL.payment!=null){const slider=document.getElementById('prepaySlider');slider.value=String(PREFILL_DEAL.payment);document.getElementById('prepayVal').textContent=slider.value+' %';}
-    if(PREFILL_DEAL.days!=null){const s=document.getElementById('deliveryDaysSlider');s.value=String(PREFILL_DEAL.days);const d=parseInt(s.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);}
-    if(PREFILL_DEAL.deliveryData){const dd=PREFILL_DEAL.deliveryData;if(dd.address)document.getElementById('delAddress').value=dd.address;if(dd.phone)document.getElementById('delPhone').value=dd.phone;if(dd.time)document.getElementById('delTime').value=formatTimeInput(dd.time);if(dd.date)document.getElementById('delDate').value=dd.date;if(dd.weight)document.getElementById('delWeight').value=dd.weight;if(dd.volume)document.getElementById('delVolume').value=dd.volume;if(dd.maxLen)document.getElementById('delMaxLen').value=dd.maxLen;}
-  }
-
-  renderInvoiceTable();renderPreview();toggleDeliveryBlock();
-  loadNomenclature().catch(()=>{});loadContractors().catch(()=>{});
-  initBuyerPicker();
-  document.getElementById('bUnp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,9);renderPreview();});
-  document.getElementById('bAccount').addEventListener('input',e=>{let raw=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28);const blocks=raw.match(/.{1,4}/g)||[];e.target.value=blocks.join(' ');renderPreview();});
-  document.getElementById('bBic').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);renderPreview();});
-  ['bName','bAddress','bBank','bPosition','bFio','bBasis','bPhone'].forEach(id=>{document.getElementById(id).addEventListener('input',renderPreview);});
-  document.getElementById('prepaySlider').addEventListener('input',e=>{document.getElementById('prepayVal').textContent=e.target.value+' %';renderPreview();});
-  document.getElementById('deliveryDaysSlider').addEventListener('input',e=>{const d=parseInt(e.target.value,10);document.getElementById('deliveryDaysVal').textContent=d+' '+declOfNum(d,['день','дня','дней']);renderPreview();});
-  document.querySelectorAll('input[name="delivery"]').forEach(el=>el.addEventListener('input',toggleDeliveryBlock));
-  const delTimeEl=document.getElementById('delTime');
-  delTimeEl.addEventListener('input',function(){const caretAtEnd=this.selectionStart===this.value.length;this.value=formatTimeInput(this.value);if(caretAtEnd)this.setSelectionRange(this.value.length,this.value.length);renderPreview();renderTruckViz();});
-  ['delAddress','delPhone','delDate','delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>{renderPreview();renderTruckViz();});});
-  ['delWeight','delVolume','delMaxLen'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('blur',()=>{attachZeroSelect(el);});});
-  document.getElementById('prepayVal').textContent=document.getElementById('prepaySlider').value+' %';
-  document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
-  document.getElementById('btnPdf').addEventListener('click',downloadPdf);
-document.getElementById('btnShare').addEventListener('click', function(){ openShareModal(); });
-document.getElementById('btnSendPdf').addEventListener('click',openPdfModal);
-  document.getElementById('btnCopy').addEventListener('click',copyShareLink);
-  document.getElementById('btnLogist').addEventListener('click',openLogistModal);
-  document.getElementById('btnLogistCopy').addEventListener('click',copyLogistText);
-  document.getElementById('shareModal').addEventListener('click',e=>{if(e.target===document.getElementById('shareModal'))e.target.classList.remove('open');});
-  document.getElementById('logistModal').addEventListener('click',e=>{if(e.target===document.getElementById('logistModal'))e.target.classList.remove('open');});
-  document.getElementById('pdfModal').addEventListener('click',e=>{if(e.target===document.getElementById('pdfModal'))e.target.classList.remove('open');});
-  if(AUTO_PDF){setTimeout(()=>{try{downloadPdf();}catch(e){console.error('autopdf',e);}},900);}
+// Запуск
+if(document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initData);
+} else {
+  initData();
 }
 </script>
 </body>

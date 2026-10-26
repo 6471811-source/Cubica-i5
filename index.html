@@ -1531,14 +1531,45 @@ function initUI() {
         if(attachChk.checked) downloadPdf();
       };
     }
+    /* ★ Если у записи уже есть ссылка — ОБНОВЛЯЕМ данные по её токену. */
     if(currentRecordId && window.CubicaJournal){
       const rec = window.CubicaJournal.get(currentRecordId);
-      if(rec && rec.client && rec.client.url){
+      if(rec && rec.client && rec.client.token && rec.client.url){
+        const payload = buildClientPayload();
+        const data    = encodePayloadForUrl(payload);
+        
         document.getElementById('shareModal').classList.add('open');
         inp.value = rec.client.url;
         updateMessengerLinks(rec.client.url);
-        statusEl.className = 'share-status show ok';
-        statusEl.textContent = '✓ Ссылка уже создана. Копируйте и отправляйте клиенту.';
+        
+        statusEl.className = 'share-status show loading';
+        statusEl.textContent = '⏳ Обновляем данные по ссылке…';
+
+        try {
+          const res = await fetch(SHORT_URL + '/update/' + encodeURIComponent(rec.client.token), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payload: data })
+          });
+          if(!res.ok) throw new Error('HTTP ' + res.status);
+          
+          rec.client.updatedAt = window.CubicaJournal.nowISO();
+          rec.history = rec.history || [];
+          rec.history.push({
+            at: window.CubicaJournal.nowISO(),
+            by: window.CubicaJournal.manager(),
+            action: 'client link data updated'
+          });
+          window.CubicaJournal.save(rec, { assignNumber: false });
+          
+          statusEl.className = 'share-status show ok';
+          statusEl.textContent = '✓ Данные обновлены! Ссылка та же — клиент увидит актуальную версию.';
+        } catch(e) {
+          console.warn('[i5] update error:', e);
+          statusEl.className = 'share-status show warn';
+          statusEl.innerHTML = '⚠ Не удалось обновить данные по ссылке (' + escapeHtml(e.message) + ').<br>' +
+            '<span style="font-size:11.5px">Ссылка рабочая, но с прежними данными.</span>';
+        }
         return;
       }
     }

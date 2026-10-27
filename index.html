@@ -1469,7 +1469,12 @@ function initUI() {
       v:6,
     paid: rec && rec.status === 'paid' ? true : false,
     paidAt: rec && rec.paidAt ? rec.paidAt : null,
-      rooms: ROOMS,
+         rooms: ROOMS.map(function(r){
+      return Object.assign({}, r, {
+        rotate90: !!r.rotate90,
+        rotation: Number(r.rotationDeg) || 0
+      });
+    }),
       i5_url: location.href.split('?')[0],
       L_in: (KP_META&&KP_META.L_in)||0,
       W_in: (KP_META&&KP_META.W_in)||0,

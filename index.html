@@ -1463,8 +1463,12 @@ function initUI() {
       if(r._fullLabel) row.labelFull = r._fullLabel;
       return row;
     });
+
+    const rec = currentRecordId && window.CubicaJournal ? window.CubicaJournal.get(currentRecordId) : null;
     return {
       v:6,
+    paid: rec && rec.status === 'paid' ? true : false,
+    paidAt: rec && rec.paidAt ? rec.paidAt : null,
       rooms: ROOMS,
       i5_url: location.href.split('?')[0],
       L_in: (KP_META&&KP_META.L_in)||0,

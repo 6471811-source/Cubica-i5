@@ -676,7 +676,7 @@ async function initData() {
         ROWS = (rec.rows||[]).map(function(r){
           var row = {
             label: String(r.label||''),
-            qtyCalc: Number(r.qtyCalc)||0,
+            qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
             qtyReserve: Number(r.qtyReserve)||0,
             unit: r.unit||'шт.',
             price: Number(r.price)||0

@@ -814,7 +814,7 @@ function initUI() {
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
         '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>' +
-        '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
+        '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit || 'шт.')+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
         '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>' +
         '<td class="vat">20 %</td>' +

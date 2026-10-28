@@ -509,7 +509,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
-/* CUBICA · i5.26 (short-links) */
+/* CUBICA · i5.27 (fix armstrong) */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 const SHORT_URL = 'https://cubica-kp-15ab.6471811.workers.dev';
@@ -673,17 +673,17 @@ async function initData() {
     if(rec){
       currentRecordId = rec.id;
       if(!IS_BLANK){
+        // ★ ГЛАВНОЕ ИСПРАВЛЕНИЕ: Берем строки как есть, не фильтруя по цене
         ROWS = (rec.rows||[]).map(function(r){
-          var row = {
+          return {
             label: String(r.label||''),
             qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
             qtyReserve: Number(r.qtyReserve)||0,
             unit: r.unit||'шт.',
-            price: Number(r.price)||0
+            price: Number(r.price)||0,
+            pieces: r.pieces,
+            _fullLabel: r.labelFull
           };
-          if(r.pieces) row.pieces = r.pieces;
-          if(r.labelFull) row._fullLabel = r.labelFull;
-          return row;
         });
         ROOMS = rec.rooms || [];
         KP_META = rec.meta || null;
@@ -701,18 +701,19 @@ async function initData() {
   if(rawData){
     try{
       const parsed=JSON.parse(b64dec(rawData));
-      if(Array.isArray(parsed.rows))ROWS=parsed.rows.map(function(r){
-        var row = {
-          label:String(r.label||''),
-          qtyCalc:Number(r.qty)||0,
-          qtyReserve:0,
-          unit:r.unit||'шт.',
-          price:Number(r.price)||0
-        };
-        if(r.pieces) row.pieces = r.pieces;
-        if(r.labelFull) row._fullLabel = r.labelFull;
-        return row;
-      });
+      if(Array.isArray(parsed.rows)){
+        ROWS=parsed.rows.map(function(r){
+          return {
+            label:String(r.label||''),
+            qtyCalc:Number(r.qty)||0,
+            qtyReserve:0,
+            unit:r.unit||'шт.',
+            price:Number(r.price)||0,
+            pieces:r.pieces,
+            _fullLabel:r.labelFull
+          };
+        });
+      }
       if(Array.isArray(parsed.rooms))ROOMS=parsed.rooms;
       if(parsed.company&&typeof parsed.company==='object')Object.assign(COMPANY,parsed.company);
       if(parsed.meta)KP_META=parsed.meta;
@@ -728,10 +729,15 @@ async function initData() {
       const rec = window.CubicaJournal.create({ series:'invoice' });
       rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
       rec.rows = ROWS.map(function(r){
-        var row = { label:r.label, qtyCalc:Number(r.qtyCalc)||0, qtyReserve:Number(r.qtyReserve)||0, unit:r.unit||'шт.', price:Number(r.price)||0 };
-        if(r.pieces) row.pieces = r.pieces;
-        if(r._fullLabel) row.labelFull = r._fullLabel;
-        return row;
+        return {
+          label:r.label,
+          qtyCalc:Number(r.qtyCalc)||0,
+          qtyReserve:Number(r.qtyReserve)||0,
+          unit:r.unit||'шт.',
+          price:Number(r.price)||0,
+          pieces:r.pieces,
+          labelFull:r._fullLabel
+        };
       });
       rec.rooms = ROOMS;
       rec.meta = KP_META;
@@ -814,7 +820,7 @@ function initUI() {
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
         '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>' +
-        '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit || 'шт.')+'"></td>' +
+        '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
         '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>' +
         '<td class="vat">20 %</td>' +

@@ -509,7 +509,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 <div class="copy-msg" id="copyMsg">✓ Скопировано в буфер обмена</div>
 
 <script>
-/* CUBICA · i5.27 (fix armstrong) */
+/* CUBICA · i5.28 (Universal) */
 
 const KP_URL = 'https://6471811-source.github.io/cubica-kp/';
 const SHORT_URL = 'https://cubica-kp-15ab.6471811.workers.dev';
@@ -673,7 +673,6 @@ async function initData() {
     if(rec){
       currentRecordId = rec.id;
       if(!IS_BLANK){
-        // ★ ГЛАВНОЕ ИСПРАВЛЕНИЕ: Берем строки как есть, не фильтруя по цене
         ROWS = (rec.rows||[]).map(function(r){
           return {
             label: String(r.label||''),
@@ -705,7 +704,7 @@ async function initData() {
         ROWS=parsed.rows.map(function(r){
           return {
             label:String(r.label||''),
-            qtyCalc:Number(r.qty)||0,
+            qtyCalc:Number(r.qty !== undefined ? r.qty : r.qtyCalc)||0,
             qtyReserve:0,
             unit:r.unit||'шт.',
             price:Number(r.price)||0,
@@ -727,6 +726,7 @@ async function initData() {
   if(rawData && !currentRecordId && window.CubicaJournal){
     try{
       const rec = window.CubicaJournal.create({ series:'invoice' });
+      rec.type = 'universal';
       rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
       rec.rows = ROWS.map(function(r){
         return {
@@ -1723,7 +1723,8 @@ function initUI() {
     rec.rows = ROWS.map(function(r){
       var row = {
         label: r.label,
-        qtyCalc: Number(r.qtyCalc)||0,
+        // ★ ИСПРАВЛЕНИЕ: Если qtyCalc нет, берем qty (как приходит из Армстронга)
+        qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
         qtyReserve: Number(r.qtyReserve)||0,
         unit: r.unit||'шт.',
         price: Number(r.price)||0

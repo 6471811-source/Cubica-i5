@@ -1457,30 +1457,58 @@ function initUI() {
   }
 
   function buildClientPayload(){
+    // ★ Берем ТУ ЖЕ функцию, что и журнал — чтобы ссылки из i5 и журнала были одинаковыми
+    if(currentRecordId && window.CubicaJournal){
+      const rec = window.CubicaJournal.get(currentRecordId);
+      if(rec){
+        // Сохраняем текущие данные в rec, чтобы buildClientPayload взял свежие
+        const deal = getDeal(), buyer = getBuyer();
+        rec.contractor = {
+          name: buyer.bName||'', full: buyer.bName||'', unp: buyer.bUnp||'',
+          addr: buyer.bAddress||'', account: buyer.bAccount||'', bank: buyer.bBank||'',
+          bic: buyer.bBic||'', position: buyer.bPosition||'', fio: buyer.bFio||'',
+          basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
+        };
+        rec.deal = deal;
+        rec.rows = ROWS.map(function(r){
+          var row = {
+            label: r.label,
+            qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
+            qtyReserve: Number(r.qtyReserve)||0,
+            unit: r.unit||'шт.',
+            price: Number(r.price)||0
+          };
+          if(r.pieces) row.pieces = r.pieces;
+          if(r._fullLabel) row.labelFull = r._fullLabel;
+          return row;
+        });
+        if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
+        if(KP_META) rec.meta = KP_META;
+        rec.number = getInvoiceNumber();
+        rec.totals = window.CubicaJournal.computeTotals(rec.rows);
+        
+        // ★ Возвращаем payload, сформированный ядром журнала
+        return window.CubicaJournal.buildClientPayload(rec);
+      }
+    }
+    
+    // Fallback: если записи ещё нет в журнале (первое сохранение), формируем сами
     const deal = getDeal(), buyer = getBuyer();
     const rowsForClient = ROWS.map(r => {
-      var row = {
-        label: r.label,
-        qty: rowTotalQty(r),
-        unit: r.unit || 'шт.',
-        price: r.price || 0
-      };
+      var row = { label: r.label, qty: rowTotalQty(r), unit: r.unit || 'шт.', price: r.price || 0 };
       if(r.pieces) row.pieces = r.pieces;
       if(r._fullLabel) row.labelFull = r._fullLabel;
       return row;
     });
-
-    const rec = currentRecordId && window.CubicaJournal ? window.CubicaJournal.get(currentRecordId) : null;
     return {
       v:6,
-    paid: rec && rec.status === 'paid' ? true : false,
-    paidAt: rec && rec.paidAt ? rec.paidAt : null,
-         rooms: ROOMS.map(function(r){
-      return Object.assign({}, r, {
-        rotate90: !!r.rotate90,
-        rotation: Number(r.rotationDeg) || 0
-      });
-    }),
+      paid: false, paidAt: null,
+      rooms: ROOMS.map(function(r){
+        var angle = r.rotation;
+        if(angle === undefined || angle === null) angle = r.rotationDeg;
+        if(angle === undefined || angle === null) angle = r.rawRotation;
+        return Object.assign({}, r, { rotate90: !!r.rotate90, rotation: Number(angle) || 0 });
+      }),
       i5_url: location.href.split('?')[0],
       L_in: (KP_META&&KP_META.L_in)||0,
       W_in: (KP_META&&KP_META.W_in)||0,
@@ -1502,12 +1530,7 @@ function initUI() {
       vat: invoiceTotals.vat,
       currency:'BYN',
       invoiceNumber:getInvoiceNumber(),
-      deal:{
-        delivery:deal.delivery,
-        payment:deal.payment,
-        days:deal.days,
-        deliveryData:deal.deliveryData
-      },
+      deal: { delivery:deal.delivery, payment:deal.payment, days:deal.days, deliveryData:deal.deliveryData },
       buyer: buyer,
       company: COMPANY,
       manager:'Менеджер CUBICA',

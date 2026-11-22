@@ -561,36 +561,42 @@ function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
 function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return Math.round(n*100)/100;}
-
 function handleSmartInput(inp, e) {
+  // Обработка удаления (Backspace)
+  if (e.key === 'Backspace' || e.key === 'Delete') {
+    e.preventDefault(); // Отменяем стандартное поведение браузера
+    
+    let raw = inp.value.replace(/\s/g, '').replace('.', ',');
+    let numStr = raw.replace(/,/g, '');
+    if (!numStr) return true;
+    
+    // Удаляем последнюю цифру
+    numStr = numStr.slice(0, -1);
+    if (!numStr) numStr = '0';
+    
+    // Пересчитываем и форматируем
+    let val = parseInt(numStr, 10) / 100;
+    let formatted = val.toFixed(2).replace('.', ',');
+    
+    inp.value = formatted;
+    inp.setSelectionRange(formatted.length, formatted.length);
+    return true;
+  }
+
   // Реагируем только на цифры (0-9)
   if (!/^\d$/.test(e.key)) return false;
 
-  // Получаем текущее значение, убираем пробелы и точки
+  // ... остальной код для ввода цифр ...
   let raw = inp.value.replace(/\s/g, '').replace('.', ',');
-  
-  // Оставляем только цифры (убираем запятую)
   let numStr = raw.replace(/,/g, '');
-  
-  // Если поле пустое, начинаем с '0'
   if (!numStr) numStr = '0';
-  
-  // Добавляем нажатую цифру в конец
   numStr += e.key;
-  
-  // Переводим в число, делим на 100 (чтобы получить копейки)
   let val = parseInt(numStr, 10) / 100;
-  
-  // Форматируем обратно в строку с 2 знаками после запятой
   let formatted = val.toFixed(2).replace('.', ',');
-  
-  // Записываем в поле
   inp.value = formatted;
-  
-  // Ставим курсор в самый конец
   inp.setSelectionRange(formatted.length, formatted.length);
   
-  return true; // Говорим, что нажатие обработано
+  return true;
 }
 
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}

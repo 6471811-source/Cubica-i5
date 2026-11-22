@@ -562,30 +562,35 @@ function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Mat
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
 function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return Math.round(n*100)/100;}
 
-function handleSmartInput(inp,e){
-  const key=e.key;
-  if(!/^\d$/.test(key))return false;
-  let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
-  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
-  const comma=val.indexOf(',');
-  if(comma>=0&&selStart<=comma){
-    let left=val.slice(0,comma),right=val.slice(comma+1);
-    if(left==='0'&&(selStart===0||selStart===1)){inp.value=key+','+right;inp.setSelectionRange(1,1);return true;}
-    const newLeft=left.slice(0,selStart)+key+left.slice(selEnd);
-    const cleaned=newLeft.replace(/^0+(\d)/,'$1').slice(0,9)||'0';
-    inp.value=cleaned+','+right;
-    const pos=Math.min(cleaned.length,selStart+1);inp.setSelectionRange(pos,pos);return true;
-  }
-  if(comma>=0&&selStart>comma){
-    let left=val.slice(0,comma)||'0';
-    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
-    const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
-    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
-    let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
-    inp.value=left+','+right;
-    const newPos=comma+1+posInFrac+1;inp.setSelectionRange(newPos,newPos);return true;
-  }
-  return false;
+function handleSmartInput(inp, e) {
+  // Реагируем только на цифры (0-9)
+  if (!/^\d$/.test(e.key)) return false;
+
+  // Получаем текущее значение, убираем пробелы и точки
+  let raw = inp.value.replace(/\s/g, '').replace('.', ',');
+  
+  // Оставляем только цифры (убираем запятую)
+  let numStr = raw.replace(/,/g, '');
+  
+  // Если поле пустое, начинаем с '0'
+  if (!numStr) numStr = '0';
+  
+  // Добавляем нажатую цифру в конец
+  numStr += e.key;
+  
+  // Переводим в число, делим на 100 (чтобы получить копейки)
+  let val = parseInt(numStr, 10) / 100;
+  
+  // Форматируем обратно в строку с 2 знаками после запятой
+  let formatted = val.toFixed(2).replace('.', ',');
+  
+  // Записываем в поле
+  inp.value = formatted;
+  
+  // Ставим курсор в самый конец
+  inp.setSelectionRange(formatted.length, formatted.length);
+  
+  return true; // Говорим, что нажатие обработано
 }
 
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}

@@ -282,6 +282,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .res-ctl button:hover{border-color:#e10004}
 .cell-input.qty.manual{color:#b26a00;font-weight:700}
 .q-sub{font-size:10px;font-weight:600;color:#2e7d32;margin-top:2px;white-space:nowrap}
+.role-unbound{font-size:10px;font-weight:700;color:#b26a00;padding:1px 6px 0}
 </style>
 </head>
 <body>
@@ -585,6 +586,8 @@ function serializeRow(r){
     price: Number(r.price)||0
   };
   if(r.nomId) row.nomId = r.nomId;
+  if(r.role) row.role = r.role;
+  if(r.role && Number(r.calcQty) > 0){ row.calcQty = Number(r.calcQty); row.calcUnit = r.calcUnit || 'шт'; }
   if(r.packOn === false) row.packOn = false;
   if(r.resManual) row.resManual = true;
   if(r.pieces) row.pieces = r.pieces;
@@ -727,6 +730,9 @@ async function initData() {
             pieces: r.pieces,
             _fullLabel: r.labelFull,
             nomId: r.nomId || r._nomId || undefined,
+            role: r.role || undefined,
+            calcQty: Number(r.calcQty) > 0 ? Number(r.calcQty) : undefined,
+            calcUnit: r.calcUnit || undefined,
             packOn: r.packOn === false ? false : undefined,
             // старые записи: запас уже стоял — считаем его ручным, чтобы не пересчитать
             resManual: r.resManual !== undefined ? !!r.resManual : (Number(r.qtyReserve)||0) !== 0
@@ -758,7 +764,11 @@ async function initData() {
             unit:r.unit||'шт.',
             price:Number(r.price)||0,
             pieces:r.pieces,
-            _fullLabel:r.labelFull
+            _fullLabel:r.labelFull,
+            nomId:r.nomId||undefined,
+            role:r.role||undefined,
+            calcQty:Number(r.calcQty)>0?Number(r.calcQty):undefined,
+            calcUnit:r.calcUnit||undefined
           };
         });
       }
@@ -805,12 +815,14 @@ async function initData() {
       const key=label+'|'+unit;
       if(map.has(key)){
         map.get(key).qtyCalc+=qtyCalc;
+        if(map.get(key).calcQty && r.calcQty) map.get(key).calcQty+=Number(r.calcQty)||0;
         map.get(key).qtyReserve+=qtyReserve;
       } else {
         const row={label,qtyCalc,qtyReserve,unit,price};
         if(r.pieces) row.pieces = r.pieces;
         if(r._fullLabel) row._fullLabel = r._fullLabel;
         if(r.nomId) row.nomId = r.nomId;
+        if(r.role){ row.role = r.role; if(r.calcQty) { row.calcQty = r.calcQty; row.calcUnit = r.calcUnit; } }
         if(r.packOn === false) row.packOn = false;
         if(r.resManual) row.resManual = true;
         map.set(key,row);
@@ -870,6 +882,13 @@ function initUI() {
     r.qtyReserve = r2(Math.max(0, q - base));
   }
   function recalcAll(){ ROWS.forEach(recalcRow); }
+  // строка калькулятора по роли: количество в единицах калькулятора → в единицах позиции 1С
+  function roleConvert(r){
+    if(!HAS_CAT || !r.role || !(Number(r.calcQty) > 0) || typeof CJ.convertQty !== 'function') return;
+    const def = CJ.roleDef(r.role) || {};
+    r.qtyCalc = CJ.convertQty(r.calcQty, r.calcUnit || def.calcUnit || 'шт', r.unit, { m2PerPiece: CJ.m2For(r.nomId, r.label, def), lenM: def.lenM });
+  }
+  function roleUnbound(r){ return !!(r.role && !r.nomId); }
   function resCtlHtml(r, i){
     let h = '';
     if(r._packAvail){
@@ -914,7 +933,7 @@ function initUI() {
         '<td><div class="name-cell">' +
           '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
           '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
-        '</div></td>' +
+        '</div>'+(roleUnbound(r)?'<div class="role-unbound" title="Роль калькулятора не привязана к позиции 1С. Выберите позицию через 📁 или привяжите роль в журнале: Справочник → Роли Армстронга">не привязано к 1С</div>':'')+'</td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
         '<td class="res-cell"><input type="text" inputmode="decimal" class="cell-input qty'+(r.resManual?' manual':'')+'" data-field="qtyReserve" value="'+resStr+'" title="'+(r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':''))+'">'+resCtlHtml(r,i)+'</td>' +
         '<td class="num qty-total" data-total="'+i+'">'+totalCellHtml(r)+'</td>' +
@@ -1048,6 +1067,7 @@ function initUI() {
       price: Number(src.price)||0
     };
     if(src.nomId) copy.nomId = src.nomId;
+    if(src.role){ copy.role = src.role; if(src.calcQty){ copy.calcQty = src.calcQty; copy.calcUnit = src.calcUnit; } }
     if(src.packOn === false) copy.packOn = false;
     if(src.resManual) copy.resManual = true;
     if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
@@ -1073,7 +1093,7 @@ function initUI() {
   function commitNumericCell(inp){
     const idx=idxOf(inp),field=inp.getAttribute('data-field');
     if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
-    else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);recalcRow(ROWS[idx]);}
+    else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);delete ROWS[idx].calcQty;recalcRow(ROWS[idx]);}
     else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);ROWS[idx].resManual=true;recalcRow(ROWS[idx]);}
     updateRowTotals(idx);updateTotalsView();renderPreview();
   }
@@ -1281,6 +1301,7 @@ function initUI() {
     ROWS[idx].nomId = node.id;
     delete ROWS[idx].packOn;
     { const eff = rowEff(ROWS[idx]); if(eff && eff.price > 0 && !(Number(ROWS[idx].price) > 0)) ROWS[idx].price = eff.price; }
+    roleConvert(ROWS[idx]);
     recalcRow(ROWS[idx]);
     if(NOMENCLATURE && NOMENCLATURE.tree){
       const path = findNodePath(NOMENCLATURE.tree, node.id, []);
@@ -1962,14 +1983,21 @@ function initUI() {
     if(HAS_CAT){
       const refreshCat = () => {
         CAT_MAP = CJ.catalogMap();
+        const before = ROWS.map(r => r.qtyCalc + '|' + r.qtyReserve + '|' + r._packAvail + '|' + r.price + '|' + r.nomId).join();
+        const roles = typeof CJ.rolesMap === 'function' ? CJ.rolesMap() : {};
         ROWS.forEach(r => {
-          if(r.nomId) return;
-          const f = CJ.catalogFind(r.label);   // точное совпадение названия с 1С
-          if(f && !f.isFolder){ r.nomId = f.code; if(f.price > 0 && !(Number(r.price) > 0)) r.price = f.price; }
+          if(!r.nomId && r.role && roles[r.role] && roles[r.role].code){   // роль привязали уже после расчёта
+            const b = roles[r.role]; r.nomId = b.code; r.label = b.name || r.label; r.unit = b.unit || r.unit;
+          }
+          if(!r.nomId){
+            const f = CJ.catalogFind(r.label);   // точное совпадение названия с 1С
+            if(f && !f.isFolder) r.nomId = f.code;
+          }
+          if(r.nomId){ const e = rowEff(r); if(e && e.price > 0 && !(Number(r.price) > 0)) r.price = e.price; }
+          roleConvert(r);
         });
-        const before = ROWS.map(r => r.qtyReserve + '|' + r._packAvail + '|' + r.price).join();
         recalcAll();
-        const after = ROWS.map(r => r.qtyReserve + '|' + r._packAvail + '|' + r.price).join();
+        const after = ROWS.map(r => r.qtyCalc + '|' + r.qtyReserve + '|' + r._packAvail + '|' + r.price + '|' + r.nomId).join();
         if(before !== after){ renderInvoiceTable(); renderPreview(); }
       };
       Promise.all([

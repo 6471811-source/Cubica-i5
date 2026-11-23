@@ -604,16 +604,24 @@ function b64dec(s){
 function b64enc(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtInvoice(v){return (Number(v)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
+// Знаки количества: тыс.шт — 3 после запятой, остальные — 2; в шт можно только целые
+function isThouUnit(u){return /^тыс/i.test(String(u||'').trim());}
+function isPcsUnit(u){return /^шт/i.test(String(u||'').trim());}
+function qDec(u){return isThouUnit(u)?3:2;}
+function rq(v,u){const n=Number(v)||0;if(isPcsUnit(u))return Math.ceil(+n.toFixed(6));const k=isThouUnit(u)?1000:100;return Math.round(n*k)/k;}
+function inpDec(u){return isPcsUnit(u)?0:qDec(u);}
+function fmtQty2(v,u){return (Number(v)||0).toFixed(qDec(u)).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
-function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return Math.round(n*100)/100;}
+function parseQtyInput(str,u){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return rq(n,u);}
 
 function handleSmartInput(inp,e){
   const key=e.key;
   if(!/^\d$/.test(key))return false;
   let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
-  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
+  const dec=inp.dataset.dec===undefined?2:Number(inp.dataset.dec);
+  const fl=dec===0?2:dec;
+  if(selStart===0&&selEnd===val.length){inp.value=key+','+'0'.repeat(fl);inp.setSelectionRange(1,1);return true;}
   const comma=val.indexOf(',');
   if(comma>=0&&selStart<=comma){
     let left=val.slice(0,comma),right=val.slice(comma+1);
@@ -624,10 +632,11 @@ function handleSmartInput(inp,e){
     const pos=Math.min(cleaned.length,selStart+1);inp.setSelectionRange(pos,pos);return true;
   }
   if(comma>=0&&selStart>comma){
+    if(dec===0)return true; // штуки — только целые, дробную часть не вводим
     let left=val.slice(0,comma)||'0';
-    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
+    let right=val.slice(comma+1).padEnd(fl,'0').slice(0,fl);
     const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
-    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
+    const posInFrac=Math.min(Math.max(idxInFrac,0),fl-1);
     let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
     inp.value=left+','+right;
     const newPos=comma+1+posInFrac+1;inp.setSelectionRange(newPos,newPos);return true;
@@ -857,7 +866,6 @@ function initUI() {
   const CJ = window.CubicaJournal;
   const HAS_CAT = !!(CJ && typeof CJ.catalogResolve === 'function' && typeof CJ.catalogPackRound === 'function');
   let CAT_MAP = HAS_CAT ? CJ.catalogMap() : {};
-  const r2 = v => Math.round((Number(v)||0)*100)/100;
   const isWholeUnit = u => /^(шт|упак|компл|пач|рул|кор)/i.test(String(u||'').trim());
   function rowEff(r){
     if(!HAS_CAT || !r.nomId) return null;
@@ -868,25 +876,27 @@ function initUI() {
     const eff = rowEff(r);
     r._packAvail = !!(eff && eff.packMultiple && eff.packQty > 0);
     r._pack = null; r._perPack = 0; r._packUnit = (eff && eff.unit) || r.unit || '';
+    r._pcsPerUnit = (eff && eff.pcsPerUnit > 1 && CJ.unitKind && CJ.unitKind(r.unit) !== 'pcs' && CJ.unitKind(r.unit) !== 'm2' && CJ.unitKind(r.unit) !== 'mp') ? eff.pcsPerUnit : 0;
     if(r._packAvail) r._perPack = CJ.catalogPackRound(eff, 1).perPack;
     if(r.resManual){
       if(r._packAvail && r._perPack > 0) r._packsInfo = Math.ceil(+((base + (Number(r.qtyReserve)||0)) / r._perPack).toFixed(6));
       return;
     }
     let q = base * (1 + RESERVE_PCT/100);
-    q = isWholeUnit(r.unit) ? Math.ceil(+q.toFixed(6)) : r2(q);
+    q = isWholeUnit(r.unit) ? Math.ceil(+q.toFixed(6)) : rq(q, r.unit);
     if(r._packAvail && r.packOn !== false && base > 0){
       const pr = CJ.catalogPackRound(eff, q);
       r._pack = pr; q = pr.ship;
     }
-    r.qtyReserve = r2(Math.max(0, q - base));
+    r.qtyReserve = rq(Math.max(0, q - base), r.unit);
   }
   function recalcAll(){ ROWS.forEach(recalcRow); }
   // строка калькулятора по роли: количество в единицах калькулятора → в единицах позиции 1С
   function roleConvert(r){
     if(!HAS_CAT || !r.role || !(Number(r.calcQty) > 0) || typeof CJ.convertQty !== 'function') return;
     const def = CJ.roleDef(r.role) || {};
-    r.qtyCalc = CJ.convertQty(r.calcQty, r.calcUnit || def.calcUnit || 'шт', r.unit, { m2PerPiece: CJ.m2For(r.nomId, r.label, def), lenM: def.lenM });
+    const opt = typeof CJ.unitOpt === 'function' ? CJ.unitOpt(r.nomId, r.label, r.unit, def) : { m2PerPiece: CJ.m2For(r.nomId, r.label, def), lenM: def.lenM };
+    r.qtyCalc = CJ.convertQty(r.calcQty, r.calcUnit || def.calcUnit || 'шт', r.unit, opt);
   }
   function roleUnbound(r){ return !!(r.role && !r.nomId); }
   function resCtlHtml(r, i){
@@ -894,8 +904,8 @@ function initUI() {
     if(r._packAvail){
       const on = r.packOn !== false && !r.resManual;
       const unit = r._packUnit || r.unit || '';
-      const per = fmtQty2(r._perPack) + ' ' + unit;
-      const t = on && r._pack ? ('До целых пачек: ' + r._pack.packs + ' × ' + per + (r._pack.added > 0 ? ', округление +' + fmtQty2(r._pack.added) : '') + '. Нажмите, чтобы снять')
+      const per = fmtQty2(r._perPack, r.unit) + ' ' + unit + (r._pcsPerUnit ? ' (' + Math.round(r._perPack * r._pcsPerUnit) + ' шт)' : '');
+      const t = on && r._pack ? ('До целых пачек: ' + r._pack.packs + ' × ' + per + (r._pack.added > 0 ? ', округление +' + fmtQty2(r._pack.added, r.unit) : '') + '. Нажмите, чтобы снять')
                               : ('В пачке ' + per + '. Нажмите, чтобы округлять до целых пачек');
       h += '<button type="button" class="res-pack' + (on ? ' on' : '') + '" data-pack="' + i + '" title="' + escapeHtml(t) + '">' + (on ? '✓ ' : '') + 'пачка</button>';
     }
@@ -903,9 +913,12 @@ function initUI() {
     return '<div class="res-ctl">' + h + '</div>';
   }
   function totalCellHtml(r){
-    let h = fmtQty2(rowTotalQty(r));
+    let h = fmtQty2(rowTotalQty(r), r.unit);
     const packs = r.resManual ? r._packsInfo : (r._pack && r._pack.packs);
-    if(r._packAvail && packs) h += '<div class="q-sub">' + packs + ' пач.</div>';
+    const sub = [];
+    if(r._pcsPerUnit) sub.push('= ' + (Math.round(rowTotalQty(r) * r._pcsPerUnit * 100) / 100).toLocaleString('ru-RU') + ' шт');
+    if(r._packAvail && packs) sub.push(packs + ' пач.');
+    if(sub.length) h += '<div class="q-sub">' + sub.join(' · ') + '</div>';
     return h;
   }
   function onReservePct(v){
@@ -927,15 +940,15 @@ function initUI() {
     const tbody=document.getElementById('invTbody');
     tbody.innerHTML=ROWS.map((r,i)=>{
       const s=rowSum(r),v=s*0.20,t=s+v;
-      const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve);
+      const calcStr=fmtQty2(r.qtyCalc,r.unit),resStr=fmtQty2(r.qtyReserve,r.unit);
       return '<tr data-idx="'+i+'">' +
         '<td class="pos">'+(i+1)+'</td>' +
         '<td><div class="name-cell">' +
           '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
           '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
         '</div>'+(roleUnbound(r)?'<div class="role-unbound" title="Роль калькулятора не привязана к позиции 1С. Выберите позицию через 📁 или привяжите роль в журнале: Справочник → Роли Армстронга">не привязано к 1С</div>':'')+'</td>' +
-        '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
-        '<td class="res-cell"><input type="text" inputmode="decimal" class="cell-input qty'+(r.resManual?' manual':'')+'" data-field="qtyReserve" value="'+resStr+'" title="'+(r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':''))+'">'+resCtlHtml(r,i)+'</td>' +
+        '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" data-dec="'+inpDec(r.unit)+'" value="'+calcStr+'"></td>' +
+        '<td class="res-cell"><input type="text" inputmode="decimal" class="cell-input qty'+(r.resManual?' manual':'')+'" data-field="qtyReserve" data-dec="'+inpDec(r.unit)+'" value="'+resStr+'" title="'+(r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':''))+'">'+resCtlHtml(r,i)+'</td>' +
         '<td class="num qty-total" data-total="'+i+'">'+totalCellHtml(r)+'</td>' +
         '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
@@ -956,26 +969,48 @@ function initUI() {
         return;
       }
       if(field==='unit'){
-        inp.addEventListener('input',()=>{const idx=idxOf(inp);ROWS[idx].unit=inp.value;updateRowTotals(idx);updateTotalsView();renderPreview();});
+        inp.addEventListener('input',()=>{const idx=idxOf(inp);const r=ROWS[idx];r.unit=inp.value;r.qtyCalc=rq(r.qtyCalc,r.unit);recalcRow(r);const tr=inp.closest('tr');if(tr)tr.querySelectorAll('[data-field=qtyCalc],[data-field=qtyReserve]').forEach(q=>{q.dataset.dec=inpDec(r.unit);if(document.activeElement!==q)q.value=fmtQty2(r[q.getAttribute('data-field')],r.unit);});updateRowTotals(idx);updateTotalsView();renderPreview();});
         return;
       }
+      // Обычный ввод: цифры, точка или запятая (станет запятой), удаление как в любом поле.
+      // Формат (12,50) ставится при выходе из ячейки.
+      // для шт (data-dec=0) дробь можно набрать, но при выходе из ячейки она округлится вверх до целого
+      const decOf=()=>{if(field==='price')return 2;const d=inp.dataset.dec===undefined?2:Number(inp.dataset.dec);return d===0?2:d;};
+      const cleanNum=(v,dec)=>{
+        v=String(v||'').replace(/\./g,',').replace(/[^\d,]/g,'');
+        const c=v.indexOf(',');
+        if(c>=0){let left=v.slice(0,c),right=v.slice(c+1).replace(/,/g,'');if(dec===0)return left;return left+','+right.slice(0,dec);}
+        return v;
+      };
+      inp.addEventListener('focus',()=>{setTimeout(()=>{try{inp.select();}catch(e){}},0);});
       inp.addEventListener('keydown',e=>{
-        if(e.key==='Backspace'||e.key==='Delete'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Tab'||e.key==='Enter'||e.key==='Home'||e.key==='End')return;
-        if(/^\d$/.test(e.key)){if(handleSmartInput(inp,e)){e.preventDefault();commitNumericCell(inp);}}
-        else if(e.key.length===1){e.preventDefault();}
+        if(e.ctrlKey||e.metaKey||e.altKey)return;
+        if(e.key==='Enter'){e.preventDefault();inp.blur();return;}
+        if(e.key.length!==1)return; // Backspace, Delete, стрелки, Tab, Home, End
+        if(/^\d$/.test(e.key))return;
+        if(e.key===','||e.key==='.'){
+          e.preventDefault();
+          const v=inp.value,st=inp.selectionStart,en=inp.selectionEnd;
+          const rest=v.slice(0,st)+v.slice(en);
+          if(rest.indexOf(',')>=0)return; // запятая уже есть
+          inp.value=(v.slice(0,st)||'0')+','+v.slice(en);
+          const pos=(v.slice(0,st)||'0').length+1;inp.setSelectionRange(pos,pos);
+          inp.dispatchEvent(new Event('input'));
+          return;
+        }
+        e.preventDefault(); // буквы и прочие знаки не вводим
       });
       inp.addEventListener('input',()=>{
+        const before=inp.value,pos=inp.selectionStart;
+        const after=cleanNum(before,decOf());
+        if(after!==before){inp.value=after;const p=Math.max(0,Math.min(after.length,pos-(before.length-after.length)));try{inp.setSelectionRange(p,p);}catch(e){}}
         commitNumericCell(inp);
-        const idx=idxOf(inp);
-        if(field==='price')inp.value=fmtPriceInput(ROWS[idx].price);
-        else if(field==='qtyCalc')inp.value=fmtQty2(ROWS[idx].qtyCalc);
-        else if(field==='qtyReserve')inp.value=fmtQty2(ROWS[idx].qtyReserve);
       });
       inp.addEventListener('blur',()=>{
         const idx=idxOf(inp);
         if(field==='price'){ROWS[idx].price=parsePriceInput(inp.value);inp.value=fmtPriceInput(ROWS[idx].price);}
-        else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyCalc);}
-        else if(field==='qtyReserve'){const v=parseQtyInput(inp.value);if(v!==r2(ROWS[idx].qtyReserve)){ROWS[idx].qtyReserve=v;ROWS[idx].resManual=true;}inp.value=fmtQty2(ROWS[idx].qtyReserve);}
+        else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value,ROWS[idx].unit);inp.value=fmtQty2(ROWS[idx].qtyCalc,ROWS[idx].unit);}
+        else if(field==='qtyReserve'){const u=ROWS[idx].unit;const v=parseQtyInput(inp.value,u);if(v!==rq(ROWS[idx].qtyReserve,u)){ROWS[idx].qtyReserve=v;ROWS[idx].resManual=true;}inp.value=fmtQty2(ROWS[idx].qtyReserve,u);}
         if(field==='qtyCalc')recalcRow(ROWS[idx]);
         updateRowTotals(idx);updateTotalsView();renderPreview();
       });
@@ -1093,8 +1128,8 @@ function initUI() {
   function commitNumericCell(inp){
     const idx=idxOf(inp),field=inp.getAttribute('data-field');
     if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
-    else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);delete ROWS[idx].calcQty;recalcRow(ROWS[idx]);}
-    else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);ROWS[idx].resManual=true;recalcRow(ROWS[idx]);}
+    else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value,ROWS[idx].unit);delete ROWS[idx].calcQty;recalcRow(ROWS[idx]);}
+    else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value,ROWS[idx].unit);ROWS[idx].resManual=true;recalcRow(ROWS[idx]);}
     updateRowTotals(idx);updateTotalsView();renderPreview();
   }
   function updateRowTotals(idx){
@@ -1108,7 +1143,7 @@ function initUI() {
     if(totEl)totEl.innerHTML=totalCellHtml(r);
     const resInp=tr.querySelector('input[data-field="qtyReserve"]');
     if(resInp){
-      if(document.activeElement!==resInp)resInp.value=fmtQty2(r.qtyReserve);
+      if(document.activeElement!==resInp)resInp.value=fmtQty2(r.qtyReserve,r.unit);
       resInp.classList.toggle('manual',!!r.resManual);
       resInp.title=r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':'');
     }
@@ -1524,7 +1559,7 @@ function initUI() {
     const unloadingClause=(deal.delivery==='delivery')?'<p>3.4. Разгрузка товара на объекте Покупателя осуществляется силами и средствами Покупателя. Водитель Поставщика не осуществляет выгрузку и перемещение товара.</p>':'';
     const rowsHtml=ROWS.map((r,i)=>{
       const s=rowSum(r),v=s*0.20;
-      const qtyStr=fmtQty2(rowTotalQty(r));
+      const qtyStr=fmtQty2(rowTotalQty(r),r.unit);
       return '<tr><td class="pos">'+(i+1)+'</td><td>'+escapeHtml(r.label)+'</td><td class="num">'+qtyStr+'</td><td>'+escapeHtml(r.unit||'шт.')+'</td><td class="num">'+fmtInvoice(r.price||0)+'</td><td class="num">'+fmtInvoice(s)+'</td><td class="vat">20 %</td><td class="num">'+fmtInvoice(v)+'</td><td class="num sum-vat">'+fmtInvoice(s+v)+'</td></tr>';
     }).join('');
     const bName=buyer.bName||'______________________________________________';
@@ -1862,7 +1897,7 @@ function initUI() {
     lines.push('  Объём:            '+(d.volume?d.volume+' м³':'—'));
     lines.push('  Макс. длина:      '+(d.maxLen?d.maxLen+' мм':'—'));
     lines.push('');lines.push('СОСТАВ ЗАКАЗА:');
-    for(let i=0;i<ROWS.length;i++){const r=ROWS[i];const qtyStr=fmtQty2(rowTotalQty(r));lines.push('  '+(i+1)+'. '+r.label+' — '+qtyStr+' '+(r.unit||'шт.'));}
+    for(let i=0;i<ROWS.length;i++){const r=ROWS[i];const qtyStr=fmtQty2(rowTotalQty(r),r.unit);lines.push('  '+(i+1)+'. '+r.label+' — '+qtyStr+' '+(r.unit||'шт.'));}
     lines.push('');lines.push('ИТОГО: '+fmtInvoice(invoiceTotals.total)+' BYN с НДС');lines.push('');lines.push('— — —');lines.push('CUBICA · '+COMPANY.phone+' · '+COMPANY.email);
     return lines.join('\n');
   }

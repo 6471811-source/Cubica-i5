@@ -231,6 +231,11 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .picker-row .label{flex:1;word-break:break-word}
 .picker-row .unit-badge{flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:#eef2f7;color:#5a6b7a;text-transform:uppercase;letter-spacing:.4px}
 .picker-row.item.selected .unit-badge{background:#e10004;color:#fff}
+.picker-row .cat-badge{flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;background:#f4f5f7;color:#6a7a8a;white-space:nowrap}
+.picker-row .cat-badge.on{background:#e8f5e9;color:#2e7d32}
+.picker-row .cat-badge.warn{background:#fff3e0;color:#b26a00}
+.picker-row .cat-badge.price{background:#fff0f0;color:#c00003}
+.picker-row .cat-badge.note{background:#eef2f7;color:#5a6b7a;cursor:help}
 .picker-row .art-badge{flex-shrink:0;font-size:10px;color:#999;font-family:Consolas,monospace;padding:2px 6px;border-radius:4px;background:#f4f5f7}
 .picker-children{margin-left:20px;border-left:2px solid #f0f0f0;padding-left:6px;display:none}
 .picker-children.open{display:block}
@@ -485,10 +490,10 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
   <div class="modal-inner picker-inner">
     <div class="picker-head">
       <h3>📁 Справочник номенклатуры</h3>
-      <p>Разверните папку и выберите позицию — подставятся название, ед. изм. и артикул.</p>
+      <p>Номенклатура 1С и настройки из справочника журнала. При выборе подставятся название, ед. изм., рекомендованная цена, а кратность пачке включит округление.</p>
     </div>
     <div class="picker-search">
-      <input type="text" id="pickerSearch" placeholder="🔍 Поиск по названию или артикулу..." autocomplete="off">
+      <input type="text" id="pickerSearch" placeholder="🔍 Поиск по названию, артикулу или коду 1С..." autocomplete="off">
       <div class="picker-toolbar">
         <button type="button" id="btnCollapseAll">⊟ Свернуть</button>
         <button type="button" id="btnExpandAll">⊞ Развернуть</button>
@@ -1117,6 +1122,15 @@ function initUI() {
   let pickerFilter='';
 
   async function loadNomenclature(force){
+    if(HAS_CAT){
+      // тот же файл 1С и те же настройки справочника, что в журнале
+      try{
+        const tasks=[CJ.nomLoad(!!force)];
+        if(CJ.isApi())tasks.push(CJ.catalogSync().catch(()=>null));
+        const res=await Promise.all(tasks);
+        if(res[0]&&Array.isArray(res[0].tree)){NOMENCLATURE=res[0];CAT_MAP=CJ.catalogMap();return NOMENCLATURE;}
+      }catch(e){console.warn('Справочник (ядро):',e);}
+    }
     if(NOMENCLATURE&&!force)return NOMENCLATURE;
     if(!force){try{const cached=localStorage.getItem(NOMENCLATURE_CACHE_KEY);if(cached){const parsed=JSON.parse(cached);if(parsed&&Array.isArray(parsed.tree)&&parsed.tree.length){NOMENCLATURE=parsed;fetchAndCache().catch(()=>{});return NOMENCLATURE;}}}catch(e){}}
     return await fetchAndCache();
@@ -1172,7 +1186,7 @@ function initUI() {
   }
   function countAllItems(tree){let n=0;for(const node of tree){if(node.children&&node.children.length)n+=countAllItems(node.children);else n++;}return n;}
   function isFolderNode(node){return node.type==='folder'||(node.children&&node.children.length>0);}
-  function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
+  function nodeMatches(node,filter){if(!filter)return true;const f=filter.toLowerCase();if(String(node.name||'').toLowerCase().includes(f))return true;if(node.article&&String(node.article).toLowerCase().includes(f))return true;if(node.id&&String(node.id).toLowerCase().includes(f))return true;if(node.children&&node.children.some(ch=>nodeMatches(ch,filter)))return true;return false;}
   function collectAllFolderIds(tree,acc){for(const node of tree){if(isFolderNode(node)){acc.add(node.id);if(node.children)collectAllFolderIds(node.children,acc);}}return acc;}
 
   async function openPicker(idx){
@@ -1191,8 +1205,31 @@ function initUI() {
   function closePicker(){document.getElementById('pickerModal').classList.remove('open');pickerTargetIdx=-1;pickerSelected.node=null;}
   function updatePickerSelInfo(){
     const el=document.getElementById('pickerSelInfo');
-    if(pickerSelected.node){el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(pickerSelected.node.name)+'</span>'+(pickerSelected.node.unit?' · '+escapeHtml(pickerSelected.node.unit):'');}
+    if(pickerSelected.node){
+      const e=pickerEff(pickerSelected.node);const extra=[];
+      if(e){const pt=pickerPackText(e);if(pt)extra.push((e.packMultiple?'кратно пачке ':'пачка ')+pt);if(e.price>0)extra.push('рек. цена '+fmtPriceInput(e.price));if(e.note)extra.push(e.note);}
+      el.classList.remove('empty');el.innerHTML='Выбрано: <span style="color:#1a1a1a">'+escapeHtml(pickerSelected.node.name)+'</span>'+(pickerSelected.node.unit?' · '+escapeHtml(pickerSelected.node.unit):'')+(extra.length?'<div style="font-weight:600;color:#2e7d32;margin-top:3px">'+escapeHtml(extra.join(' · '))+'</div>':'');}
     else{el.classList.add('empty');el.textContent='Позиция не выбрана';}
+  }
+  function pickerEff(node){if(!HAS_CAT||!node)return null;try{return CJ.catalogResolve(node.id,CAT_MAP);}catch(e){return null;}}
+  function pickerPackText(e){
+    if(!e||!(e.packQty>0))return '';
+    const u=e.packUnit==='шт'?'шт':(e.unit||'ед.');
+    let t=fmtNum(e.packQty)+' '+u;
+    if(e.packUnit==='шт'&&e.m2PerPiece>0&&/м2|м²/i.test(e.unit||''))t+=' = '+fmtNum(+(e.packQty*e.m2PerPiece).toFixed(3))+' м²';
+    return t;
+  }
+  function fmtNum(v){return String(Math.round((Number(v)||0)*1000)/1000).replace('.',',');}
+  function pickerCatBadges(node){
+    const e=pickerEff(node);if(!e)return '';
+    let h='';
+    const pt=pickerPackText(e);
+    if(pt)h+='<span class="cat-badge'+(e.packMultiple?' on':'')+'" title="'+(e.packMultiple?'Кратно пачке — в счёте округлится до целых пачек':'Пачка указана, но кратность выключена')+'">'+(e.packMultiple?'▣ ':'')+'пачка '+escapeHtml(pt)+'</span>';
+    else if(e.packMultiple)h+='<span class="cat-badge warn" title="Кратность включена, но не указано, сколько в пачке">кратно, пачка не задана</span>';
+    if(e.m2PerPiece>0)h+='<span class="cat-badge">'+fmtNum(e.m2PerPiece)+' м²/шт</span>';
+    if(e.price>0)h+='<span class="cat-badge price">'+fmtPriceInput(e.price)+'</span>';
+    if(e.note)h+='<span class="cat-badge note" title="'+escapeHtml(e.note)+'">i</span>';
+    return h;
   }
   function renderPickerTree(){
     const container=document.getElementById('pickerTree');
@@ -1213,6 +1250,7 @@ function initUI() {
       if(isFolder)html+='<span class="arrow">▶</span><span class="icon">📁</span>';
       else html+='<span class="arrow invisible">▶</span><span class="icon">📄</span>';
       html+='<span class="label">'+escapeHtml(node.name)+'</span>';
+      if(!isFolder)html+=pickerCatBadges(node);
       if(!isFolder&&node.unit)html+='<span class="unit-badge">'+escapeHtml(node.unit)+'</span>';
       if(!isFolder&&node.article)html+='<span class="art-badge">'+escapeHtml(node.article)+'</span>';
       html+='</div>';
@@ -1221,7 +1259,7 @@ function initUI() {
     }
     let html='';for(const node of NOMENCLATURE.tree)html+=renderNode(node);
     container.innerHTML=html||'<div class="picker-empty"><span class="big">🔍</span>Ничего не найдено</div>';
-    countEl.textContent=pickerFilter?'Найдено по фильтру':('Всего позиций: '+countAllItems(NOMENCLATURE.tree));
+    countEl.textContent=(pickerFilter?'Найдено по фильтру':('Всего позиций: '+countAllItems(NOMENCLATURE.tree)))+(HAS_CAT?' · настроек в справочнике журнала: '+Object.keys(CAT_MAP).length:' · справочник журнала недоступен (старое ядро, обновите Ctrl+F5)');
     container.querySelectorAll('.picker-row').forEach(row=>{
       row.addEventListener('click',()=>{
         const id=row.getAttribute('data-id'),type=row.getAttribute('data-type');

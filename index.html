@@ -263,6 +263,20 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
   .picker-tree{padding:8px 10px}
   .inv-toolbar .inv-num-group{margin-left:0;flex-basis:100%;flex-wrap:wrap}
 }
+/* Запас: общий ползунок + пачки */
+.res-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:-4px 0 12px;padding:10px 14px;background:#fff8f0;border:1px solid #f3e1c8;border-radius:10px}
+.res-bar .res-lbl{font-size:11px;font-weight:800;color:#7a8a99;text-transform:uppercase;letter-spacing:.6px}
+.res-bar input[type=range]{width:220px;accent-color:#e10004}
+.res-bar .res-val{min-width:44px;font-weight:800;font-size:14px;color:#1a1a1a;font-variant-numeric:tabular-nums}
+.res-bar .res-note{font-size:11.5px;color:#8a8a8a}
+.res-cell{vertical-align:top}
+.res-ctl{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;margin-top:2px}
+.res-ctl button{border:1px solid #ddd;background:#fff;color:#777;border-radius:10px;font-size:10px;line-height:1;padding:3px 7px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.res-ctl button.res-pack.on{background:#e8f5e9;border-color:#9ccc9f;color:#2e7d32;font-weight:700}
+.res-ctl button.res-auto{background:#fff3e0;border-color:#f0c48a;color:#b26a00}
+.res-ctl button:hover{border-color:#e10004}
+.cell-input.qty.manual{color:#b26a00;font-weight:700}
+.q-sub{font-size:10px;font-weight:600;color:#2e7d32;margin-top:2px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -296,6 +310,13 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
         <div class="hint">Кликните по строке — она выделится, затем ▲ / ▼ двигают позицию, 📋 копирует выделенную позицию в конец списка</div>
       </div>
 
+      <div class="res-bar" id="resBar">
+        <span class="res-lbl">Запас на все позиции</span>
+        <input type="range" id="resSlider" min="0" max="30" step="1" value="0">
+        <span class="res-val" id="resVal">0 %</span>
+        <span class="res-note">Позиции с кратностью из справочника округляются до целых пачек (кнопка «пачка» в строке снимает округление). Запас, введённый вручную, ползунок не меняет.</span>
+      </div>
+
       <div class="inv-wrap">
         <table class="inv">
           <thead>
@@ -303,7 +324,7 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
               <th style="width:26px">№</th>
               <th>Наименование</th>
               <th style="width:80px;text-align:right">Расчёт</th>
-              <th style="width:75px;text-align:right">Запас</th>
+              <th style="width:112px;text-align:right">Запас</th>
               <th style="width:80px;text-align:right">Итого</th>
               <th style="width:48px">Ед.</th>
               <th style="width:80px;text-align:right">Цена</th>
@@ -547,6 +568,24 @@ function makeDefaultInvNumber(){
 }
 
 let selectedRowIdx = -1;
+const RESERVE_PCT_KEY = 'cubica_i5_reserve_pct';
+let RESERVE_PCT = (function(){try{const v=parseFloat(localStorage.getItem(RESERVE_PCT_KEY));return isFinite(v)?Math.max(0,Math.min(30,v)):0;}catch(e){return 0;}})();
+/* Строка для журнала: расчёт, запас, позиция справочника и режим запаса */
+function serializeRow(r){
+  const row = {
+    label: r.label,
+    qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
+    qtyReserve: Number(r.qtyReserve)||0,
+    unit: r.unit||'шт.',
+    price: Number(r.price)||0
+  };
+  if(r.nomId) row.nomId = r.nomId;
+  if(r.packOn === false) row.packOn = false;
+  if(r.resManual) row.resManual = true;
+  if(r.pieces) row.pieces = r.pieces;
+  if(r._fullLabel) row.labelFull = r._fullLabel;
+  return row;
+}
 
 function b64dec(s){
   if(!s) return null;
@@ -561,42 +600,31 @@ function fmtQty2(v){return (Number(v)||0).toFixed(2).replace('.', ',');}
 function fmtPriceInput(v){const n=Number(v)||0;const i=Math.floor(n);const f=Math.round((n-i)*100);return i+','+String(f).padStart(2,'0');}
 function parsePriceInput(str){if(str==null)return 0;let s=String(str).replace(/[^\d.,]/g,'').replace('.',',');if(s.indexOf(',')>=0){const[a,b]=s.split(',');const i=a.replace(/\D/g,'').slice(0,9)||'0';const f=(b||'').replace(/\D/g,'').slice(0,2).padEnd(2,'0');return parseInt(i,10)+parseInt(f,10)/100;}return parseInt(s.replace(/\D/g,'')||'0',10);}
 function parseQtyInput(str){const n=parseFloat(String(str).replace(',','.'));if(!isFinite(n))return 0;return Math.round(n*100)/100;}
-function handleSmartInput(inp, e) {
-  // Обработка удаления (Backspace)
-  if (e.key === 'Backspace' || e.key === 'Delete') {
-    e.preventDefault(); // Отменяем стандартное поведение браузера
-    
-    let raw = inp.value.replace(/\s/g, '').replace('.', ',');
-    let numStr = raw.replace(/,/g, '');
-    if (!numStr) return true;
-    
-    // Удаляем последнюю цифру
-    numStr = numStr.slice(0, -1);
-    if (!numStr) numStr = '0';
-    
-    // Пересчитываем и форматируем
-    let val = parseInt(numStr, 10) / 100;
-    let formatted = val.toFixed(2).replace('.', ',');
-    
-    inp.value = formatted;
-    inp.setSelectionRange(formatted.length, formatted.length);
-    return true;
+
+function handleSmartInput(inp,e){
+  const key=e.key;
+  if(!/^\d$/.test(key))return false;
+  let val=inp.value,selStart=inp.selectionStart,selEnd=inp.selectionEnd;
+  if(selStart===0&&selEnd===val.length){inp.value=key+',00';inp.setSelectionRange(1,1);return true;}
+  const comma=val.indexOf(',');
+  if(comma>=0&&selStart<=comma){
+    let left=val.slice(0,comma),right=val.slice(comma+1);
+    if(left==='0'&&(selStart===0||selStart===1)){inp.value=key+','+right;inp.setSelectionRange(1,1);return true;}
+    const newLeft=left.slice(0,selStart)+key+left.slice(selEnd);
+    const cleaned=newLeft.replace(/^0+(\d)/,'$1').slice(0,9)||'0';
+    inp.value=cleaned+','+right;
+    const pos=Math.min(cleaned.length,selStart+1);inp.setSelectionRange(pos,pos);return true;
   }
-
-  // Реагируем только на цифры (0-9)
-  if (!/^\d$/.test(e.key)) return false;
-
-  // ... остальной код для ввода цифр ...
-  let raw = inp.value.replace(/\s/g, '').replace('.', ',');
-  let numStr = raw.replace(/,/g, '');
-  if (!numStr) numStr = '0';
-  numStr += e.key;
-  let val = parseInt(numStr, 10) / 100;
-  let formatted = val.toFixed(2).replace('.', ',');
-  inp.value = formatted;
-  inp.setSelectionRange(formatted.length, formatted.length);
-  
-  return true;
+  if(comma>=0&&selStart>comma){
+    let left=val.slice(0,comma)||'0';
+    let right=val.slice(comma+1).padEnd(2,'0').slice(0,2);
+    const idxInFrac=selStart-comma-1;if(idxInFrac<0)return false;
+    const posInFrac=Math.min(Math.max(idxInFrac,0),1);
+    let arr=right.split('');arr[posInFrac]=key;right=arr.join('');
+    inp.value=left+','+right;
+    const newPos=comma+1+posInFrac+1;inp.setSelectionRange(newPos,newPos);return true;
+  }
+  return false;
 }
 
 function declOfNum(n,forms){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];}
@@ -692,12 +720,17 @@ async function initData() {
             unit: r.unit||'шт.',
             price: Number(r.price)||0,
             pieces: r.pieces,
-            _fullLabel: r.labelFull
+            _fullLabel: r.labelFull,
+            nomId: r.nomId || r._nomId || undefined,
+            packOn: r.packOn === false ? false : undefined,
+            // старые записи: запас уже стоял — считаем его ручным, чтобы не пересчитать
+            resManual: r.resManual !== undefined ? !!r.resManual : (Number(r.qtyReserve)||0) !== 0
           };
         });
         ROOMS = rec.rooms || [];
         KP_META = rec.meta || null;
       }
+      RESERVE_PCT = typeof rec.reservePct === 'number' ? rec.reservePct : 0;
       PREFILL_BUYER = rec.contractor || null;
       PREFILL_DEAL = rec.deal || null;
       INVOICE_NUMBER = rec.number || '';
@@ -739,17 +772,8 @@ async function initData() {
       const rec = window.CubicaJournal.create({ series:'invoice' });
       rec.type = 'universal';
       rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
-      rec.rows = ROWS.map(function(r){
-        return {
-          label:r.label,
-          qtyCalc:Number(r.qtyCalc)||0,
-          qtyReserve:Number(r.qtyReserve)||0,
-          unit:r.unit||'шт.',
-          price:Number(r.price)||0,
-          pieces:r.pieces,
-          labelFull:r._fullLabel
-        };
-      });
+      rec.rows = ROWS.map(serializeRow);
+      rec.reservePct = RESERVE_PCT;
       rec.rooms = ROOMS;
       rec.meta = KP_META;
       rec.history = rec.history || [];
@@ -781,6 +805,9 @@ async function initData() {
         const row={label,qtyCalc,qtyReserve,unit,price};
         if(r.pieces) row.pieces = r.pieces;
         if(r._fullLabel) row._fullLabel = r._fullLabel;
+        if(r.nomId) row.nomId = r.nomId;
+        if(r.packOn === false) row.packOn = false;
+        if(r.resManual) row.resManual = true;
         map.set(key,row);
         order.push(key);
       }
@@ -808,6 +835,61 @@ async function initData() {
 function initUI() {
   // Все функции рендера и обработчики
   function rowTotalQty(r){return (Number(r.qtyCalc)||0)+(Number(r.qtyReserve)||0);}
+
+  /* ---- Запас: % на все позиции → округление до пачки ---- */
+  const CJ = window.CubicaJournal;
+  const HAS_CAT = !!(CJ && typeof CJ.catalogResolve === 'function' && typeof CJ.catalogPackRound === 'function');
+  let CAT_MAP = HAS_CAT ? CJ.catalogMap() : {};
+  const r2 = v => Math.round((Number(v)||0)*100)/100;
+  const isWholeUnit = u => /^(шт|упак|компл|пач|рул|кор)/i.test(String(u||'').trim());
+  function rowEff(r){
+    if(!HAS_CAT || !r.nomId) return null;
+    try{ return CJ.catalogResolve(r.nomId, CAT_MAP); }catch(e){ return null; }
+  }
+  function recalcRow(r){
+    const base = Number(r.qtyCalc)||0;
+    const eff = rowEff(r);
+    r._packAvail = !!(eff && eff.packMultiple && eff.packQty > 0);
+    r._pack = null; r._perPack = 0; r._packUnit = (eff && eff.unit) || r.unit || '';
+    if(r._packAvail) r._perPack = CJ.catalogPackRound(eff, 1).perPack;
+    if(r.resManual){
+      if(r._packAvail && r._perPack > 0) r._packsInfo = Math.ceil(+((base + (Number(r.qtyReserve)||0)) / r._perPack).toFixed(6));
+      return;
+    }
+    let q = base * (1 + RESERVE_PCT/100);
+    q = isWholeUnit(r.unit) ? Math.ceil(+q.toFixed(6)) : r2(q);
+    if(r._packAvail && r.packOn !== false && base > 0){
+      const pr = CJ.catalogPackRound(eff, q);
+      r._pack = pr; q = pr.ship;
+    }
+    r.qtyReserve = r2(Math.max(0, q - base));
+  }
+  function recalcAll(){ ROWS.forEach(recalcRow); }
+  function resCtlHtml(r, i){
+    let h = '';
+    if(r._packAvail){
+      const on = r.packOn !== false && !r.resManual;
+      const unit = r._packUnit || r.unit || '';
+      const per = fmtQty2(r._perPack) + ' ' + unit;
+      const t = on && r._pack ? ('До целых пачек: ' + r._pack.packs + ' × ' + per + (r._pack.added > 0 ? ', округление +' + fmtQty2(r._pack.added) : '') + '. Нажмите, чтобы снять')
+                              : ('В пачке ' + per + '. Нажмите, чтобы округлять до целых пачек');
+      h += '<button type="button" class="res-pack' + (on ? ' on' : '') + '" data-pack="' + i + '" title="' + escapeHtml(t) + '">' + (on ? '✓ ' : '') + 'пачка</button>';
+    }
+    if(r.resManual) h += '<button type="button" class="res-auto" data-auto="' + i + '" title="Запас введён вручную. Нажмите, чтобы вернуть автоматический (ползунок и пачки)">вручную ✕</button>';
+    return '<div class="res-ctl">' + h + '</div>';
+  }
+  function totalCellHtml(r){
+    let h = fmtQty2(rowTotalQty(r));
+    const packs = r.resManual ? r._packsInfo : (r._pack && r._pack.packs);
+    if(r._packAvail && packs) h += '<div class="q-sub">' + packs + ' пач.</div>';
+    return h;
+  }
+  function onReservePct(v){
+    RESERVE_PCT = Math.max(0, Math.min(30, Math.round(Number(v)||0)));
+    try{ localStorage.setItem(RESERVE_PCT_KEY, String(RESERVE_PCT)); }catch(e){}
+    document.getElementById('resVal').textContent = RESERVE_PCT + ' %';
+    recalcAll(); ROWS.forEach((r,i)=>updateRowTotals(i)); updateTotalsView(); renderPreview();
+  }
   function rowSum(r){return rowTotalQty(r)*(Number(r.price)||0);}
   function computeTotals(){let sub=0,vat=0,tot=0;for(const r of ROWS){const s=rowSum(r);const v=s*0.20;sub+=s;vat+=v;tot+=s+v;}invoiceTotals={subtotal:sub,vat,total:tot};}
 
@@ -821,7 +903,7 @@ function initUI() {
     const tbody=document.getElementById('invTbody');
     tbody.innerHTML=ROWS.map((r,i)=>{
       const s=rowSum(r),v=s*0.20,t=s+v;
-      const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve),totStr=fmtQty2(rowTotalQty(r));
+      const calcStr=fmtQty2(r.qtyCalc),resStr=fmtQty2(r.qtyReserve);
       return '<tr data-idx="'+i+'">' +
         '<td class="pos">'+(i+1)+'</td>' +
         '<td><div class="name-cell">' +
@@ -829,8 +911,8 @@ function initUI() {
           '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
         '</div></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" value="'+calcStr+'"></td>' +
-        '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyReserve" value="'+resStr+'"></td>' +
-        '<td class="num qty-total" data-total="'+i+'">'+totStr+'</td>' +
+        '<td class="res-cell"><input type="text" inputmode="decimal" class="cell-input qty'+(r.resManual?' manual':'')+'" data-field="qtyReserve" value="'+resStr+'" title="'+(r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':''))+'">'+resCtlHtml(r,i)+'</td>' +
+        '<td class="num qty-total" data-total="'+i+'">'+totalCellHtml(r)+'</td>' +
         '<td><input type="text" class="cell-input" style="text-align:center" data-field="unit" value="'+escapeHtml(r.unit)+'"></td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input price" data-field="price" value="'+fmtPriceInput(r.price)+'"></td>' +
         '<td class="num" data-sum="'+i+'">'+fmtInvoice(s)+'</td>' +
@@ -869,7 +951,8 @@ function initUI() {
         const idx=idxOf(inp);
         if(field==='price'){ROWS[idx].price=parsePriceInput(inp.value);inp.value=fmtPriceInput(ROWS[idx].price);}
         else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyCalc);}
-        else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);inp.value=fmtQty2(ROWS[idx].qtyReserve);}
+        else if(field==='qtyReserve'){const v=parseQtyInput(inp.value);if(v!==r2(ROWS[idx].qtyReserve)){ROWS[idx].qtyReserve=v;ROWS[idx].resManual=true;}inp.value=fmtQty2(ROWS[idx].qtyReserve);}
+        if(field==='qtyCalc')recalcRow(ROWS[idx]);
         updateRowTotals(idx);updateTotalsView();renderPreview();
       });
     });
@@ -959,7 +1042,9 @@ function initUI() {
       unit: src.unit || 'шт.',
       price: Number(src.price)||0
     };
-    if(src._nomId) copy._nomId = src._nomId;
+    if(src.nomId) copy.nomId = src.nomId;
+    if(src.packOn === false) copy.packOn = false;
+    if(src.resManual) copy.resManual = true;
     if(Array.isArray(src._nomPath)) copy._nomPath = src._nomPath.slice();
     if(src.pieces) copy.pieces = src.pieces;
     if(src._fullLabel) copy._fullLabel = src._fullLabel;
@@ -983,8 +1068,8 @@ function initUI() {
   function commitNumericCell(inp){
     const idx=idxOf(inp),field=inp.getAttribute('data-field');
     if(field==='price')ROWS[idx].price=parsePriceInput(inp.value);
-    else if(field==='qtyCalc')ROWS[idx].qtyCalc=parseQtyInput(inp.value);
-    else if(field==='qtyReserve')ROWS[idx].qtyReserve=parseQtyInput(inp.value);
+    else if(field==='qtyCalc'){ROWS[idx].qtyCalc=parseQtyInput(inp.value);recalcRow(ROWS[idx]);}
+    else if(field==='qtyReserve'){ROWS[idx].qtyReserve=parseQtyInput(inp.value);ROWS[idx].resManual=true;recalcRow(ROWS[idx]);}
     updateRowTotals(idx);updateTotalsView();renderPreview();
   }
   function updateRowTotals(idx){
@@ -995,7 +1080,15 @@ function initUI() {
     const sumEl=tr.querySelector('[data-sum="'+idx+'"]');
     const vatEl=tr.querySelector('[data-vat="'+idx+'"]');
     const svatEl=tr.querySelector('[data-svat="'+idx+'"]');
-    if(totEl)totEl.textContent=fmtQty2(rowTotalQty(r));
+    if(totEl)totEl.innerHTML=totalCellHtml(r);
+    const resInp=tr.querySelector('input[data-field="qtyReserve"]');
+    if(resInp){
+      if(document.activeElement!==resInp)resInp.value=fmtQty2(r.qtyReserve);
+      resInp.classList.toggle('manual',!!r.resManual);
+      resInp.title=r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':'');
+    }
+    const ctl=tr.querySelector('.res-ctl');
+    if(ctl)ctl.outerHTML=resCtlHtml(r,idx);
     if(sumEl)sumEl.textContent=fmtInvoice(s);
     if(vatEl)vatEl.textContent=fmtInvoice(v);
     if(svatEl)svatEl.textContent=fmtInvoice(t);
@@ -1009,6 +1102,7 @@ function initUI() {
   }
   document.getElementById('btnAddRow').addEventListener('click',()=>{
     ROWS.push({label:'Новая позиция',qtyCalc:1,qtyReserve:0,unit:'шт.',price:0});
+    recalcRow(ROWS[ROWS.length-1]);
     renderInvoiceTable();renderPreview();
   });
 
@@ -1146,14 +1240,17 @@ function initUI() {
     const node=pickerSelected.node;
     ROWS[idx].label=node.name;
     if(node.unit)ROWS[idx].unit=node.unit;
-    ROWS[idx]._nomId = node.id;
+    ROWS[idx].nomId = node.id;
+    delete ROWS[idx].packOn;
+    { const eff = rowEff(ROWS[idx]); if(eff && eff.price > 0 && !(Number(ROWS[idx].price) > 0)) ROWS[idx].price = eff.price; }
+    recalcRow(ROWS[idx]);
     if(NOMENCLATURE && NOMENCLATURE.tree){
       const path = findNodePath(NOMENCLATURE.tree, node.id, []);
       ROWS[idx]._nomPath = path || [];
     }
     const tr=document.querySelector('tr[data-idx="'+idx+'"]');
     if(tr){const nameInp=tr.querySelector('input[data-field="label"]');const unitInp=tr.querySelector('input[data-field="unit"]');if(nameInp)nameInp.value=ROWS[idx].label;if(unitInp&&node.unit)unitInp.value=ROWS[idx].unit;}
-    updateRowTotals(idx);updateTotalsView();renderPreview();closePicker();
+    closePicker();renderInvoiceTable();renderPreview();setSelectedRow(idx);
   }
   document.getElementById('pickerSearch').addEventListener('input',e=>{pickerFilter=e.target.value;renderPickerTree();});
   document.getElementById('pickerSearch').addEventListener('keydown',e=>{
@@ -1481,18 +1578,8 @@ function initUI() {
           basis: buyer.bBasis||'', phone: buyer.bPhone||'', email: ''
         };
         rec.deal = deal;
-        rec.rows = ROWS.map(function(r){
-          var row = {
-            label: r.label,
-            qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
-            qtyReserve: Number(r.qtyReserve)||0,
-            unit: r.unit||'шт.',
-            price: Number(r.price)||0
-          };
-          if(r.pieces) row.pieces = r.pieces;
-          if(r._fullLabel) row.labelFull = r._fullLabel;
-          return row;
-        });
+        rec.rows = ROWS.map(serializeRow);
+        rec.reservePct = RESERVE_PCT;
         if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
         if(KP_META) rec.meta = KP_META;
         rec.number = getInvoiceNumber();
@@ -1754,19 +1841,8 @@ function initUI() {
     };
     rec.deal = getDeal();
 
-    rec.rows = ROWS.map(function(r){
-      var row = {
-        label: r.label,
-        // ★ ИСПРАВЛЕНИЕ: Если qtyCalc нет, берем qty (как приходит из Армстронга)
-        qtyCalc: Number(r.qtyCalc !== undefined ? r.qtyCalc : r.qty) || 0,
-        qtyReserve: Number(r.qtyReserve)||0,
-        unit: r.unit||'шт.',
-        price: Number(r.price)||0
-      };
-      if(r.pieces) row.pieces = r.pieces;
-      if(r._fullLabel) row.labelFull = r._fullLabel;
-      return row;
-    });
+    rec.rows = ROWS.map(serializeRow);
+    rec.reservePct = RESERVE_PCT;
 
     if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
     if(KP_META) rec.meta = KP_META;
@@ -1832,7 +1908,38 @@ function initUI() {
       if(PREFILL_DEAL.deliveryData){const dd=PREFILL_DEAL.deliveryData;if(dd.address)document.getElementById('delAddress').value=dd.address;if(dd.phone)document.getElementById('delPhone').value=dd.phone;if(dd.time)document.getElementById('delTime').value=formatTimeInput(dd.time);if(dd.date)document.getElementById('delDate').value=dd.date;if(dd.weight)document.getElementById('delWeight').value=dd.weight;if(dd.volume)document.getElementById('delVolume').value=dd.volume;if(dd.maxLen)document.getElementById('delMaxLen').value=dd.maxLen;}
     }
 
+    { const sl = document.getElementById('resSlider'); sl.value = String(RESERVE_PCT); document.getElementById('resVal').textContent = RESERVE_PCT + ' %';
+      sl.addEventListener('input', e => onReservePct(e.target.value)); }
+    document.getElementById('invTbody').addEventListener('click', e => {
+      const bp = e.target.closest('button[data-pack]'), ba = e.target.closest('button[data-auto]');
+      if(!bp && !ba) return;
+      const idx = parseInt((bp||ba).getAttribute(bp ? 'data-pack' : 'data-auto'), 10), r = ROWS[idx];
+      if(!r) return;
+      if(bp){ const on = r.packOn !== false && !r.resManual; r.packOn = on ? false : undefined; }
+      r.resManual = false;
+      recalcRow(r); updateRowTotals(idx); updateTotalsView(); renderPreview();
+    });
+    recalcAll();
     renderInvoiceTable();renderPreview();toggleDeliveryBlock();
+    if(HAS_CAT){
+      const refreshCat = () => {
+        CAT_MAP = CJ.catalogMap();
+        ROWS.forEach(r => {
+          if(r.nomId) return;
+          const f = CJ.catalogFind(r.label);   // точное совпадение названия с 1С
+          if(f && !f.isFolder){ r.nomId = f.code; if(f.price > 0 && !(Number(r.price) > 0)) r.price = f.price; }
+        });
+        const before = ROWS.map(r => r.qtyReserve + '|' + r._packAvail + '|' + r.price).join();
+        recalcAll();
+        const after = ROWS.map(r => r.qtyReserve + '|' + r._packAvail + '|' + r.price).join();
+        if(before !== after){ renderInvoiceTable(); renderPreview(); }
+      };
+      Promise.all([
+        CJ.nomLoad().catch(() => null),
+        CJ.isApi() ? CJ.catalogSync().catch(() => null) : null
+      ]).then(refreshCat);
+      if(CJ.on) CJ.on('catalog-changed', refreshCat);
+    }
     loadNomenclature().catch(()=>{});loadContractors().catch(()=>{});
     initBuyerPicker();
     document.getElementById('bUnp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,9);renderPreview();});

@@ -946,7 +946,7 @@ function initUI() {
         '<td><div class="name-cell">' +
           '<input type="text" class="cell-input name" data-field="label" value="'+escapeHtml(r.label)+'">' +
           '<button type="button" class="btn-picker" data-picker="'+i+'" title="Выбрать из справочника">📁</button>' +
-        '</div>'+(roleUnbound(r)?'<div class="role-unbound" title="Роль калькулятора не привязана к позиции 1С. Выберите позицию через 📁 или привяжите роль в журнале: Справочник → Роли Армстронга">не привязано к 1С</div>':'')+'</td>' +
+        '</div>'+(roleUnbound(r)?'<div class="role-unbound" title="Роль калькулятора не привязана к позиции 1С. Выберите позицию через 📁 или привяжите роль в журнале: Справочник → Роли калькуляторов">не привязано к 1С</div>':'')+'</td>' +
         '<td><input type="text" inputmode="decimal" class="cell-input qty" data-field="qtyCalc" data-dec="'+inpDec(r.unit)+'" value="'+calcStr+'"></td>' +
         '<td class="res-cell"><input type="text" inputmode="decimal" class="cell-input qty'+(r.resManual?' manual':'')+'" data-field="qtyReserve" data-dec="'+inpDec(r.unit)+'" value="'+resStr+'" title="'+(r.resManual?'Запас введён вручную':'Запас: '+RESERVE_PCT+' %'+(r._pack?' + до пачки':''))+'">'+resCtlHtml(r,i)+'</td>' +
         '<td class="num qty-total" data-total="'+i+'">'+totalCellHtml(r)+'</td>' +

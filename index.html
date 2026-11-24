@@ -104,6 +104,15 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 .preview-page{background:#fff;width:760px;height:1074px;box-shadow:0 12px 50px rgba(44,62,80,.18);position:relative;display:flex;overflow:hidden;flex-shrink:0;font-family:'Segoe UI',Calibri,Arial,sans-serif}
 .pv-panel{width:230px;padding:18px 12px 14px;display:flex;flex-direction:column;position:relative;background:#fff;color:#1a1a1a;border-right:2px solid #e10004;z-index:2;flex-shrink:0}
 .pv-panel .pv-logo-svg{width:100%;height:auto;display:block;margin-bottom:14px}
+.pv-panel .pv-logo-svg.arm{padding:10px 4px 6px;color:#111}
+.pv-panel .pv-logo-svg.arm svg{width:100%;height:auto;display:block}
+.brand-pick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;font-size:13px;color:#555}
+.brand-pick .seg{display:inline-flex;border:1px solid #d6d9de;border-radius:8px;overflow:hidden;background:#fff}
+.brand-pick label{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;cursor:pointer;font-weight:600;color:#333;border-right:1px solid #d6d9de;user-select:none}
+.brand-pick label:last-child{border-right:none}
+.brand-pick input{accent-color:#e10004;margin:0}
+.brand-pick label.on{background:#fff4f4;color:#e10004}
+.brand-pick .hint{font-size:12px;color:#8a929c}
 .pv-panel-company{font-size:12px;font-weight:800;margin-bottom:5px;color:#000}
 .pv-panel-req{font-size:9px;line-height:1.5;color:#333}
 .pv-panel-req div{margin-bottom:2px;word-break:break-word}
@@ -415,6 +424,14 @@ table.inv tr.flash td{animation:rowFlash .9s ease-out}
 
     <div class="section">
       <h2 class="sec-title"><span class="sec-num">4</span>Предпросмотр счёта</h2>
+      <div class="brand-pick" id="brandPick">
+        <span>Логотип счёта:</span>
+        <span class="seg">
+          <label><input type="radio" name="invBrand" value="cubica"> CUBICA</label>
+          <label><input type="radio" name="invBrand" value="armstrong"> Armstrong.by</label>
+        </span>
+        <span class="hint" id="brandHint"></span>
+      </div>
       <div class="preview-wrap">
         <div class="preview-page" id="pvPage"></div>
       </div>
@@ -703,6 +720,11 @@ const IS_BLANK = urlParams.get('blank')==='1';
 
 let ROWS=[],ROOMS=[],KP_META=null,PREFILL_BUYER=null,PREFILL_DEAL=null;
 let INVOICE_NUMBER = '';
+/* Бренд счёта: Armstrong.by — если пришли из калькулятора Армстронга, иначе CUBICA.
+   Менеджер может переключить вручную; выбор хранится в записи журнала (rec.brand) и уходит в КП. */
+let REC_TYPE = null, INVOICE_BRAND = null;
+function invoiceBrand(){ return INVOICE_BRAND || (REC_TYPE === 'armstrong' ? 'armstrong' : 'cubica'); }
+const LOGO_SVG_ARMSTRONG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -840 7030 1080" fill="currentColor"><g transform="translate(0 -823.5) scale(8.5)"><defs><clipPath id="i5ArmClip"><circle cx="60" cy="60" r="55"/></clipPath></defs><circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="10"/><g clip-path="url(#i5ArmClip)" fill="none" stroke="currentColor" stroke-linejoin="miter" stroke-miterlimit="10"><path d="M22 118 L60 21 L98 118" stroke-width="17"/><path d="M41 80 H79" stroke-width="12"/></g></g><path d="M1061 0V-542H1242V-384L1215 -429Q1239 -490 1293 -520.5Q1347 -551 1424 -551V-380Q1411 -382 1401.5 -382.5Q1392 -383 1381 -383Q1323 -383 1287 -351.5Q1251 -320 1251 -249V0ZM1457 0V-542H1638V-391L1602 -434Q1632 -492 1684 -521.5Q1736 -551 1800 -551Q1873 -551 1928.5 -513.5Q1984 -476 2003 -397L1941 -410Q1970 -476 2028.5 -513.5Q2087 -551 2163 -551Q2226 -551 2275.5 -525.5Q2325 -500 2353.5 -447Q2382 -394 2382 -310V0H2192V-279Q2192 -337 2170 -363.5Q2148 -390 2110 -390Q2083 -390 2061 -377Q2039 -364 2027 -337.5Q2015 -311 2015 -269V0H1825V-279Q1825 -337 1803.5 -363.5Q1782 -390 1743 -390Q1715 -390 1693.5 -377Q1672 -364 1659.5 -337.5Q1647 -311 1647 -269V0ZM2654 9Q2585 9 2519.5 -7Q2454 -23 2414 -47L2471 -177Q2509 -154 2560 -140.5Q2611 -127 2660 -127Q2708 -127 2726.5 -137Q2745 -147 2745 -164Q2745 -180 2727.5 -187.5Q2710 -195 2681.5 -199Q2653 -203 2619 -208Q2585 -213 2550.5 -221.5Q2516 -230 2487.5 -247.5Q2459 -265 2442 -295Q2425 -325 2425 -371Q2425 -423 2455.5 -463.5Q2486 -504 2545 -527.5Q2604 -551 2689 -551Q2746 -551 2804.5 -539.5Q2863 -528 2903 -505L2846 -376Q2806 -399 2766 -407.5Q2726 -416 2690 -416Q2642 -416 2622.5 -405Q2603 -394 2603 -378Q2603 -362 2620 -353.5Q2637 -345 2665.5 -340.5Q2694 -336 2728 -331.5Q2762 -327 2796.5 -318Q2831 -309 2859.5 -291.5Q2888 -274 2905 -244.5Q2922 -215 2922 -169Q2922 -119 2891.5 -79Q2861 -39 2801.5 -15Q2742 9 2654 9ZM3201 9Q3097 9 3039 -42.5Q2981 -94 2981 -198V-663H3171V-200Q3171 -171 3187 -154.5Q3203 -138 3228 -138Q3262 -138 3286 -155L3333 -22Q3309 -6 3274 1.5Q3239 9 3201 9ZM2902 -401V-542H3295V-401ZM3361 0V-542H3542V-384L3515 -429Q3539 -490 3593 -520.5Q3647 -551 3724 -551V-380Q3711 -382 3701.5 -382.5Q3692 -383 3681 -383Q3623 -383 3587 -351.5Q3551 -320 3551 -249V0ZM4024 9Q3935 9 3866 -27Q3797 -63 3757.5 -126.5Q3718 -190 3718 -272Q3718 -354 3757.5 -417Q3797 -480 3866 -515.5Q3935 -551 4024 -551Q4113 -551 4182.5 -515.5Q4252 -480 4291 -417Q4330 -354 4330 -272Q4330 -190 4291 -126.5Q4252 -63 4182.5 -27Q4113 9 4024 9ZM4024 -142Q4057 -142 4082.5 -157Q4108 -172 4123 -201.5Q4138 -231 4138 -272Q4138 -313 4123 -341.5Q4108 -370 4082.5 -385Q4057 -400 4024 -400Q3992 -400 3966.5 -385Q3941 -370 3925.5 -341.5Q3910 -313 3910 -272Q3910 -231 3925.5 -201.5Q3941 -172 3966.5 -157Q3992 -142 4024 -142ZM4373 0V-542H4554V-388L4519 -433Q4550 -492 4604 -521.5Q4658 -551 4726 -551Q4789 -551 4840 -525.5Q4891 -500 4920.5 -447Q4950 -394 4950 -310V0H4760V-279Q4760 -337 4736.5 -363.5Q4713 -390 4671 -390Q4641 -390 4616 -376.5Q4591 -363 4577 -335Q4563 -307 4563 -262V0ZM5296 203Q5218 203 5147.5 185Q5077 167 5027 132L5096 -1Q5130 26 5180.5 41.5Q5231 57 5279 57Q5356 57 5390 23.5Q5424 -10 5424 -74V-138L5434 -290L5433 -443V-542H5614V-99Q5614 55 5531 129Q5448 203 5296 203ZM5263 -28Q5191 -28 5130.5 -60.5Q5070 -93 5033.5 -151.5Q4997 -210 4997 -290Q4997 -370 5033.5 -428.5Q5070 -487 5130.5 -519Q5191 -551 5263 -551Q5332 -551 5381 -523.5Q5430 -496 5455.5 -438Q5481 -380 5481 -290Q5481 -200 5455.5 -142Q5430 -84 5381 -56Q5332 -28 5263 -28ZM5308 -179Q5342 -179 5368.5 -193Q5395 -207 5410.5 -232Q5426 -257 5426 -290Q5426 -323 5410.5 -348Q5395 -373 5368.5 -386.5Q5342 -400 5308 -400Q5274 -400 5247 -386.5Q5220 -373 5204.5 -348Q5189 -323 5189 -290Q5189 -257 5204.5 -232Q5220 -207 5247 -193Q5274 -179 5308 -179ZM5960 28V-532H6246.4Q6356.8 -532 6411.2 -491.6Q6465.6 -451.2 6465.6 -385.6Q6465.6 -342.4 6442.8 -310Q6420 -277.6 6378.8 -258.8Q6337.6 -240 6280.8 -240L6296.8 -278.4Q6356 -278.4 6400 -260.4Q6444 -242.4 6468.4 -208.4Q6492.8 -174.4 6492.8 -125.6Q6492.8 -52.8 6434 -12.4Q6375.2 28 6262.4 28ZM6116.8 -86.4H6249.6Q6290.4 -86.4 6311.6 -100.4Q6332.8 -114.4 6332.8 -143.2Q6332.8 -172 6311.6 -186Q6290.4 -200 6249.6 -200H6105.6V-309.6H6225.6Q6265.6 -309.6 6285.6 -323.2Q6305.6 -336.8 6305.6 -364Q6305.6 -391.2 6285.6 -404.4Q6265.6 -417.6 6225.6 -417.6H6116.8ZM6669.6 28V-208.8L6706.4 -113.6L6456 -532H6623.2L6804 -228.8H6707.2L6888.8 -532H7042.4L6792.8 -113.6L6828 -208.8V28Z"/><circle cx="5760" cy="45.5" r="80"/></svg>';
 let currentRecordId = null;
 let invoiceTotals={subtotal:0,vat:0,total:0};
 
@@ -754,6 +776,8 @@ async function initData() {
       PREFILL_BUYER = rec.contractor || null;
       PREFILL_DEAL = rec.deal || null;
       INVOICE_NUMBER = rec.number || '';
+      REC_TYPE = rec.type || null;
+      if(rec.brand === 'armstrong' || rec.brand === 'cubica') INVOICE_BRAND = rec.brand;
       console.log('[i5] Загружено из журнала:', rec.number, IS_BLANK ? '(пустой)' : '');
     } else {
       console.warn('[i5] Запись не найдена в журнале:', JID);
@@ -787,6 +811,8 @@ async function initData() {
       if(parsed.buyer&&typeof parsed.buyer==='object')PREFILL_BUYER=parsed.buyer;
       if(parsed.deal&&typeof parsed.deal==='object')PREFILL_DEAL=parsed.deal;
       if(parsed.invoiceNumber) INVOICE_NUMBER = String(parsed.invoiceNumber);
+      if(!REC_TYPE && parsed.type) REC_TYPE = String(parsed.type);
+      if(!INVOICE_BRAND && (parsed.brand === 'armstrong' || parsed.brand === 'cubica')) INVOICE_BRAND = parsed.brand;
     }catch(e){console.warn('?data:',e);}
   }
 
@@ -798,6 +824,7 @@ async function initData() {
       rec.number = INVOICE_NUMBER || window.CubicaJournal.nextNumber('invoice');
       rec.rows = ROWS.map(serializeRow);
       rec.reservePct = RESERVE_PCT;
+      rec.brand = invoiceBrand();
       rec.rooms = ROOMS;
       rec.meta = KP_META;
       rec.history = rec.history || [];
@@ -1569,7 +1596,7 @@ function initUI() {
     const bBank=buyer.bBank||'_____________________________________________';
     document.getElementById('pvPage').innerHTML=`
       <div class="pv-panel">
-        <div class="pv-logo-svg">${LOGO_SVG_COLOR}</div>
+        ${invoiceBrand()==='armstrong'?'<div class="pv-logo-svg arm">'+LOGO_SVG_ARMSTRONG+'</div>':'<div class="pv-logo-svg">'+LOGO_SVG_COLOR+'</div>'}
         <div class="pv-panel-company">${COMPANY.name}</div>
         <div class="pv-panel-req"><div>УНП: ${COMPANY.unp}</div><div>${COMPANY.address}</div></div>
         <hr class="pv-sep">
@@ -1635,7 +1662,7 @@ function initUI() {
             <div class="col"><b>Покупатель</b><div class="ln"></div><div>&nbsp;</div></div>
           </div>
         </div>
-        <div class="pv-footer"><span>CUBICA.BY</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
+        <div class="pv-footer"><span>${invoiceBrand()==='armstrong'?'ARMSTRONG.BY':'CUBICA.BY'}</span><span>${COMPANY.tagline} · ${COMPANY.phone} · ${COMPANY.email}</span><span>Спасибо за заказ!</span></div>
       </div>`;
   }
 
@@ -1655,7 +1682,7 @@ function initUI() {
     const imgH=imgW*(canvas.height/canvas.width);
     doc.addImage(imgData,'PNG',MARGIN,MARGIN,imgW,imgH,undefined,'FAST');
     const invNo=getInvoiceNumber().replace(/[^\w\-]/g,'');
-    doc.save('CUBICA_' + invNo + '.pdf');
+    doc.save((invoiceBrand()==='armstrong'?'ARMSTRONG_':'CUBICA_') + invNo + '.pdf');
   }
 
   function buildClientPayload(){
@@ -1674,13 +1701,16 @@ function initUI() {
         rec.deal = deal;
         rec.rows = ROWS.map(serializeRow);
         rec.reservePct = RESERVE_PCT;
+        rec.brand = invoiceBrand();
         if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
         if(KP_META) rec.meta = KP_META;
         rec.number = getInvoiceNumber();
         rec.totals = window.CubicaJournal.computeTotals(rec.rows);
         
         // ★ Возвращаем payload, сформированный ядром журнала
-        return window.CubicaJournal.buildClientPayload(rec);
+        const pl = window.CubicaJournal.buildClientPayload(rec);
+        if(pl && typeof pl === 'object') pl.brand = invoiceBrand();
+        return pl;
       }
     }
     
@@ -1694,6 +1724,8 @@ function initUI() {
     });
     return {
       v:6,
+      type: REC_TYPE || 'universal',
+      brand: invoiceBrand(),
       paid: false, paidAt: null,
       rooms: ROOMS.map(function(r){
         var angle = r.rotation;
@@ -1937,6 +1969,7 @@ function initUI() {
 
     rec.rows = ROWS.map(serializeRow);
     rec.reservePct = RESERVE_PCT;
+    rec.brand = invoiceBrand();
 
     if(Array.isArray(ROOMS) && ROOMS.length > 0) rec.rooms = ROOMS;
     if(KP_META) rec.meta = KP_META;
@@ -2057,6 +2090,21 @@ function initUI() {
     document.getElementById('prepayVal').textContent=document.getElementById('prepaySlider').value+' %';
     document.getElementById('deliveryDaysVal').textContent=document.getElementById('deliveryDaysSlider').value+' '+declOfNum(parseInt(document.getElementById('deliveryDaysSlider').value,10),['день','дня','дней']);
     document.getElementById('btnPdf').addEventListener('click',downloadPdf);
+    (function initBrandPick(){
+      const box=document.getElementById('brandPick'); if(!box) return;
+      const hint=document.getElementById('brandHint');
+      function sync(){
+        const b=invoiceBrand();
+        box.querySelectorAll('input[name="invBrand"]').forEach(el=>{el.checked=(el.value===b);el.parentNode.classList.toggle('on',el.checked);});
+        const auto=(REC_TYPE==='armstrong'?'armstrong':'cubica');
+        hint.textContent = INVOICE_BRAND && INVOICE_BRAND!==auto ? 'выбрано вручную' : (REC_TYPE==='armstrong' ? 'по умолчанию: расчёт в калькуляторе Армстронга' : '');
+      }
+      box.querySelectorAll('input[name="invBrand"]').forEach(el=>el.addEventListener('change',function(){
+        INVOICE_BRAND=this.value; sync(); renderPreview();
+        if(currentRecordId && window.CubicaJournal){ try{ const rec=window.CubicaJournal.get(currentRecordId); if(rec){ rec.brand=INVOICE_BRAND; window.CubicaJournal.save(rec,{assignNumber:false}); } }catch(e){} }
+      }));
+      sync();
+    })();
     document.getElementById('btnShare').addEventListener('click', function(){ openShareModal(); });
     document.getElementById('btnSendPdf').addEventListener('click',openPdfModal);
     document.getElementById('btnCopy').addEventListener('click',copyShareLink);
